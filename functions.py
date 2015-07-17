@@ -18,6 +18,11 @@ def check_file_validity(instrument):
     return
 
 
+# TODO: Load file function. This must read the csv data into dictionaries and clean up if req'd
+def load_instrument_file(instrument_file):
+    return
+
+
 def get_sampling_time(sample_set, station, sample_date):
     """
     Finds the sampling time for a set of samples collected at the same station
