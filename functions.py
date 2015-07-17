@@ -11,9 +11,11 @@ INSTRUMENTS = ["Hydrolab DS5"]
 # List of available field officers
 FIELD_STAFF = ["Andy Wise", "Sarah McGeoch"]
 
+
 # Check validity of the instrument file
 def check_file_validity(instrument):
     return
+
 
 def get_sampling_time(sample_set, station, sample_date):
     """
@@ -35,6 +37,7 @@ def get_sampling_time(sample_set, station, sample_date):
     sampling_time = min(sample_times).strftime('%H:%M:%S')
     return sampling_time
 
+
 def parse_time_from_string(time_string):
     """
     Takes a string that stores time information (in any format) and parses it
@@ -54,6 +57,7 @@ def parse_time_from_string(time_string):
     # Concatenate time components with colons
     time_string = hours + ':' + minutes + ':' + seconds
     return time_string
+
 
 def get_sampling_number(field_dict):
     """
@@ -75,8 +79,12 @@ def get_sampling_number(field_dict):
     sampling_number = sampling_delimiter.join([station, date, matrix])
     return sampling_number
 
-def get_fraction_number:
+
+def get_fraction_number(field_dict):
+
+    sample.get_new_number() + '_' + str(sample.cid) + str(sample.location_id) + '_F',
     return
+
 
 def write_to_csv(data_list, out_file, fieldnames_list):
     """
