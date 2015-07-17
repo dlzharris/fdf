@@ -16,6 +16,17 @@ def check_file_validity(instrument):
     return
 
 def get_sampling_time(sample_set, station, sample_date):
+    """
+    Finds the sampling time for a set of samples collected at the same station
+    on a given date. The sampling time is different from the sample time and
+    is used in KiWQM to collect related samples into a group (depth profiles or
+    primary and replicate samples).
+    :param sample_set: The entire set of field data from the instrument as a
+    dictionary, with extra metadata such as station already added in.
+    :param station: String of the station number to be queried
+    :param sample_date: String of the date used for the query
+    :return: The sampling time used to identify samplings in KiWQM.
+    """
     # sample_set is a dictionary of samples extracted from the csv
     # with extra attributes
     sample_times = [datetime.datetime.strptime(parse_time_from_string(['Time']), '%H:%M:%S')
