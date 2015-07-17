@@ -13,7 +13,7 @@ FIELD_STAFF = ["Andy Wise", "Sarah McGeoch"]
 
 # Check validity of the instrument file
 def check_file_validity(instrument):
-
+    return
 
 def get_sampling_time(sample_set, station, sample_date):
     # sample_set is a dictionary of samples extracted from the csv
@@ -38,11 +38,21 @@ def parse_time_from_string(time_string):
     time_string = hours + ':' + minutes + ':' + seconds
     return time_string
 
-def get_sampling_number:
-
+def get_sampling_number(data_line):
+    """Return a new sampling number."""
+    date_format = '%d%m%y'
+    sampling_delimiter = "-"
+    station = data_line['Station']
+    try:
+        date = datetime.datetime.strptime(data_line['Date'], '%d/%m/%y').strftime(date_format)
+    except ValueError:
+        date = datetime.datetime.strptime(data_line['Date'], '%d%m%y').strftime(date_format)
+    matrix = data_line['Matrix']
+    sampling_number = sampling_delimiter.join([station, date, matrix])
+    return sampling_number
 
 def get_fraction_number:
-
+    return
 
 def write_to_csv(data_list, out_file, fieldnames_list):
     """
