@@ -63,7 +63,7 @@ def get_sampling_number(field_dict):
     """
     Return a new sampling number
     :param field_dict: Dictionary created from data imported from the instrument file
-    :return: the sampling number used to identify the sample in KiWQM
+    :return: The sampling number used to identify the sample in KiWQM
     """
     # Set the date format and delimiter for the sampling number
     date_format = '%d%m%y'
@@ -81,9 +81,22 @@ def get_sampling_number(field_dict):
 
 
 def get_fraction_number(field_dict):
-
-    sample.get_new_number() + '_' + str(sample.cid) + str(sample.location_id) + '_F',
-    return
+    """
+    Return the fraction number for the field sample.
+    :param field_dict: Dictionary created from data imported from the instrument file.
+    :return: The fraction number used to identify the results as field results (as opposed
+    to lab results) in KiWQM.
+    """
+    # Set the delimiter to be used in the fraction number
+    fraction_delimiter = "_"
+    # Get the sampling number and strip out the matrix code from the end
+    # Using 9 as the starting point for str.find allows us to skip over the first hyphen.
+    sampling_number = get_sampling_number(field_dict)
+    delimiter_position = sampling_number.find("-", 9)
+    # Create the fraction number in form STATION#-DDMMYY_(CID+LOCATION ID)_F
+    fraction_number = sampling_number[:delimiter_position] + fraction_delimiter + str(field_dict['CID']) +\
+        str(field_dict['Location ID']) + fraction_delimiter + "F"
+    return fraction_number
 
 
 def write_to_csv(data_list, out_file, fieldnames_list):
