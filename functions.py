@@ -12,6 +12,7 @@ INSTRUMENTS = ["Hydrolab DS5"]
 FIELD_STAFF = ["Andy Wise", "Sarah McGeoch"]
 
 
+# TODO: Check file validity function
 # Check validity of the instrument file
 def check_file_validity(instrument):
     return
