@@ -25,6 +25,12 @@ def get_sampling_time(sample_set, station, sample_date):
     return sampling_time
 
 def parse_time_from_string(time_string):
+    """
+    Takes a string that stores time information (in any format) and parses it
+    to the format HH:MM:SS.
+    :param time_string: The string that contains time information
+    :return: Formatted time string as HH:MM:SS
+    """
     # Filter out the digits from the time string"
     time_digits = filter(str.isdigit, time_string)
     # Ensure two-digits used for hour
