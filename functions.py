@@ -38,16 +38,23 @@ def parse_time_from_string(time_string):
     time_string = hours + ':' + minutes + ':' + seconds
     return time_string
 
-def get_sampling_number(data_line):
-    """Return a new sampling number."""
+def get_sampling_number(field_dict):
+    """
+    Return a new sampling number
+    :param field_dict: Dictionary created from data imported from the instrument file
+    :return: the sampling number used to identify the sample in KiWQM
+    """
+    # Set the date format and delimiter for the sampling number
     date_format = '%d%m%y'
     sampling_delimiter = "-"
-    station = data_line['Station']
+    # Get the required parts of the sampling number from the field_dict
+    station = field_dict['Station']
     try:
-        date = datetime.datetime.strptime(data_line['Date'], '%d/%m/%y').strftime(date_format)
+        date = datetime.datetime.strptime(field_dict['Date'], '%d/%m/%y').strftime(date_format)
     except ValueError:
-        date = datetime.datetime.strptime(data_line['Date'], '%d%m%y').strftime(date_format)
-    matrix = data_line['Matrix']
+        date = datetime.datetime.strptime(field_dict['Date'], '%d%m%y').strftime(date_format)
+    matrix = field_dict['Matrix']
+    # Create the sampling number in format STATION#-DDMMYY-MATRIX
     sampling_number = sampling_delimiter.join([station, date, matrix])
     return sampling_number
 
