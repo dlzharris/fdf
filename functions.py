@@ -29,6 +29,8 @@ def load_instrument_file(instrument_file, instrument_type):
     :return: List of dictionaries, with each dictionary representing a
     different measurement point
     """
+    # TODO: Find a way to separate same parmaeter different units (e.g. temp celsius and temp degrees)
+    # TODO: This may require editing the original file, although this is not ideal
     # Set the number of lines to skip at the beginning of the csv file
     skip_lines = 0
     # File readings procedure for Hydrolab instruments:
@@ -43,17 +45,19 @@ def load_instrument_file(instrument_file, instrument_type):
                 # Find if we have reached the end of the data
                 if "Recovery" in line:
                     break
+        # TODO: Do we need to close and reopen the file here?
+        with open(instrument_file, "rb") as f:
             # Generate a new iterator from the instrument file that contains only the headers
             # and data
-            d = islice(f, skip_lines, n)
+            d = islice(f, skip_lines, n - 1)
             # Create the reader object to parse data into dictionaries
             reader = csv.DictReader(d, delimiter=',', skipinitialspace=True, quotechar='"')
             # Skip the first line, which only contains the units
             reader.next()
             data = []
             # Add each remaining line to a list
-            for line in reader:
-                data.append(line)
+            for item in reader:
+                data.append(item)
     else:
         data = None
     # Return the list
