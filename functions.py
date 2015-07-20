@@ -2,6 +2,7 @@
 import os
 import csv
 import datetime
+from itertools import islice
 
 # Global constants
 LABORATORY = "Field Measurement"
@@ -10,17 +11,53 @@ DATA_SOURCE = "Field Data"
 INSTRUMENTS = ["Hydrolab DS5"]
 # List of available field officers
 FIELD_STAFF = ["Andy Wise", "Sarah McGeoch"]
+# Instrument names as variables
+hydrolab = "Hydrolab DS5"
 
 
 # TODO: Check file validity function
 # Check validity of the instrument file
-def check_file_validity(instrument):
+def check_file_validity(instrument, instrument_type):
     return
 
 
-# TODO: Load file function. This must read the csv data into dictionaries and clean up if req'd
-def load_instrument_file(instrument_file):
-    return
+def load_instrument_file(instrument_file, instrument_type):
+    """
+    Reads the provided csv file, parses and loads the file to memory
+    :param instrument_file: The csv file to be loaded
+    :param instrument_type: The instrument from which the file was obtained
+    :return: List of dictionaries, with each dictionary representing a
+    different measurement point
+    """
+    # Set the number of lines to skip at the beginning of the csv file
+    skip_lines = 0
+    # File readings procedure for Hydrolab instruments:
+    if instrument_type == hydrolab:
+        skip_lines = 5
+        # Open the file
+        with open(instrument_file, "rb") as f:
+            # Initialise the counter
+            n = 0
+            for line in f.readlines():
+                n += 1
+                # Find if we have reached the end of the data
+                if "Recovery" in line:
+                    break
+            # Generate a new iterator from the instrument file that contains only the headers
+            # and data
+            d = islice(f, skip_lines, n)
+            # Create the reader object to parse data into dictionaries
+            reader = csv.DictReader(d, delimiter=',', skipinitialspace=True, quotechar='"')
+            # Skip the first line, which only contains the units
+            reader.next()
+            data = []
+            # Add each remaining line to a list
+            for line in reader:
+                data.append(line)
+    else:
+        data = None
+    # Return the list
+    return data
 
 
 def get_sampling_time(sample_set, station, sample_date):
