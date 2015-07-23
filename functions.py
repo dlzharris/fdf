@@ -16,8 +16,13 @@ FIELD_STAFF = ["Andy Wise", "Sarah McGeoch"]
 hydrolab_instruments = ["Hydrolab DS5", "Hydrolab MS4", "Hydrolab MS5"]
 
 
-# Check validity of the instrument file
 def check_file_validity(instrument_file, instrument_type):
+    """
+    Checks the validity of the user-selected input file for the selected instrument
+    :param instrument_file: Open instrument file object
+    :param instrument_type: The instrument from which the file was obtained (str)
+    :return: Boolean indicating the validity of the file (True for valid, False for invalid)
+    """
     # File validity check for Hydrolab instruments:
     if instrument_type in hydrolab_instruments:
         # Read the file into a list for interrogation
