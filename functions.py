@@ -51,13 +51,18 @@ def load_instrument_file(instrument_file, instrument_type):
                 if j == "Temp":
                     temp_match = re.search('[CF]', units[i])
                     parameters[i] = "Temp" + temp_match.group()
+            # Double check the beginning of the data set: it will be row 8, or row 9 if a
+            # power loss description is in row 8.
+            if "Power" in in_list[data_start_row]:
+                data_start_row += 1
             # Find the end of the data set in the file. First, initialise the counter
-            n = 0
+            n = 1
             for line in in_list:
-                n += 1
                 # Find if we have reached the end of the data
                 if "Recovery" in line:
                     break
+                else:
+                    n += 1
             # Return to beginning of file
             f.seek(0)
             # Generate a new iterator from the instrument file that contains only the headers
@@ -66,7 +71,6 @@ def load_instrument_file(instrument_file, instrument_type):
             # Create the reader object to parse data into dictionaries
             reader = csv.DictReader(d, delimiter=',', skipinitialspace=True, quotechar='"', fieldnames=parameters)
             # Skip the first line, which only contains the units
-            reader.next()
             data = []
             # Add each remaining line to a list
             for line in reader:
