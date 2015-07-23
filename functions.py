@@ -1,7 +1,6 @@
 # functions.py: functions required for field data import gui
 import os
 import csv
-import codecs
 import datetime
 from itertools import islice
 import re
@@ -17,10 +16,27 @@ FIELD_STAFF = ["Andy Wise", "Sarah McGeoch"]
 hydrolab_instruments = ["Hydrolab DS5", "Hydrolab MS4", "Hydrolab MS5"]
 
 
-# TODO: Check file validity function
 # Check validity of the instrument file
-def check_file_validity(instrument, instrument_type):
-    return
+def check_file_validity(instrument_file, instrument_type):
+    # File validity check for Hydrolab instruments:
+    if instrument_type in hydrolab_instruments:
+        # Read the file into a list for interrogation
+        in_file = list(instrument_file.readlines())
+        # Perform the validity tests
+        valid_test_1 = True if "Log File Name" in in_file[0] else False
+        valid_test_2 = True if "Setup" in in_file[1] else False
+        valid_test_3 = True if "Setup" in in_file[2] else False
+        valid_test_4 = True if "Recovery" in in_file[len(in_file) - 2] else False
+        # If all tests pass (True) then the file is valid, otherwise it is invalid
+        if all([valid_test_1, valid_test_2, valid_test_3, valid_test_4]):
+            file_valid = True
+        else:
+            file_valid = False
+    # If the instrument type is not found in the available instruments, then
+    # the file is invalid.
+    else:
+        file_valid = False
+    return file_valid
 
 
 def load_instrument_file(instrument_file, instrument_type):
@@ -38,6 +54,12 @@ def load_instrument_file(instrument_file, instrument_type):
         data_start_row = 8
         # Open the file
         with open(instrument_file, "rb") as f:
+            # Check the validity of the file
+            # TODO: Can we do this more elegantly with a custom exception?
+            if check_file_validity(f, instrument_type) is not True:
+                return None
+            # Rewind the file head
+            f.seek(0)
             # Read the file into a list for initial interrogation and processing. We will
             # read the data portion into a dictionary further below.
             in_list = list(f.readlines())
@@ -72,9 +94,12 @@ def load_instrument_file(instrument_file, instrument_type):
             reader = csv.DictReader(d, delimiter=',', skipinitialspace=True, quotechar='"', fieldnames=parameters)
             # Skip the first line, which only contains the units
             data = []
-            # Add each remaining line to a list
+            # Remove empty key:value pairs and add each remaining line to a list
             for line in reader:
+                del line['']
+                # TODO: Send time and date to function for formatting
                 data.append(line)
+    # If the format for the instrument data file was not found, make the data list None
     else:
         data = None
     # Return the list
