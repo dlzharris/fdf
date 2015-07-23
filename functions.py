@@ -1,18 +1,20 @@
 # functions.py: functions required for field data import gui
 import os
 import csv
+import codecs
 import datetime
 from itertools import islice
+import re
 
 # Global constants
 LABORATORY = "Field Measurement"
 DATA_SOURCE = "Field Data"
 # List of available instruments
-INSTRUMENTS = ["Hydrolab DS5"]
+INSTRUMENTS = ["Hydrolab DS5", "Hydrolab MS4", "Hydrolab MS5"]
 # List of available field officers
 FIELD_STAFF = ["Andy Wise", "Sarah McGeoch"]
 # Instrument names as variables
-hydrolab = "Hydrolab DS5"
+hydrolab_instruments = ["Hydrolab DS5", "Hydrolab MS4", "Hydrolab MS5"]
 
 
 # TODO: Check file validity function
@@ -29,35 +31,46 @@ def load_instrument_file(instrument_file, instrument_type):
     :return: List of dictionaries, with each dictionary representing a
     different measurement point
     """
-    # TODO: Find a way to separate same parmaeter different units (e.g. temp celsius and temp degrees)
-    # TODO: This may require editing the original file, although this is not ideal
-    # Set the number of lines to skip at the beginning of the csv file
-    skip_lines = 0
     # File readings procedure for Hydrolab instruments:
-    if instrument_type == hydrolab:
-        skip_lines = 5
+    if instrument_type in hydrolab_instruments:
+        # Set the header and data start rows
+        header_start_row = 5
+        data_start_row = 8
         # Open the file
         with open(instrument_file, "rb") as f:
-            # Initialise the counter
+            # Read the file into a list for initial interrogation and processing. We will
+            # read the data portion into a dictionary further below.
+            in_list = list(f.readlines())
+            # The hydrolab data headers are made up of two rows: one for the parameter and one
+            # for the unit. Because temperature is reported more than once in different units,
+            # we need to parse temperature with the respective unit (deg celsius or fahrenheit)
+            # to make it unique.
+            parameters = in_list[header_start_row].replace('"', '').split(',')
+            units = in_list[header_start_row + 1].replace('"', '').split(',')
+            for i, j in enumerate(parameters):
+                if j == "Temp":
+                    temp_match = re.search('[CF]', units[i])
+                    parameters[i] = "Temp" + temp_match.group()
+            # Find the end of the data set in the file. First, initialise the counter
             n = 0
-            for line in f.readlines():
+            for line in in_list:
                 n += 1
                 # Find if we have reached the end of the data
                 if "Recovery" in line:
                     break
-        # TODO: Do we need to close and reopen the file here?
-        with open(instrument_file, "rb") as f:
+            # Return to beginning of file
+            f.seek(0)
             # Generate a new iterator from the instrument file that contains only the headers
             # and data
-            d = islice(f, skip_lines, n - 1)
+            d = islice(f, data_start_row, n - 1)
             # Create the reader object to parse data into dictionaries
-            reader = csv.DictReader(d, delimiter=',', skipinitialspace=True, quotechar='"')
+            reader = csv.DictReader(d, delimiter=',', skipinitialspace=True, quotechar='"', fieldnames=parameters)
             # Skip the first line, which only contains the units
             reader.next()
             data = []
             # Add each remaining line to a list
-            for item in reader:
-                data.append(item)
+            for line in reader:
+                data.append(line)
     else:
         data = None
     # Return the list
