@@ -48,3 +48,5 @@ test
 # Unctracked project files #
 ############################
 *.csv
+hydrolab*
+test.py
