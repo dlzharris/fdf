@@ -57,6 +57,8 @@ def load_instrument_file(instrument_file, instrument_type):
         # Set the header and data start rows
         header_start_row = 5
         data_start_row = 8
+        # Initialise the date format container
+        date_idx = []
         # Open the file
         with open(instrument_file, "rb") as f:
             # Check the validity of the file
@@ -78,6 +80,12 @@ def load_instrument_file(instrument_file, instrument_type):
                 if j == "Temp":
                     temp_match = re.search('[CF]', units[i])
                     parameters[i] = "Temp" + temp_match.group()
+                # Find the order of date components
+                if j == "Date":
+                    date_day = re.search('D', units[i]).span()
+                    date_month = re.search('M', units[i]).span()
+                    date_year = re.search('Y', units[i]).span()
+                    date_idx = [date_day, date_month, date_year]
             # Double check the beginning of the data set: it will be row 8, or row 9 if a
             # power loss description is in row 8.
             if "Power" in in_list[data_start_row]:
@@ -102,6 +110,7 @@ def load_instrument_file(instrument_file, instrument_type):
             # Remove empty key:value pairs and add each remaining line to a list
             for line in reader:
                 del line['']
+                line['Date'] = parse_date_from_string(line['Date'], date_idx)
                 # TODO: Send time and date to function for formatting
                 data.append(line)
     # If the format for the instrument data file was not found, make the data list None
@@ -139,7 +148,9 @@ def parse_time_from_string(time_string):
     :param time_string: The string that contains time information
     :return: Formatted time string as HH:MM:SS
     """
-    # Filter out the digits from the time string"
+    # Set the time component delimiter
+    delimiter = ':'
+    # Filter out the digits from the time string
     time_digits = filter(str.isdigit, time_string)
     # Ensure two-digits used for hour
     if len(time_digits) < 6:
@@ -148,9 +159,34 @@ def parse_time_from_string(time_string):
     hours = time_digits[:2]
     minutes = time_digits[2:4]
     seconds = time_digits[4:6]
-    # Concatenate time components with colons
-    time_string = hours + ':' + minutes + ':' + seconds
+    # Concatenate time components with delimiter
+    time_string = hours + delimiter + minutes + delimiter + seconds
     return time_string
+
+
+def parse_date_from_string(date_string, date_idx):
+    """
+    Takes a string that stores date information and parses it to the format DD/MM/YY
+    :param date_string: The string that contains date information
+    :param date_idx: List of tuples that provide the indices of date components
+    in the date_digits extracted from the date string
+    :return: Formatted date string as DD/MM/YY
+    """
+    # Set the date component delimiter
+    delimiter = '/'
+    # Extract the date components
+    day_idx = date_idx[0]
+    month_idx = date_idx[1]
+    year_idx = date_idx[2]
+    # Filter out the digits from the date string
+    date_digits = filter(str.isdigit, date_string)
+    # Extract the date components
+    day = date_digits[day_idx[0]:day_idx[1]]
+    month = date_digits[month_idx[0]:month_idx[1]]
+    year = date_digits[year_idx[0]:year_idx[1]]
+    # Concatenate date components with delimiter
+    date_string = day + delimiter + month + delimiter + year
+    return date_string
 
 
 def get_sampling_number(field_dict):
