@@ -94,6 +94,7 @@ def load_instrument_file(instrument_file, instrument_type):
             n = 1
             for line in in_list:
                 # Find if we have reached the end of the data
+                # TODO: Find if "Power loss" is between data and "Recovery" - need to skip this line too
                 if "Recovery" in line:
                     break
                 else:
@@ -111,7 +112,7 @@ def load_instrument_file(instrument_file, instrument_type):
             for line in reader:
                 del line['']
                 line['Date'] = parse_date_from_string(line['Date'], date_idx)
-                # TODO: Send time and date to function for formatting
+                line['Time'] = parse_time_from_string(line['Time'])
                 data.append(line)
     # If the format for the instrument data file was not found, make the data list None
     else:
@@ -181,9 +182,9 @@ def parse_date_from_string(date_string, date_idx):
     # Filter out the digits from the date string
     date_digits = filter(str.isdigit, date_string)
     # Extract the date components
-    day = date_digits[day_idx[0]:day_idx[1]]
-    month = date_digits[month_idx[0]:month_idx[1]]
-    year = date_digits[year_idx[0]:year_idx[1]]
+    day = date_digits[day_idx[0]:day_idx[1] + 1]
+    month = date_digits[month_idx[0]:month_idx[1] + 1]
+    year = date_digits[year_idx[0]:year_idx[1] + 1]
     # Concatenate date components with delimiter
     date_string = day + delimiter + month + delimiter + year
     return date_string
