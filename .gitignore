@@ -44,9 +44,9 @@ Thumbs.db
 # Untracked folders #
 #####################
 test
+sample_hydrolab_files
 
 # Unctracked project files #
 ############################
 *.csv
-hydrolab*
 test.py
