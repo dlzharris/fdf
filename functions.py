@@ -90,12 +90,12 @@ def load_instrument_file(instrument_file, instrument_type):
             # power loss description is in row 8.
             if "Power" in in_list[data_start_row]:
                 data_start_row += 1
-            # Find the end of the data set in the file. First, initialise the counter
-            n = 1
-            for line in in_list:
+            # Find the end of the data set in the file. First, initialise the counter to
+            # beginning of data set.
+            n = data_start_row
+            for line in in_list[data_start_row:]:
                 # Find if we have reached the end of the data
-                # TODO: Find if "Power loss" is between data and "Recovery" - need to skip this line too
-                if "Recovery" in line:
+                if "Recovery" in line or "Power" in line:
                     break
                 else:
                     n += 1
@@ -103,10 +103,9 @@ def load_instrument_file(instrument_file, instrument_type):
             f.seek(0)
             # Generate a new iterator from the instrument file that contains only the headers
             # and data
-            d = islice(f, data_start_row, n - 1)
-            # Create the reader object to parse data into dictionaries
+            d = islice(f, data_start_row, n)
+            # Create the reader object to parse data into dictionaries and the data container list
             reader = csv.DictReader(d, delimiter=',', skipinitialspace=True, quotechar='"', fieldnames=parameters)
-            # Skip the first line, which only contains the units
             data = []
             # Remove empty key:value pairs and add each remaining line to a list
             for line in reader:
