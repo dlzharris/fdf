@@ -1,5 +1,4 @@
 # functions.py: functions required for field data import gui
-import os
 import csv
 import datetime
 from itertools import islice
