@@ -109,6 +109,7 @@ def load_instrument_file(instrument_file, instrument_type):
             # Remove empty key:value pairs and add each remaining line to a list
             for line in reader:
                 del line['']
+                del line['\r\n']
                 line['Date'] = parse_date_from_string(line['Date'], date_idx)
                 line['Time'] = parse_time_from_string(line['Time'])
                 data.append(line)
@@ -242,3 +243,38 @@ def write_to_csv(data_list, out_file, fieldnames_list):
     writer.writeheader()
     writer.writerows(data_list)
     return None
+
+
+def get_data_col_order(key):
+    order = {"Date": 1,
+             "Time": 2,
+             "IBVSvr4": 3,
+             "TempC": 4,
+             "pH": 5,
+             "Dep25": 6,
+             "LDO%": 7,
+             "SpCond": 8,
+             "LDO": 9,
+             "BP": 10,
+             "BPSvr4": 11,
+             "TempF": 12}
+    return order[key]
+
+
+def get_new_dict_key(key):
+    new_keys = {"Date": "date",
+                "Time": "sample_time",
+                "TempC": "temp_c",
+                "TempF": "temp_f",
+                "Dep25": "depth",
+                "LDO%": "do_sat",
+                "LDO": "do",
+                "pH": "ph",
+                "SpCond": "conductivity_uncomp",
+                "IBVSvr4": "internal_voltage",
+                "BPSvr4": "barometric_pressure",
+                "PYC": "pyc",
+                "PYCV": "pyc_v",
+                "CHL": "chlorophyll_a",
+                "CHLV": "chlorophyll_a_v"}
+    return new_keys[key]
