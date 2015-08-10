@@ -66,7 +66,7 @@ class MainPanel(wx.Panel):
             ColumnDefn("", "center", 20, "checked"),
             ColumnDefn("MP#", "left", 80, "mp_number"),
             ColumnDefn("Station#", "center", 100, "station_number",  valueSetter=self.updateSampleStation),
-            ColumnDefn("Sampling Number", "center", 220, "sampling_number"),
+            ColumnDefn("Sampling Number", "center", 220, "sampling_number", isEditable=False),
             ColumnDefn("Date", "center", 100, "date"),
             ColumnDefn("Time", "center", -1, "sample_time"),
             ColumnDefn("Loc#", "left", 80, "location_id"),
