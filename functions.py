@@ -106,13 +106,31 @@ def load_instrument_file(instrument_file, instrument_type):
             # Create the reader object to parse data into dictionaries and the data container list
             reader = csv.DictReader(d, delimiter=',', skipinitialspace=True, quotechar='"', fieldnames=parameters)
             data = []
-            # Remove empty key:value pairs and add each remaining line to a list
+            # Change the keys to our standard key values and remove items that are not relevant
             for line in reader:
-                del line['']
-                del line['\r\n']
-                line['Date'] = parse_date_from_string(line['Date'], date_idx)
-                line['Time'] = parse_time_from_string(line['Time'])
-                data.append(line)
+                new_line = {}
+                for item in line:
+                    try:
+                        new_line[get_new_dict_key(item)] = line[item]
+                    except KeyError:
+                        pass
+                # Format the date and time correctly
+                new_line['date'] = parse_date_from_string(new_line['date'], date_idx)
+                new_line['sample_time'] = parse_time_from_string(new_line['sample_time'])
+                # Add the extra items we'll need access to later on
+                new_line['sampling_number'] = ""
+                new_line['replicate_number'] = ""
+                new_line['sample_cid'] = ""
+                new_line['sample_matrix'] = ""
+                new_line['mp_number'] = ""
+                new_line['location_id'] = ""
+                new_line['station_number'] = ""
+                new_line['calibration_record'] = ""
+                new_line['sampling_officer'] = ""
+                new_line['sample_collected'] = ""
+                new_line['depth_lower'] = ""
+                # Add the new updated dictionary to our list
+                data.append(new_line)
     # If the format for the instrument data file was not found, make the data list None
     else:
         data = None
@@ -199,12 +217,12 @@ def get_sampling_number(field_dict):
     date_format = '%d%m%y'
     sampling_delimiter = "-"
     # Get the required parts of the sampling number from the field_dict
-    station = field_dict['Station']
+    station = field_dict['station_number']
     try:
-        date = datetime.datetime.strptime(field_dict['Date'], '%d/%m/%y').strftime(date_format)
+        date = datetime.datetime.strptime(field_dict['date'], '%d/%m/%y').strftime(date_format)
     except ValueError:
-        date = datetime.datetime.strptime(field_dict['Date'], '%d%m%y').strftime(date_format)
-    matrix = field_dict['Matrix']
+        date = datetime.datetime.strptime(field_dict['date'], '%d%m%y').strftime(date_format)
+    matrix = field_dict['sample_matrix']
     # Create the sampling number in format STATION#-DDMMYY-MATRIX
     sampling_number = sampling_delimiter.join([station, date, matrix])
     return sampling_number
@@ -266,7 +284,7 @@ def get_new_dict_key(key):
                 "Time": "sample_time",
                 "TempC": "temp_c",
                 "TempF": "temp_f",
-                "Dep25": "depth",
+                "Dep25": "depth_upper",
                 "LDO%": "do_sat",
                 "LDO": "do",
                 "pH": "ph",
