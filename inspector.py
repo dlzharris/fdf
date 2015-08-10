@@ -46,18 +46,33 @@ class MainPanel(wx.Panel):
         for item in the_data:
             print item
 
+    def updateSampleStation(self, sampleObject, value):
+        sampleObject['station_number'] = value
+        if sampleObject['sample_matrix'] != "":
+            sampleObject['sampling_number'] = functions.get_sampling_number(sampleObject)
+        else:
+            pass
+
+    def updateSampleMatrix(self, sampleObject, value):
+        sampleObject['sample_matrix'] = value
+        if sampleObject['sample_matrix'] != "":
+            sampleObject['sampling_number'] = functions.get_sampling_number(sampleObject)
+        else:
+            pass
+
     #----------------------------------------------------------------------
     def setSamples(self, data=None):
         self.dataOlv.SetColumns([
+            ColumnDefn("", "center", 20, "checked"),
             ColumnDefn("MP#", "left", 80, "mp_number"),
-            ColumnDefn("Station#", "center", 100, "station_number"),
+            ColumnDefn("Station#", "center", 100, "station_number",  valueSetter=self.updateSampleStation),
             ColumnDefn("Sampling Number", "center", 220, "sampling_number"),
             ColumnDefn("Date", "center", 100, "date"),
             ColumnDefn("Time", "center", -1, "sample_time"),
             ColumnDefn("Loc#", "left", 80, "location_id"),
             ColumnDefn("Seq#", "left", 80, "sample_cid"),
             ColumnDefn("Rep#", "left", 50, "replicate_number"),
-            ColumnDefn("Matrix", "left", 100, "sample_matrix"),
+            ColumnDefn("Matrix", "left", 100, "sample_matrix", valueSetter=self.updateSampleMatrix),
             # ColumnDefn("Sample Type", "left", 100, "sample_type"),
             # ColumnDefn("Collection Method", "left", 100, "collection_method"),
             ColumnDefn("Calibration Record", "left", 100, "calibration_record"),
