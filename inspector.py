@@ -1,6 +1,7 @@
 import wx
 import functions
-from ObjectListView import ObjectListView, ColumnDefn
+import globals
+from ObjectListView import ObjectListView, ColumnDefn, CellEditor
 
 
 class MainPanel(wx.Panel):
@@ -76,7 +77,7 @@ class MainPanel(wx.Panel):
             # ColumnDefn("Sample Type", "left", 100, "sample_type"),
             # ColumnDefn("Collection Method", "left", 100, "collection_method"),
             ColumnDefn("Calibration Record", "left", 100, "calibration_record"),
-            ColumnDefn("Sampling Officer", "left", 100, "sampling_officer"),
+            ColumnDefn("Sampling Officer", "left", 100, "sampling_officer", cellEditorCreator=dropDownComboBox),
             # ColumnDefn("Event Time", "left", 100, "event_time"),
             ColumnDefn("Sample Collected", "left", 100, "sample_collected"),
             ColumnDefn("Depth Upper (m)", "left", 100, "depth_upper"),
@@ -90,6 +91,27 @@ class MainPanel(wx.Panel):
             ColumnDefn("Water Depth", "left", 100, "water_depth"),
             ColumnDefn("Gauge Height (m)", "left", 100, "gauge_height")
         ])
+
+
+# Additional GUI components
+def dropDownComboBox(olv, rowIndex, columnIndex):
+    """
+    Return a ComboBox that lets the user choose from the appropriate values for the column.
+    """
+    # Get the column object
+    col = olv.columns[columnIndex]
+    # Select the correct list for the column
+    if col.title == "Sampling Officer":
+        options = globals.FIELD_STAFF
+
+    # Create the combobox object
+    cb = wx.ComboBox(olv, choices=list(options),
+                     style=wx.CB_DROPDOWN | wx.CB_SORT | wx.TE_PROCESS_ENTER)
+    # Add autocomplete to the combobox
+    CellEditor.AutoCompleteHelper(cb)
+    # Return the combobox object for the column
+    return cb
+
 
 ########################################################################
 class MainFrame(wx.Frame):
