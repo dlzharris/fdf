@@ -74,7 +74,7 @@ class MainPanel(wx.Panel):
             ColumnDefn("Seq#", "left", 80, "sample_cid"),
             ColumnDefn("Rep#", "left", 50, "replicate_number"),
             ColumnDefn("Matrix", "left", 100, "sample_matrix", valueSetter=self.updateSampleMatrix),
-            # ColumnDefn("Sample Type", "left", 100, "sample_type"),
+            ColumnDefn("Sample Type", "left", 100, "sample_type", cellEditorCreator=dropDownComboBox),
             # ColumnDefn("Collection Method", "left", 100, "collection_method"),
             ColumnDefn("Calibration Record", "left", 100, "calibration_record"),
             ColumnDefn("Sampling Officer", "left", 100, "sampling_officer", cellEditorCreator=dropDownComboBox),
@@ -103,7 +103,9 @@ def dropDownComboBox(olv, rowIndex, columnIndex):
     # Select the correct list for the column
     if col.title == "Sampling Officer":
         options = globals.FIELD_STAFF
-
+    # TODO: make sample type appear in specific order
+    if col.title == "Sample Type":
+        options = globals.SAMPLE_TYPES
     # Create the combobox object
     cb = wx.ComboBox(olv, choices=list(options),
                      style=wx.CB_DROPDOWN | wx.CB_SORT | wx.TE_PROCESS_ENTER)

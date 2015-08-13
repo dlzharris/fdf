@@ -115,6 +115,7 @@ def load_instrument_file(instrument_file, instrument_type):
                 new_line['replicate_number'] = ""
                 new_line['sample_cid'] = ""
                 new_line['sample_matrix'] = ""
+                new_line['sample_type'] = ""
                 new_line['mp_number'] = ""
                 new_line['location_id'] = ""
                 new_line['station_number'] = ""
