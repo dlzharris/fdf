@@ -4,13 +4,6 @@ import datetime
 from itertools import islice
 import re
 
-# Global constants
-LABORATORY = "Field Measurement"
-DATA_SOURCE = "Field Data"
-# List of available instruments
-INSTRUMENTS = ["Hydrolab DS5", "Hydrolab MS4", "Hydrolab MS5"]
-# List of available field officers
-FIELD_STAFF = ["Andy Wise", "Sarah McGeoch"]
 # Instrument names as variables
 hydrolab_instruments = ["Hydrolab DS5", "Hydrolab MS4", "Hydrolab MS5"]
 
@@ -223,8 +216,11 @@ def get_sampling_number(field_dict):
     except ValueError:
         date = datetime.datetime.strptime(field_dict['date'], '%d%m%y').strftime(date_format)
     matrix = field_dict['sample_matrix']
-    # Create the sampling number in format STATION#-DDMMYY-MATRIX
-    sampling_number = sampling_delimiter.join([station, date, matrix])
+    # Create the sampling number in format STATION#-DDMMYY[-MATRIX]
+    if matrix in ['SED', 'PDMS']:
+        sampling_number = sampling_delimiter.join([station, date, matrix])
+    else:
+        sampling_number = sampling_delimiter.join([station, date])
     return sampling_number
 
 
