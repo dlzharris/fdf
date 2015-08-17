@@ -73,7 +73,7 @@ class MainPanel(wx.Panel):
             ColumnDefn("Loc#", "left", 80, "location_id"),
             ColumnDefn("Seq#", "left", 80, "sample_cid"),
             ColumnDefn("Rep#", "left", 50, "replicate_number"),
-            ColumnDefn("Matrix", "left", 100, "sample_matrix", valueSetter=self.updateSampleMatrix),
+            ColumnDefn("Matrix", "left", 100, "sample_matrix", cellEditorCreator=dropDownComboBox, valueSetter=self.updateSampleMatrix),
             ColumnDefn("Sample Type", "left", 100, "sample_type", cellEditorCreator=dropDownComboBox),
             # ColumnDefn("Collection Method", "left", 100, "collection_method"),
             ColumnDefn("Calibration Record", "left", 100, "calibration_record"),
@@ -100,15 +100,20 @@ def dropDownComboBox(olv, rowIndex, columnIndex):
     """
     # Get the column object
     col = olv.columns[columnIndex]
+    # Set the default display style options
+    style = wx.CB_DROPDOWN | wx.CB_SORT | wx.TE_PROCESS_ENTER
     # Select the correct list for the column
+    if col.title == "Matrix":
+        options = globals.MATRIX_TYPES
     if col.title == "Sampling Officer":
         options = globals.FIELD_STAFF
-    # TODO: make sample type appear in specific order
     if col.title == "Sample Type":
         options = globals.SAMPLE_TYPES
+        # Ensure the sample type displays in the specific order
+        style = wx.CB_DROPDOWN | wx.TE_PROCESS_ENTER
     # Create the combobox object
     cb = wx.ComboBox(olv, choices=list(options),
-                     style=wx.CB_DROPDOWN | wx.CB_SORT | wx.TE_PROCESS_ENTER)
+                     style=style)
     # Add autocomplete to the combobox
     CellEditor.AutoCompleteHelper(cb)
     # Return the combobox object for the column
