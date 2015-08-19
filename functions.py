@@ -111,6 +111,7 @@ def load_instrument_file(instrument_file, instrument_type):
                 new_line['date'] = parse_date_from_string(new_line['date'], date_idx)
                 new_line['sample_time'] = parse_time_from_string(new_line['sample_time'])
                 # Add the extra items we'll need access to later on
+                new_line['event_time'] = ""
                 new_line['sampling_number'] = ""
                 new_line['replicate_number'] = ""
                 new_line['sample_cid'] = ""
