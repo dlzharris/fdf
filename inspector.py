@@ -43,8 +43,10 @@ class MainPanel(wx.Panel):
     def exportData(self, event):
         # TODO: Replace contents of this function by sending to write_to_csv function
         the_data = self.dataOlv.GetObjects()
-        for item in the_data:
+        data_reformatted = functions.prepare_dictionary(the_data)
+        for item in data_reformatted:
             print item
+
 
     def updateSampleStation(self, sampleObject, value):
         """
@@ -97,7 +99,8 @@ class MainPanel(wx.Panel):
             ColumnDefn("Conductivity", "left", 100, "conductivity_uncomp"),
             ColumnDefn("Turbidity", "left", 100, "turbidity"),
             ColumnDefn("Water Depth", "left", 100, "water_depth"),
-            ColumnDefn("Gauge Height (m)", "left", 100, "gauge_height")
+            ColumnDefn("Gauge Height (m)", "left", 100, "gauge_height"),
+            ColumnDefn("Comments", "left", 200, "sampling_comment")
         ])
 
 
