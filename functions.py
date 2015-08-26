@@ -241,11 +241,14 @@ def get_fraction_number(field_dict):
     fraction_delimiter = "_"
     # Get the sampling number and strip out the matrix code from the end
     # Using 9 as the starting point for str.find allows us to skip over the first hyphen.
-    sampling_number = get_sampling_number(field_dict)
-    delimiter_position = sampling_number.find("-", 9)
+    sampling_number = field_dict['sampling_number']
+    try:
+        delimiter_position = sampling_number.index("-", 9)
+    except ValueError:
+        delimiter_position = None
     # Create the fraction number in form STATION#-DDMMYY_(CID+LOCATION ID)_F
-    fraction_number = sampling_number[:delimiter_position] + fraction_delimiter + str(field_dict['CID']) +\
-        str(field_dict['Location ID']) + fraction_delimiter + "F"
+    fraction_number = sampling_number[:delimiter_position] + fraction_delimiter + str(field_dict['sample_cid']) +\
+        str(field_dict['location_id']) + fraction_delimiter + "F"
     return fraction_number
 
 
@@ -315,14 +318,15 @@ def get_parameter_unit(key):
 def prepare_dictionary(data_list):
     # Create the container for the parameter-oriented data
     data_list_param_oriented = []
+    # Set the datetime format for the entry datetime
+    dt_format = '%Y-%m-%d %H:%M:%S'
     # Each item in the list is a single dictionary representing a single sample
     for sample in data_list:
-        # TODO: Assign fraction lab, data source, fraction number and fraction entry datetime
         # Assign the static fraction information to the sample
-        sample['fraction_lab_shortname'] = "FLD"    # Static text
-        sample['fraction_data_source'] = "Field Data"      # Static text
-        sample['fraction_number'] = get_fraction_number(sample)           # Calculated value
-        sample['fraction_entry_datetime'] = datetime.datetime.now()  # Current time (datetime.now)
+        sample['fraction_lab_shortname'] = "FLD"                                         # Static text
+        sample['fraction_data_source'] = "Field Data"                                    # Static text
+        sample['fraction_number'] = get_fraction_number(sample)                          # Calculated value
+        sample['fraction_entry_datetime'] = datetime.datetime.now().strftime(dt_format)  # Current time
         for param in globals.PARAMETERS:
             # Store sample metadata for reuse. We use deepcopy here so we create
             # a new object from the sample data.
