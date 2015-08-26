@@ -317,6 +317,12 @@ def prepare_dictionary(data_list):
     data_list_param_oriented = []
     # Each item in the list is a single dictionary representing a single sample
     for sample in data_list:
+        # TODO: Assign fraction lab, data source, fraction number and fraction entry datetime
+        # Assign the static fraction information to the sample
+        sample['fraction_lab_shortname'] = "FLD"    # Static text
+        sample['fraction_data_source'] = "Field Data"      # Static text
+        sample['fraction_number'] = get_fraction_number(sample)           # Calculated value
+        sample['fraction_entry_datetime'] = datetime.datetime.now()  # Current time (datetime.now)
         for param in globals.PARAMETERS:
             # Store sample metadata for reuse. We use deepcopy here so we create
             # a new object from the sample data.
