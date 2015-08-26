@@ -1,8 +1,11 @@
 # functions.py: functions required for field data import gui
 import csv
+import copy
 import datetime
 from itertools import islice
 import re
+import globals
+
 
 # Instrument names as variables
 hydrolab_instruments = ["Hydrolab DS5", "Hydrolab MS4", "Hydrolab MS5"]
@@ -16,7 +19,7 @@ def check_file_validity(instrument_file, instrument_type):
     :return: Boolean indicating the validity of the file (True for valid, False for invalid)
     """
     # File validity check for Hydrolab instruments:
-    if instrument_type in hydrolab_instruments:
+    if instrument_type in globals.hydrolab_instruments:
         # Read the file into a list for interrogation
         in_file = list(instrument_file.readlines())
         # Perform the validity tests
@@ -45,7 +48,7 @@ def load_instrument_file(instrument_file, instrument_type):
     different measurement point
     """
     # File readings procedure for Hydrolab instruments:
-    if instrument_type in hydrolab_instruments:
+    if instrument_type in globals.hydrolab_instruments:
         # Set the header and data start rows
         header_start_row = 5
         data_start_row = 8
@@ -124,6 +127,7 @@ def load_instrument_file(instrument_file, instrument_type):
                 new_line['sampling_officer'] = ""
                 new_line['sample_collected'] = ""
                 new_line['depth_lower'] = ""
+                new_line['sampling_comment'] = ""
                 # Add the new updated dictionary to our list
                 data.append(new_line)
     # If the format for the instrument data file was not found, make the data list None
@@ -294,3 +298,37 @@ def get_new_dict_key(key):
                 "CHL": "chlorophyll_a",
                 "CHLV": "chlorophyll_a_v"}
     return new_keys[key]
+
+
+def get_parameter_unit(key):
+    units = {"conductivity_uncomp": "mS/cm",
+             "do": "mg/L",
+             "do_sat": "%sat",
+             "gauge_height": "m",
+             "ph": "pH_units",
+             "temp_c": "deg_c",
+             "turbidity": "NTU",
+             "water_depth": "m"}
+    return units[key]
+
+
+def prepare_dictionary(data_list):
+    # Create the container for the parameter-oriented data
+    data_list_param_oriented = []
+    # Each item in the list is a single dictionary representing a single sample
+    for sample in data_list:
+        for param in globals.PARAMETERS:
+            # Store sample metadata for reuse. We use deepcopy here so we create
+            # a new object from the sample data.
+            sample_param_oriented = copy.deepcopy(sample)
+            try:
+                # Create dictionary items for parameter, value and unit
+                sample_param_oriented["parameter"] = param
+                sample_param_oriented["value"] = sample_param_oriented.pop(param)
+                sample_param_oriented["units"] = get_parameter_unit(param)
+            # If the parameter wasn't found in the list, skip to the next one
+            except KeyError:
+                pass
+            # Add the dictionary to the parameter-oriented container
+            data_list_param_oriented.append(sample_param_oriented)
+    return data_list_param_oriented
