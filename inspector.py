@@ -1,15 +1,87 @@
 import wx
+from ObjectListView import ObjectListView, ColumnDefn, CellEditor
+from wx.lib.pubsub import pub
 import functions
 import globals
-from ObjectListView import ObjectListView, ColumnDefn, CellEditor
+
+###############################################################################
+class loadDialog ( wx.Frame ):
+
+    def __init__( self, parent=None ):
+        wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"KiWQM Field Data Import Tool", pos = wx.DefaultPosition, size = wx.Size( 691,349 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
+
+        self.editWindow = EditWindow()
+
+        self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
+        self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_INFOBK ) )
+
+        bSizer2 = wx.BoxSizer( wx.VERTICAL )
+
+        self.m_staticText1 = wx.StaticText( self, wx.ID_ANY, u"Welcome to the KiWQM Field Data Import Tool. This tool will format your field data ready for importing to KiWQM. To get started, select an instrument type, the sampler name, and select the logger file for the instrument.", wx.DefaultPosition, wx.Size( -1,-1 ), wx.ALIGN_CENTRE )
+        self.m_staticText1.Wrap( 1500 )
+        bSizer2.Add( self.m_staticText1, 1, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 5 )
+
+        bSizer3 = wx.BoxSizer( wx.HORIZONTAL )
+
+        m_choice_instrumentChoices = [ u"Pick an instrument...", u"Hydrolab DS5", u"Hydrolab MS4" ]
+        self.m_choice_instrument = wx.Choice( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_instrumentChoices, 0 )
+        self.m_choice_instrument.SetSelection( 0 )
+        bSizer3.Add( self.m_choice_instrument, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+
+        m_choice_samplerChoices = [ u"Select sampler...", u"Andy", u"Sarah", u"Gordon" ]
+        self.m_choice_sampler = wx.Choice( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_samplerChoices, 0 )
+        self.m_choice_sampler.SetSelection( 0 )
+        bSizer3.Add( self.m_choice_sampler, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+
+        m_radioBox_entryModeChoices = [ u"Load logger file", u"Manual data entry" ]
+        self.m_radioBox_entryMode = wx.RadioBox( self, wx.ID_ANY, u"Data entry mode", wx.DefaultPosition, wx.DefaultSize, m_radioBox_entryModeChoices, 2, wx.RA_SPECIFY_COLS )
+        self.m_radioBox_entryMode.SetSelection( 0 )
+        bSizer3.Add( self.m_radioBox_entryMode, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+
+
+        bSizer2.Add( bSizer3, 1, wx.EXPAND, 5 )
+
+        self.m_staticText2 = wx.StaticText( self, wx.ID_ANY, u"If you are importing data from a logger file, select the file with the \"Browse\" button below.", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText2.Wrap( -1 )
+        bSizer2.Add( self.m_staticText2, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
+
+        self.m_filePicker1 = wx.FilePickerCtrl( self, wx.ID_ANY, wx.EmptyString, u"Select a file", u"*.*", wx.DefaultPosition, wx.DefaultSize, wx.FLP_CHANGE_DIR|wx.FLP_DEFAULT_STYLE|wx.FLP_FILE_MUST_EXIST )
+        bSizer2.Add( self.m_filePicker1, 0, wx.ALL|wx.EXPAND, 5 )
+
+        self.m_button_loadFile = wx.Button( self, wx.ID_ANY, u"Continue", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_button_loadFile.Bind(wx.EVT_BUTTON, self.sendAndClose)
+        bSizer2.Add( self.m_button_loadFile, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
+
+
+        self.SetSizer( bSizer2 )
+        self.Layout()
+
+        self.Centre( wx.BOTH )
+
+        # TODO: This should really go elsewhere for clarity
+        self.Show()
+
+    def __del__( self ):
+        pass
+
+    def sendAndClose(self, event):
+        msg = self.m_filePicker1.GetPath()
+        pub.sendMessage("importDataListener", message=msg)
+        #frame = EditWindow()
+        #frame.Show()
+        self.editWindow.Show()
+        self.Hide()
 
 
 ###############################################################################
-# Main panel configuration
+# Edit window configuration
 ###############################################################################
-class MainPanel(wx.Panel):
+class EditPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+
+        # Set up the panel to listen for messages from the opening screen
+        pub.subscribe(self.dataListener, "importDataListener")
 
         self.dataOlv = ObjectListView(self, wx.ID_ANY, style=wx.LC_REPORT|wx.SUNKEN_BORDER)
         self.setSamples()
@@ -33,20 +105,27 @@ class MainPanel(wx.Panel):
         mainSizer.Add(exportBtn, 0, wx.ALL|wx.CENTER, 5)
         self.SetSizer(mainSizer)
 
-    #--------------------------------------------------------------------------
+    def dataListener(self, message):
+        indata = functions.load_instrument_file(message, "Hydrolab DS5")
+        self.dataOlv.SetObjects(indata)
+        # frame = EditWindow()
+        # frame.Show()
+
+    # -------------------------------------------------------------------------
     def updateControl(self, event):
         # TODO: Replace this with data sourced from initial screen
         print "updating..."
-        indata = functions.load_instrument_file("C:\\code\\projects\\field_data_importer\\sample_hydrolab_files\\hydrolab_test", "Hydrolab DS5")
+        indata = functions.load_instrument_file(self.fileLocation, "Hydrolab DS5")
         self.dataOlv.SetObjects(indata)
 
     def exportData(self, event):
-        # TODO: Replace contents of this function by sending to write_to_csv function
+        # TODO: Make this code pretty
         the_data = self.dataOlv.GetObjects()
+        # TODO: Check required fields are filled
         data_reformatted = functions.prepare_dictionary(the_data)
         for item in data_reformatted:
             print item
-
+        # functions.write_to_csv(data_reformatted, OUT_FILE, globals.FIELDNAMES)
 
     def updateSampleStation(self, sampleObject, value):
         """
@@ -68,7 +147,7 @@ class MainPanel(wx.Panel):
         else:
             pass
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def setSamples(self, data=None):
         """
         Defines columns and associated data sources
@@ -138,24 +217,23 @@ def dropDownComboBox(olv, rowIndex, columnIndex):
     return cb
 
 
-###############################################################################
-class MainFrame(wx.Frame):
+class EditWindow(wx.Frame):
     def __init__(self):
         wx.Frame.__init__(self, parent=None, id=wx.ID_ANY,
-                          title="ObjectListView Demo", size=(800, 600))
-        panel = MainPanel(self)
+                          title="KiWQM Field Data Importer (Data Editing Mode)", size=(800, 600))
+        panel = EditPanel(self)
 
 
 ###############################################################################
-class GenApp(wx.App):
-    def __init__(self, redirect=False, filename=None):
-        wx.App.__init__(self, redirect, filename)
-
-    def OnInit(self):
-        # create frame here
-        frame = MainFrame()
-        frame.Show()
-        return True
+# class GenApp(wx.App):
+#     def __init__(self, redirect=False, filename=None):
+#         wx.App.__init__(self, redirect, filename)
+#
+#     def OnInit(self):
+#         # create frame here
+#         frame = MainFrame()
+#         frame.Show()
+#         return True
 
 
 ###############################################################################
@@ -165,7 +243,10 @@ def main():
     """
     Run the demo
     """
-    app = GenApp()
+    # app = GenApp()
+    app = wx.App(False)
+    editFrame = EditWindow()
+    frame = loadDialog()
     app.MainLoop()
 
 if __name__ == "__main__":
