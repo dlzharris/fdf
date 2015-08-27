@@ -4,64 +4,84 @@ from wx.lib.pubsub import pub
 import functions
 import globals
 
+
 ###############################################################################
-class loadDialog ( wx.Frame ):
+class loadDialog (wx.Frame):
 
-    def __init__( self, parent=None ):
-        wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"KiWQM Field Data Import Tool", pos = wx.DefaultPosition, size = wx.Size( 691,349 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
-
+    def __init__(self, parent=None):
+        # Set up the frames we will be using
+        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"KiWQM Field Data Import Tool",
+                          pos=wx.DefaultPosition, size=wx.Size(691,349), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
         self.editWindow = EditWindow()
 
-        self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
-        self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_INFOBK ) )
+        # Set the frame size and background colour
+        self.SetSizeHintsSz(wx.DefaultSize, wx.DefaultSize)
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INFOBK))
 
-        bSizer2 = wx.BoxSizer( wx.VERTICAL )
+        # Create the sizers
+        bSizer2 = wx.BoxSizer(wx.VERTICAL)
+        bSizer3 = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.m_staticText1 = wx.StaticText( self, wx.ID_ANY, u"Welcome to the KiWQM Field Data Import Tool. This tool will format your field data ready for importing to KiWQM. To get started, select an instrument type, the sampler name, and select the logger file for the instrument.", wx.DefaultPosition, wx.Size( -1,-1 ), wx.ALIGN_CENTRE )
-        self.m_staticText1.Wrap( 1500 )
-        bSizer2.Add( self.m_staticText1, 1, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 5 )
+        # Introductory text
+        intro_text = u"Welcome to the KiWQM Field Data Import Tool. " \
+                     u"This tool will format your field data ready for importing to KiWQM. " \
+                     u"To get started, select an instrument type, the sampler name, " \
+                     u"and select the logger file for the instrument."
+        self.m_staticText1 = wx.StaticText(self, wx.ID_ANY, intro_text, wx.DefaultPosition, wx.Size(-1,-1), wx.ALIGN_CENTRE)
+        self.m_staticText1.Wrap(1500)
+        bSizer2.Add(self.m_staticText1, 1, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND, 5)
 
-        bSizer3 = wx.BoxSizer( wx.HORIZONTAL )
+        # Instrument selection box
+        m_choice_instrumentChoices = [u"Pick an instrument..."]
+        m_choice_instrumentChoices.extend(globals.INSTRUMENTS)
+        self.m_choice_instrument = wx.Choice(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_instrumentChoices, 0)
+        self.m_choice_instrument.SetSelection(0)
+        bSizer3.Add(self.m_choice_instrument, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
-        m_choice_instrumentChoices = [ u"Pick an instrument...", u"Hydrolab DS5", u"Hydrolab MS4" ]
-        self.m_choice_instrument = wx.Choice( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_instrumentChoices, 0 )
-        self.m_choice_instrument.SetSelection( 0 )
-        bSizer3.Add( self.m_choice_instrument, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        # Sampler selection box
+        m_choice_samplerChoices = [u"Select sampler..."]
+        m_choice_samplerChoices.extend(globals.FIELD_STAFF)
+        self.m_choice_sampler = wx.Choice(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_samplerChoices, 0)
+        self.m_choice_sampler.SetSelection(0)
+        bSizer3.Add(self.m_choice_sampler, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
-        m_choice_samplerChoices = [ u"Select sampler...", u"Andy", u"Sarah", u"Gordon" ]
-        self.m_choice_sampler = wx.Choice( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_samplerChoices, 0 )
-        self.m_choice_sampler.SetSelection( 0 )
-        bSizer3.Add( self.m_choice_sampler, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        # Data entry mode radio box
+        m_radioBox_entryModeChoices = [u"Load logger file", u"Manual data entry"]
+        self.m_radioBox_entryMode = wx.RadioBox(self, wx.ID_ANY, u"Data entry mode", wx.DefaultPosition,
+                                                wx.DefaultSize, m_radioBox_entryModeChoices, 2, wx.RA_SPECIFY_COLS)
+        self.m_radioBox_entryMode.SetSelection(0)
+        bSizer3.Add(self.m_radioBox_entryMode, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
-        m_radioBox_entryModeChoices = [ u"Load logger file", u"Manual data entry" ]
-        self.m_radioBox_entryMode = wx.RadioBox( self, wx.ID_ANY, u"Data entry mode", wx.DefaultPosition, wx.DefaultSize, m_radioBox_entryModeChoices, 2, wx.RA_SPECIFY_COLS )
-        self.m_radioBox_entryMode.SetSelection( 0 )
-        bSizer3.Add( self.m_radioBox_entryMode, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        # Place the selection boxes in the vertical sizer
+        bSizer2.Add(bSizer3, 1, wx.EXPAND, 5)
 
+        # File selection explanatory text
+        explan_text = u"If you are importing data from a logger file, " \
+                      u"select the file with the \"Browse\" button below."
+        self.m_staticText2 = wx.StaticText(self, wx.ID_ANY, explan_text, wx.DefaultPosition, wx.DefaultSize, 0)
+        self.m_staticText2.Wrap(-1)
+        bSizer2.Add(self.m_staticText2, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
-        bSizer2.Add( bSizer3, 1, wx.EXPAND, 5 )
+        # File browser
+        self.m_filePicker1 = wx.FilePickerCtrl(self, wx.ID_ANY, wx.EmptyString, u"Select a file", u"*.*",
+                                               wx.DefaultPosition, wx.DefaultSize,
+                                               wx.FLP_CHANGE_DIR | wx.FLP_DEFAULT_STYLE | wx.FLP_FILE_MUST_EXIST)
+        bSizer2.Add(self.m_filePicker1, 0, wx.ALL | wx.EXPAND, 5)
 
-        self.m_staticText2 = wx.StaticText( self, wx.ID_ANY, u"If you are importing data from a logger file, select the file with the \"Browse\" button below.", wx.DefaultPosition, wx.DefaultSize, 0 )
-        self.m_staticText2.Wrap( -1 )
-        bSizer2.Add( self.m_staticText2, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
-
-        self.m_filePicker1 = wx.FilePickerCtrl( self, wx.ID_ANY, wx.EmptyString, u"Select a file", u"*.*", wx.DefaultPosition, wx.DefaultSize, wx.FLP_CHANGE_DIR|wx.FLP_DEFAULT_STYLE|wx.FLP_FILE_MUST_EXIST )
-        bSizer2.Add( self.m_filePicker1, 0, wx.ALL|wx.EXPAND, 5 )
-
-        self.m_button_loadFile = wx.Button( self, wx.ID_ANY, u"Continue", wx.DefaultPosition, wx.DefaultSize, 0 )
+        # Load file button
+        self.m_button_loadFile = wx.Button(self, wx.ID_ANY, u"Continue", wx.DefaultPosition, wx.DefaultSize, 0)
         self.m_button_loadFile.Bind(wx.EVT_BUTTON, self.sendAndClose)
-        bSizer2.Add( self.m_button_loadFile, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
+        bSizer2.Add(self.m_button_loadFile, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
-
-        self.SetSizer( bSizer2 )
+        # Set up the sizer and frame layout
+        self.SetSizer(bSizer2)
         self.Layout()
-
-        self.Centre( wx.BOTH )
+        self.Centre(wx.BOTH)
 
         # TODO: This should really go elsewhere for clarity
         self.Show()
 
-    def __del__( self ):
+    def __del__(self):
         pass
 
     def sendAndClose(self, event):
@@ -83,7 +103,7 @@ class EditPanel(wx.Panel):
         # Set up the panel to listen for messages from the opening screen
         pub.subscribe(self.dataListener, "importDataListener")
 
-        self.dataOlv = ObjectListView(self, wx.ID_ANY, style=wx.LC_REPORT|wx.SUNKEN_BORDER)
+        self.dataOlv = ObjectListView(self, wx.ID_ANY, style=wx.LC_REPORT | wx.SUNKEN_BORDER)
         self.setSamples()
 
         # Allow the cell values to be edited when double-clicked
@@ -100,9 +120,9 @@ class EditPanel(wx.Panel):
 
         # Create some sizers
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(self.dataOlv, 1, wx.ALL|wx.EXPAND, 5)
-        mainSizer.Add(updateBtn, 0, wx.ALL|wx.CENTER, 5)
-        mainSizer.Add(exportBtn, 0, wx.ALL|wx.CENTER, 5)
+        mainSizer.Add(self.dataOlv, 1, wx.ALL | wx.EXPAND, 5)
+        mainSizer.Add(updateBtn, 0, wx.ALL | wx.CENTER, 5)
+        mainSizer.Add(exportBtn, 0, wx.ALL | wx.CENTER, 5)
         self.SetSizer(mainSizer)
 
     def dataListener(self, message):
