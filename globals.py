@@ -19,7 +19,7 @@ PARAMETERS = ["conductivity_uncomp", "do", "do_sat", "gauge_height",
 hydrolab_instruments = ["Hydrolab DS5", "Hydrolab MS4", "Hydrolab MS5"]
 
 # CSV Properties
-FIELDNAMES = {
+FIELDNAMES = [
     'mp_number',
     'station_number',
     'sampling_number',
@@ -44,5 +44,5 @@ FIELDNAMES = {
     'fraction_entry_datetime',   # Current time (datetime.now)
     'parameter',
     'value',
-    'unit'}
+    'units']
 
