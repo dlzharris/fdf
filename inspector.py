@@ -108,6 +108,9 @@ class EditPanel(wx.Panel):
         # Set up the panel to listen for messages from the opening screen
         pub.subscribe(self.dataListener, "importDataListener")
 
+        # Create a placeholder for the save as filename
+        self.saveAsFilename = None
+
         # Create the ObjectListView object instance and set the instance properties
         self.dataOlv = ObjectListView(self, wx.ID_ANY, style=wx.LC_REPORT | wx.SUNKEN_BORDER)
         self.dataOlv.cellEditMode = ObjectListView.CELLEDIT_SINGLECLICK  # Really only happens on double-click
@@ -145,13 +148,18 @@ class EditPanel(wx.Panel):
 
     # -------------------------------------------------------------------------
     def exportData(self, event):
-        # TODO: File picker - choose export location
+        """
+        Prepare the dictionary for export and write to csv
+        """
+        # Open the save as dialog
+        self.onSaveFile()
+        # Put the data in a dictionary for processing
         data_dicts = self.dataOlv.GetObjects()
         # TODO: Check required fields are filled
+        # Reformat the data in parameter-oriented format
         data_reformatted = functions.prepare_dictionary(data_dicts)
-        for item in data_reformatted:
-            print item
-        # functions.write_to_csv(data_reformatted, OUT_FILE, globals.FIELDNAMES)
+        # Write the data to csv
+        functions.write_to_csv(data_reformatted, self.saveAsFilename, globals.FIELDNAMES)
 
     # -------------------------------------------------------------------------
     def updateSampleStation(self, sampleObject, value):
@@ -210,6 +218,19 @@ class EditPanel(wx.Panel):
             ColumnDefn("Comments", "left", 200, "sampling_comment")
         ])
 
+    def onSaveFile(self):
+        """
+        Create and show the Save FileDialog
+        """
+        wildcard = "Comma-separated values (*.csv)|*.csv"
+        dlg = wx.FileDialog(
+            self, message="Save file as ...",
+            #defaultDir=self.currentDirectory,
+            defaultFile="", wildcard=wildcard, style=wx.SAVE)
+        if dlg.ShowModal() == wx.ID_OK:
+            self.saveAsFilename = dlg.GetPath()
+
+        dlg.Destroy()
 
 ###############################################################################
 # Additional GUI components
