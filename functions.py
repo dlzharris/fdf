@@ -151,8 +151,8 @@ def get_sampling_time(sample_set, station, sample_date):
     """
     # sample_set is a dictionary of samples extracted from the csv
     # with extra attributes
-    sample_times = [datetime.datetime.strptime(parse_time_from_string(['Time']), '%H:%M:%S')
-                    for s in sample_set if s['Station'] == station and s['Date'] == sample_date]
+    sample_times = [datetime.datetime.strptime(parse_time_from_string(s['sample_time']), '%H:%M:%S')
+                    for s in sample_set if s['station_number'] == station and s['date'] == sample_date]
     # Find the earliest time and convert it to a string
     sampling_time = min(sample_times).strftime('%H:%M:%S')
     return sampling_time
@@ -252,7 +252,7 @@ def get_fraction_number(field_dict):
     return fraction_number
 
 
-def write_to_csv(data_list, out_file, fieldnames_list):
+def write_to_csv(data_list, out_filepath, fieldnames_list):
     """
     Write entire data dictionary to a csv file
     :param data_list: List of dictionaries to be written. Each dictionary
@@ -261,10 +261,11 @@ def write_to_csv(data_list, out_file, fieldnames_list):
     :param fieldnames_list: List of fieldnames to be used when writing
     :return: No return value
     """
-    writer = csv.DictWriter(out_file, delimiter=',', extrasaction='ignore',
-                            fieldnames=fieldnames_list)
-    writer.writeheader()
-    writer.writerows(data_list)
+    with open(out_filepath, 'wb') as f:
+        writer = csv.DictWriter(f, delimiter=',', extrasaction='ignore',
+                                fieldnames=fieldnames_list)
+        writer.writeheader()
+        writer.writerows(data_list)
     return None
 
 
@@ -322,6 +323,8 @@ def prepare_dictionary(data_list):
     dt_format = '%Y-%m-%d %H:%M:%S'
     # Each item in the list is a single dictionary representing a single sample
     for sample in data_list:
+        # Get the sampling event time
+        sample['event_time'] = get_sampling_time(data_list, sample['station_number'], sample['date'])
         # Assign the static fraction information to the sample
         sample['fraction_lab_shortname'] = "FLD"                                         # Static text
         sample['fraction_data_source'] = "Field Data"                                    # Static text
