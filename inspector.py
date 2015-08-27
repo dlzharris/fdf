@@ -11,7 +11,7 @@ class loadDialog (wx.Frame):
     def __init__(self, parent=None):
         # Set up the frames we will be using
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"KiWQM Field Data Import Tool",
-                          pos=wx.DefaultPosition, size=wx.Size(691,349), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+                          pos=wx.DefaultPosition, size=wx.Size(691, 349), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
         self.editWindow = EditWindow()
 
         # Set the frame size and background colour
@@ -78,7 +78,7 @@ class loadDialog (wx.Frame):
         self.Layout()
         self.Centre(wx.BOTH)
 
-        # TODO: This should really go elsewhere for clarity
+        # Show the window
         self.Show()
 
     def __del__(self):
@@ -87,8 +87,6 @@ class loadDialog (wx.Frame):
     def sendAndClose(self, event):
         msg = self.m_filePicker1.GetPath()
         pub.sendMessage("importDataListener", message=msg)
-        #frame = EditWindow()
-        #frame.Show()
         self.editWindow.Show()
         self.Hide()
 
@@ -96,6 +94,13 @@ class loadDialog (wx.Frame):
 ###############################################################################
 # Edit window configuration
 ###############################################################################
+class EditWindow(wx.Frame):
+    def __init__(self):
+        wx.Frame.__init__(self, parent=None, id=wx.ID_ANY,
+                          title="KiWQM Field Data Importer (Data Editing Mode)", size=(800, 600))
+        panel = EditPanel(self)
+
+
 class EditPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
@@ -103,50 +108,52 @@ class EditPanel(wx.Panel):
         # Set up the panel to listen for messages from the opening screen
         pub.subscribe(self.dataListener, "importDataListener")
 
+        # Create the ObjectListView object instance and set the instance properties
         self.dataOlv = ObjectListView(self, wx.ID_ANY, style=wx.LC_REPORT | wx.SUNKEN_BORDER)
-        self.setSamples()
+        self.dataOlv.cellEditMode = ObjectListView.CELLEDIT_SINGLECLICK  # Really only happens on double-click
 
-        # Allow the cell values to be edited when double-clicked
-        self.dataOlv.cellEditMode = ObjectListView.CELLEDIT_SINGLECLICK
+        # Set the column names and column data sources
+        self.setColumns()
 
-        #TODO: Remove update button. Replace with reset button
-        # create an update button
-        updateBtn = wx.Button(self, wx.ID_ANY, "Update OLV")
-        updateBtn.Bind(wx.EVT_BUTTON, self.updateControl)
+        # Reset button
+        resetBtn = wx.Button(self, wx.ID_ANY, "Reset data")
+        resetBtn.Bind(wx.EVT_BUTTON, self.resetData)
 
-        # export button
+        # Export button
         exportBtn = wx.Button(self, wx.ID_ANY, "Export data")
         exportBtn.Bind(wx.EVT_BUTTON, self.exportData)
 
-        # Create some sizers
+        # Create sizer and add gui elements
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(self.dataOlv, 1, wx.ALL | wx.EXPAND, 5)
-        mainSizer.Add(updateBtn, 0, wx.ALL | wx.CENTER, 5)
+        mainSizer.Add(resetBtn, 0, wx.ALL | wx.CENTER, 5)
         mainSizer.Add(exportBtn, 0, wx.ALL | wx.CENTER, 5)
         self.SetSizer(mainSizer)
 
+    # -------------------------------------------------------------------------
     def dataListener(self, message):
-        indata = functions.load_instrument_file(message, "Hydrolab DS5")
-        self.dataOlv.SetObjects(indata)
+        data_in_location = functions.load_instrument_file(message, "Hydrolab DS5")
+        self.dataOlv.SetObjects(data_in_location)
         # frame = EditWindow()
         # frame.Show()
 
     # -------------------------------------------------------------------------
-    def updateControl(self, event):
-        # TODO: Replace this with data sourced from initial screen
-        print "updating..."
-        indata = functions.load_instrument_file(self.fileLocation, "Hydrolab DS5")
-        self.dataOlv.SetObjects(indata)
+    def resetData(self, event):
+        # TODO: Message box - Warning: all data will be lost.
+        self.dataOlv.DeleteAllItems()
+        # TODO: Go back to loadDialog
 
+    # -------------------------------------------------------------------------
     def exportData(self, event):
-        # TODO: Make this code pretty
-        the_data = self.dataOlv.GetObjects()
+        # TODO: File picker - choose export location
+        data_dicts = self.dataOlv.GetObjects()
         # TODO: Check required fields are filled
-        data_reformatted = functions.prepare_dictionary(the_data)
+        data_reformatted = functions.prepare_dictionary(data_dicts)
         for item in data_reformatted:
             print item
         # functions.write_to_csv(data_reformatted, OUT_FILE, globals.FIELDNAMES)
 
+    # -------------------------------------------------------------------------
     def updateSampleStation(self, sampleObject, value):
         """
         Tries to generate sampling number if station number has been updated
@@ -157,6 +164,7 @@ class EditPanel(wx.Panel):
         else:
             pass
 
+    # -------------------------------------------------------------------------
     def updateSampleMatrix(self, sampleObject, value):
         """
         Tries to generate sampling number if matrix has been updated
@@ -168,7 +176,7 @@ class EditPanel(wx.Panel):
             pass
 
     # -------------------------------------------------------------------------
-    def setSamples(self, data=None):
+    def setColumns(self, data=None):
         """
         Defines columns and associated data sources
         """
@@ -237,37 +245,18 @@ def dropDownComboBox(olv, rowIndex, columnIndex):
     return cb
 
 
-class EditWindow(wx.Frame):
-    def __init__(self):
-        wx.Frame.__init__(self, parent=None, id=wx.ID_ANY,
-                          title="KiWQM Field Data Importer (Data Editing Mode)", size=(800, 600))
-        panel = EditPanel(self)
-
-
-###############################################################################
-# class GenApp(wx.App):
-#     def __init__(self, redirect=False, filename=None):
-#         wx.App.__init__(self, redirect, filename)
-#
-#     def OnInit(self):
-#         # create frame here
-#         frame = MainFrame()
-#         frame.Show()
-#         return True
-
-
 ###############################################################################
 # Main loop - initiate data window
 ###############################################################################
 def main():
     """
-    Run the demo
+    Run the field data importer app
     """
-    # app = GenApp()
     app = wx.App(False)
-    editFrame = EditWindow()
     frame = loadDialog()
     app.MainLoop()
 
+
+# -----------------------------------------------------------------------------
 if __name__ == "__main__":
     main()
