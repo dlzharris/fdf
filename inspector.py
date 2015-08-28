@@ -159,7 +159,15 @@ class EditPanel(wx.Panel):
         # Reformat the data in parameter-oriented format
         data_reformatted = functions.prepare_dictionary(data_dicts)
         # Write the data to csv
-        functions.write_to_csv(data_reformatted, self.saveAsFilename, globals.FIELDNAMES)
+        try:
+            functions.write_to_csv(data_reformatted, self.saveAsFilename, globals.FIELDNAMES)
+        except IOError:
+            # TODO: Message box to let user know that file is open or unavailable
+            self.saveFileErrorMsg()
+
+    # -------------------------------------------------------------------------
+    def saveFileErrorMsg(self):
+        wx.MessageBox("File currently in use.  Please close file to continue.", "Warning!", wx.OK | wx.ICON_EXCLAMATION)
 
     # -------------------------------------------------------------------------
     def updateSampleStation(self, sampleObject, value):
