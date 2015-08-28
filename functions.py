@@ -175,7 +175,7 @@ def parse_time_from_string(time_string):
     # Extract the time components
     hours = time_digits[:2]
     minutes = time_digits[2:4]
-    seconds = time_digits[4:6]
+    seconds = "00"  # This strips out the seconds component. To keep the seconds, use time_digits[4:6]
     # Concatenate time components with delimiter
     time_string = hours + delimiter + minutes + delimiter + seconds
     return time_string
@@ -305,14 +305,14 @@ def get_new_dict_key(key):
 
 
 def get_parameter_unit(key):
-    units = {"conductivity_uncomp": "mS/cm",
-             "do": "mg/L",
-             "do_sat": "%sat",
-             "gauge_height": "m",
-             "ph": "pH_units",
-             "temp_c": "deg_c",
+    units = {"conductivity_uncomp": "MISC",
+             "do": "MGL",
+             "do_sat": "WISKI_PSAT",
+             "gauge_height": "M",
+             "ph": "SCAL",
+             "temp_c": "DEGC",
              "turbidity": "NTU",
-             "water_depth": "m"}
+             "water_depth": "M"}
     return units[key]
 
 
