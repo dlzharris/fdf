@@ -128,6 +128,7 @@ def load_instrument_file(instrument_file, instrument_type):
                 new_line['sample_collected'] = ""
                 new_line['depth_lower'] = ""
                 new_line['sampling_comment'] = ""
+                new_line['sampling_instrument'] = ""
                 # Add the new updated dictionary to our list
                 data.append(new_line)
     # If the format for the instrument data file was not found, make the data list None
