@@ -85,8 +85,10 @@ class loadDialog (wx.Frame):
         pass
 
     def sendAndClose(self, event):
-        msg = self.m_filePicker1.GetPath()
-        pub.sendMessage("importDataListener", message=msg)
+        path = self.m_filePicker1.GetPath()
+        sampler = self.m_choice_sampler.GetStringSelection()
+        instrument = self.m_choice_instrument.GetStringSelection()
+        pub.sendMessage("importDataListener", message=path, sampler=sampler, instrument=instrument)
         self.editWindow.Show()
         self.Hide()
 
@@ -134,11 +136,27 @@ class EditPanel(wx.Panel):
         self.SetSizer(mainSizer)
 
     # -------------------------------------------------------------------------
-    def dataListener(self, message):
-        data_in_location = functions.load_instrument_file(message, "Hydrolab DS5")
+    def dataListener(self, message, sampler=None, instrument=None):
+        """
+        Receives data from the load dialog and sends it to the objectlistview
+        This function is triggered by a publisher-subscriber listener
+        """
+        # Check if the selected instrument is a valid instrument, that is
+        # the selection is not the "Please select an instrument..." option in the
+        # load dialog.
+        if instrument in globals.INSTRUMENTS:
+            pass
+        else:
+            instrument = globals.DEFAULT_INSTRUMENT
+        # Check the instrument file and load it
+        data_in_location = functions.load_instrument_file(message, instrument)
         self.dataOlv.SetObjects(data_in_location)
-        # frame = EditWindow()
-        # frame.Show()
+        # Update the sampler and instrument
+        objects = self.dataOlv.GetObjects()
+        for obj in objects:
+            obj['sampling_officer'] = sampler
+            obj['sampling_instrument'] = instrument
+            self.dataOlv.RefreshObject(obj)
 
     # -------------------------------------------------------------------------
     def resetData(self, event):
@@ -162,7 +180,6 @@ class EditPanel(wx.Panel):
         try:
             functions.write_to_csv(data_reformatted, self.saveAsFilename, globals.FIELDNAMES)
         except IOError:
-            # TODO: Message box to let user know that file is open or unavailable
             self.saveFileErrorMsg()
 
     # -------------------------------------------------------------------------
@@ -210,6 +227,7 @@ class EditPanel(wx.Panel):
             ColumnDefn("Sample Type", "left", 100, "sample_type", cellEditorCreator=dropDownComboBox),
             # ColumnDefn("Collection Method", "left", 100, "collection_method"),
             ColumnDefn("Calibration Record", "left", 100, "calibration_record"),
+            ColumnDefn("Instrument", "left", 100, "sampling_instrument", cellEditorCreator=dropDownComboBox),
             ColumnDefn("Sampling Officer", "left", 100, "sampling_officer", cellEditorCreator=dropDownComboBox),
             # ColumnDefn("Event Time", "left", 100, "event_time"),
             ColumnDefn("Sample Collected", "left", 100, "sample_collected", cellEditorCreator=dropDownComboBox),
@@ -250,11 +268,14 @@ def dropDownComboBox(olv, rowIndex, columnIndex):
     # Get the column object
     col = olv.columns[columnIndex]
     # Set the default display style options
-    style = wx.CB_DROPDOWN | wx.CB_SORT | wx.TE_PROCESS_ENTER
+    style_ordered = wx.CB_DROPDOWN | wx.CB_SORT | wx.TE_PROCESS_ENTER
     style_unordered = wx.CB_DROPDOWN | wx.TE_PROCESS_ENTER
+    style = style_ordered
     # Select the correct list for the column
     if col.title == "Matrix":
         options = globals.MATRIX_TYPES
+    if col.title == "Instrument":
+        options = globals.INSTRUMENTS
     if col.title == "Sample Collected":
         options = globals.BOOLEAN
         # Ensure the sample type displays in the specific order
