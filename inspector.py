@@ -169,11 +169,21 @@ class EditPanel(wx.Panel):
         """
         Prepare the dictionary for export and write to csv
         """
-        # Open the save as dialog
-        self.onSaveFile()
         # Put the data in a dictionary for processing
         data_dicts = self.dataOlv.GetObjects()
         # TODO: Check required fields are filled
+        incomplete_fields = functions.check_data_completeness(data_dicts)
+        zero_value_fields = functions.check_data_zero_values(data_dicts)
+
+        if incomplete_fields:
+            self.checkCompletenessMsg(incomplete_fields)
+            return None
+        if zero_value_fields:
+            self.checkZeroValuesMsg(zero_value_fields)
+            return None
+
+        # Open the save as dialog
+        self.onSaveFile()
         # Reformat the data in parameter-oriented format
         data_reformatted = functions.prepare_dictionary(data_dicts)
         # Write the data to csv
@@ -181,6 +191,20 @@ class EditPanel(wx.Panel):
             functions.write_to_csv(data_reformatted, self.saveAsFilename, globals.FIELDNAMES)
         except IOError:
             self.saveFileErrorMsg()
+
+    # -------------------------------------------------------------------------
+    def checkCompletenessMsg(self, incomplete_fields):
+        msg = "The following fields have incomplete values:\n%s\nPlease complete before continuing." \
+              % '\n'.join(incomplete_fields)
+        wx.MessageBox(msg, "Incomplete data!", wx.OK | wx.ICON_EXCLAMATION)
+
+    # -------------------------------------------------------------------------
+    def checkZeroValuesMsg(self, zero_value_fields):
+        msg = "The following fields have items with values of zero (0):\n%s\n\n" \
+              "A value of zero generally indicates a sensor failure, or a non-measured parameter.\n" \
+              "Please review and adjust before continuing." \
+              % '\n'.join(zero_value_fields)
+        wx.MessageBox(msg, "Data quality error!", wx.OK | wx.ICON_EXCLAMATION)
 
     # -------------------------------------------------------------------------
     def saveFileErrorMsg(self):
@@ -244,6 +268,7 @@ class EditPanel(wx.Panel):
             ColumnDefn("Comments", "left", 200, "sampling_comment")
         ])
 
+    # -------------------------------------------------------------------------
     def onSaveFile(self):
         """
         Create and show the Save FileDialog

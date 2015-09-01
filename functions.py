@@ -129,6 +129,8 @@ def load_instrument_file(instrument_file, instrument_type):
                 new_line['depth_lower'] = ""
                 new_line['sampling_comment'] = ""
                 new_line['sampling_instrument'] = ""
+                new_line['gauge_height'] = ""
+                new_line['turbidity'] = ""
                 # Add the new updated dictionary to our list
                 data.append(new_line)
     # If the format for the instrument data file was not found, make the data list None
@@ -271,50 +273,80 @@ def write_to_csv(data_list, out_filepath, fieldnames_list):
 
 
 def get_data_col_order(key):
-    order = {"Date": 1,
-             "Time": 2,
-             "IBVSvr4": 3,
-             "TempC": 4,
-             "pH": 5,
-             "Dep25": 6,
-             "LDO%": 7,
-             "SpCond": 8,
-             "LDO": 9,
-             "BP": 10,
-             "BPSvr4": 11,
-             "TempF": 12}
+    order = {
+        "Date": 1,
+        "Time": 2,
+        "IBVSvr4": 3,
+        "TempC": 4,
+        "pH": 5,
+        "Dep25": 6,
+        "LDO%": 7,
+        "SpCond": 8,
+        "LDO": 9,
+        "BP": 10,
+        "BPSvr4": 11,
+        "TempF": 12}
     return order[key]
 
 
 def get_new_dict_key(key):
-    new_keys = {"Date": "date",
-                "Time": "sample_time",
-                "TempC": "temp_c",
-                "TempF": "temp_f",
-                "Dep25": "depth_upper",
-                "LDO%": "do_sat",
-                "LDO": "do",
-                "pH": "ph",
-                "SpCond": "conductivity_uncomp",
-                "IBVSvr4": "internal_voltage",
-                "BPSvr4": "barometric_pressure",
-                "PYC": "pyc",
-                "PYCV": "pyc_v",
-                "CHL": "chlorophyll_a",
-                "CHLV": "chlorophyll_a_v"}
+    new_keys = {
+        "Date": "date",
+        "Time": "sample_time",
+        "TempC": "temp_c",
+        "TempF": "temp_f",
+        "Dep25": "depth_upper",
+        "LDO%": "do_sat",
+        "LDO": "do",
+        "pH": "ph",
+        "SpCond": "conductivity_uncomp",
+        "IBVSvr4": "internal_voltage",
+        "BPSvr4": "barometric_pressure",
+        "PYC": "pyc",
+        "PYCV": "pyc_v",
+        "CHL": "chlorophyll_a",
+        "CHLV": "chlorophyll_a_v"}
     return new_keys[key]
 
 
 def get_parameter_unit(key):
-    units = {"conductivity_uncomp": "MISC",
-             "do": "MGL",
-             "do_sat": "WISKI_PSAT",
-             "gauge_height": "M",
-             "ph": "SCAL",
-             "temp_c": "DEGC",
-             "turbidity": "NTU",
-             "water_depth": "M"}
+    units = {
+        "conductivity_uncomp": "MISC",
+        "do": "MGL",
+        "do_sat": "WISKI_PSAT",
+        "gauge_height": "M",
+        "ph": "SCAL",
+        "temp_c": "DEGC",
+        "turbidity": "NTU",
+        "water_depth": "M"}
     return units[key]
+
+
+def get_column_title(key):
+    titles = {
+        'mp_number': "MP#",
+        'station_number': "Station#",
+        'date': "Date",
+        'sample_matrix': "Matrix",
+        'sample_type': "Sample type",
+        # 'sampling_reason',
+        'sampling_officer': "Sampling officer",
+        'location_id': "Loc#",
+        'sample_cid': "Seq#",
+        'sample_time': "Time",
+        'depth_upper': "Depth (upper)"}
+    return titles[key]
+
+
+def get_parameter_name(key):
+    param_names = {
+        "do": "DO (mg/L)",
+        "do_sat": "DO (% sat)",
+        "ph": "pH",
+        "temp_c": "Temp (deg C)",
+        "conductivity_uncomp": "Conductivity",
+        "turbidity": "Turbidity"}
+    return param_names[key]
 
 
 def prepare_dictionary(data_list):
@@ -346,3 +378,39 @@ def prepare_dictionary(data_list):
             # Add the dictionary to the parameter-oriented container
             data_list_param_oriented.append(sample_param_oriented)
     return data_list_param_oriented
+
+
+def check_data_completeness(data_list):
+    # Create container for list of incomplete required fields
+    incomplete_fields = []
+    # Loop through required fields and check each item in the field for completeness
+    for field in globals.REQUIRED_FIELDS:
+        # Extract the values with the given key
+        column = (i[field] for i in data_list)
+        for item in column:
+            # If we have an incomplete item in a required field
+            # add the item to our incomplete list and
+            if item == "":
+                incomplete_fields.append(get_column_title(field))
+                break
+            else:
+                pass
+    return incomplete_fields
+
+
+def check_data_zero_values(data_list):
+    # Create container for list of incomplete required fields
+    zero_value_fields = []
+    # Loop through required fields and check each item in the field for completeness
+    for field in globals.NON_ZERO_FIELDS:
+        # Extract the values with the given key
+        column = (i[field] for i in data_list)
+        for item in column:
+            # If we have an incomplete item in a required field
+            # add the item to our incomplete list and
+            if item == "0":
+                zero_value_fields.append(get_parameter_name(field))
+                break
+            else:
+                pass
+    return zero_value_fields

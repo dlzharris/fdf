@@ -19,6 +19,29 @@ PARAMETERS = ["conductivity_uncomp", "do", "do_sat", "gauge_height",
 # Instrument names as variables
 hydrolab_instruments = ["Hydrolab DS5", "Hydrolab MS4", "Hydrolab MS5"]
 
+# Required fields for export
+REQUIRED_FIELDS = [
+    'mp_number',
+    'station_number',
+    'date',
+    'sample_matrix',
+    'sample_type',
+    # 'sampling_reason',
+    'sampling_officer',
+    'location_id',
+    'sample_cid',
+    'sample_time',
+    'depth_upper']
+
+# Non-zero fields
+NON_ZERO_FIELDS = [
+    "conductivity_uncomp",
+    "do",
+    "do_sat",
+    "ph",
+    "temp_c",
+    "turbidity"]
+
 # CSV Properties
 FIELDNAMES = [
     'mp_number',
