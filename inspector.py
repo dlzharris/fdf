@@ -277,7 +277,7 @@ class EditPanel(wx.Panel):
         dlg = wx.FileDialog(
             self, message="Save file as ...",
             #defaultDir=self.currentDirectory,
-            defaultFile="", wildcard=wildcard, style=wx.SAVE)
+            defaultFile="", wildcard=wildcard, style=wx.SAVE | wx.OVERWRITE_PROMPT)
         if dlg.ShowModal() == wx.ID_OK:
             self.saveAsFilename = dlg.GetPath()
 
