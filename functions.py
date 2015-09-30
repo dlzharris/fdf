@@ -140,6 +140,46 @@ def load_instrument_file(instrument_file, instrument_type):
     return data
 
 
+def load_manual_entry(number_lines):
+    """
+    Creates a dictionary with empty items for use in the manual entry screen.
+    :param number_lines:
+    :return:
+    """
+    empty_data = []
+    for i in range(1, number_lines):
+        new_line = {
+            'checked': "",
+            'mp_number': "",
+            'station_number': "",
+            'sampling_number': "",
+            'date': "",
+            'sample_time': "",
+            'location_id': "",
+            'sample_cid': "",
+            'replicate_number': "",
+            'sample_matrix': "",
+            'sample_type': "",
+            'collection_method': "",
+            'calibration_record': "",
+            'sampling_instrument': "",
+            'sampling_officer': "",
+            'event_time': "",
+            'sample_collected': "",
+            'depth_upper': "",
+            'depth_lower': "",
+            'do': "",
+            'do_sat': "",
+            'ph': "",
+            'temp_c': "",
+            'conductivity_uncomp': "",
+            'turbidity': "",
+            'water_depth': "",
+            'gauge_height': "",
+            'sampling_comment': ""}
+        empty_data.append(new_line)
+    return empty_data
+
 def get_sampling_time(sample_set, station, sample_date):
     """
     Finds the sampling time for a set of samples collected at the same station
