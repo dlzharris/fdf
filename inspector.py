@@ -85,10 +85,24 @@ class loadDialog (wx.Frame):
         pass
 
     def sendAndClose(self, event):
-        path = self.m_filePicker1.GetPath()
+        # Check input mode
+        input_mode = self.m_radioBox_entryMode.GetSelection()
+        # Load from file
+        if input_mode == 0:
+            path = self.m_filePicker1.GetPath()
+            if path == "":
+                wx.MessageBox("Please select a valid file or switch to manual mode.", "No file specified.",
+                              wx.OK | wx.ICON_EXCLAMATION)
+                return None
+        # Manual data entry
+        else:
+            path = None
+        # Generic components
         sampler = self.m_choice_sampler.GetStringSelection()
         instrument = self.m_choice_instrument.GetStringSelection()
-        pub.sendMessage("importDataListener", message=path, sampler=sampler, instrument=instrument)
+        # Publish data to listener
+        pub.sendMessage("importDataListener", path=path, sampler=sampler, instrument=instrument)
+        # Show the edit window and hide the load dialog
         self.editWindow.Show()
         self.Hide()
 
@@ -106,7 +120,7 @@ class EditWindow(wx.Frame):
 class EditPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
-
+        self.parent = parent
         # Set up the panel to listen for messages from the opening screen
         pub.subscribe(self.dataListener, "importDataListener")
 
@@ -136,7 +150,7 @@ class EditPanel(wx.Panel):
         self.SetSizer(mainSizer)
 
     # -------------------------------------------------------------------------
-    def dataListener(self, message, sampler=None, instrument=None):
+    def dataListener(self, path, sampler=None, instrument=None):
         """
         Receives data from the load dialog and sends it to the objectlistview
         This function is triggered by a publisher-subscriber listener
@@ -148,10 +162,26 @@ class EditPanel(wx.Panel):
             pass
         else:
             instrument = globals.DEFAULT_INSTRUMENT
-        # Check the instrument file and load it
-        data_in_location = functions.load_instrument_file(message, instrument)
-        self.dataOlv.SetObjects(data_in_location)
+        # If a file path is provided, open it, otherwise create blank lines in the table
+        if path is not None:
+            # Check the instrument file and load it
+            data_to_load = functions.load_instrument_file(path, instrument)
+        else:
+            # Ask the user for the number of lines (samples) required
+            text_valid = False
+            while text_valid is False:
+                dlg_number_lines = wx.TextEntryDialog(self, "Enter the number of samples below:", "Data entry set-up", "5")
+                if dlg_number_lines.ShowModal() == wx.ID_OK:
+                    number_lines = dlg_number_lines.GetValue()
+                    try:
+                        data_to_load = functions.load_manual_entry(int(number_lines))
+                        text_valid = True
+                    except ValueError:
+                        wx.MessageBox(message="Please enter a valid number!",
+                                      caption="Invalid number!",
+                                      style=wx.OK | wx.ICON_EXCLAMATION)
         # Update the sampler and instrument
+        self.dataOlv.SetObjects(data_to_load)
         objects = self.dataOlv.GetObjects()
         for obj in objects:
             obj['sampling_officer'] = sampler
@@ -160,9 +190,20 @@ class EditPanel(wx.Panel):
 
     # -------------------------------------------------------------------------
     def resetData(self, event):
-        # TODO: Message box - Warning: all data will be lost.
-        self.dataOlv.DeleteAllItems()
-        # TODO: Go back to loadDialog
+        """
+        Confirms a data reset with the user, closes the edit window and reopens the load dialog.
+        """
+        msg = "All current data will be lost. Do you want to continue?"
+        dlg = wx.MessageDialog(parent=None, message=msg, caption="Confirm reset!", style=wx.OK | wx.CANCEL | wx.ICON_EXCLAMATION)
+        result = dlg.ShowModal()
+        # Close the reset data dialog box
+        dlg.Destroy()
+        # If the reset is confirmed, clear data, close window and return to the load screen.
+        if result == wx.ID_OK:
+            self.dataOlv.DeleteAllItems()
+            loadDlg = loadDialog()
+            self.parent.Destroy()
+            loadDlg.Show()
 
     # -------------------------------------------------------------------------
     def exportData(self, event):
@@ -247,14 +288,14 @@ class EditPanel(wx.Panel):
             ColumnDefn("Loc#", "left", 80, "location_id"),
             ColumnDefn("Seq#", "left", 80, "sample_cid"),
             ColumnDefn("Rep#", "left", 50, "replicate_number"),
-            ColumnDefn("Matrix", "left", 100, "sample_matrix", cellEditorCreator=dropDownComboBox, valueSetter=self.updateSampleMatrix),
-            ColumnDefn("Sample Type", "left", 100, "sample_type", cellEditorCreator=dropDownComboBox),
+            ColumnDefn("Matrix", "left", 100, "sample_matrix", cellEditorCreator=self.dropDownComboBox, valueSetter=self.updateSampleMatrix),
+            ColumnDefn("Sample Type", "left", 100, "sample_type", cellEditorCreator=self.dropDownComboBox),
             # ColumnDefn("Collection Method", "left", 100, "collection_method"),
             ColumnDefn("Calibration Record", "left", 100, "calibration_record"),
-            ColumnDefn("Instrument", "left", 100, "sampling_instrument", cellEditorCreator=dropDownComboBox),
-            ColumnDefn("Sampling Officer", "left", 100, "sampling_officer", cellEditorCreator=dropDownComboBox),
+            ColumnDefn("Instrument", "left", 100, "sampling_instrument", cellEditorCreator=self.dropDownComboBox),
+            ColumnDefn("Sampling Officer", "left", 100, "sampling_officer", cellEditorCreator=self.dropDownComboBox),
             # ColumnDefn("Event Time", "left", 100, "event_time"),
-            ColumnDefn("Sample Collected", "left", 100, "sample_collected", cellEditorCreator=dropDownComboBox),
+            ColumnDefn("Sample Collected", "left", 100, "sample_collected", cellEditorCreator=self.dropDownComboBox),
             ColumnDefn("Depth Upper (m)", "left", 100, "depth_upper"),
             ColumnDefn("Depth Lower (m)", "left", 100, "depth_lower"),
             ColumnDefn("DO (mg/L)", "left", 100, "do"),
@@ -269,6 +310,40 @@ class EditPanel(wx.Panel):
         ])
 
     # -------------------------------------------------------------------------
+    def dropDownComboBox(self, olv, rowIndex, columnIndex):
+        """
+        Return a ComboBox that lets the user choose from the appropriate values for the column.
+        """
+        # Get the column object
+        col = olv.columns[columnIndex]
+        # Set the default display style options
+        style_ordered = wx.CB_DROPDOWN | wx.CB_SORT | wx.TE_PROCESS_ENTER
+        style_unordered = wx.CB_DROPDOWN | wx.TE_PROCESS_ENTER
+        style = style_ordered
+        # Select the correct list for the column
+        if col.title == "Matrix":
+            options = globals.MATRIX_TYPES
+        if col.title == "Instrument":
+            options = globals.INSTRUMENTS
+        if col.title == "Sample Collected":
+            options = globals.BOOLEAN
+            # Ensure the sample type displays in the specific order
+            style = style_unordered
+        if col.title == "Sampling Officer":
+            options = globals.FIELD_STAFF
+        if col.title == "Sample Type":
+            options = globals.SAMPLE_TYPES
+            # Ensure the sample type displays in the specific order
+            style = style_unordered
+        # Create the combobox object
+        cb = wx.ComboBox(olv, choices=list(options),
+                         style=style)
+        # Add autocomplete to the combobox
+        CellEditor.AutoCompleteHelper(cb)
+        # Return the combobox object for the column
+        return cb
+
+    # -------------------------------------------------------------------------
     def onSaveFile(self):
         """
         Create and show the Save FileDialog
@@ -280,55 +355,66 @@ class EditPanel(wx.Panel):
             defaultFile="", wildcard=wildcard, style=wx.SAVE | wx.OVERWRITE_PROMPT)
         if dlg.ShowModal() == wx.ID_OK:
             self.saveAsFilename = dlg.GetPath()
-
+        # Destroy the save file dialog
         dlg.Destroy()
 
+
 ###############################################################################
-# Additional GUI components
+# Splash screen
 ###############################################################################
-def dropDownComboBox(olv, rowIndex, columnIndex):
+class SplashScreen(wx.SplashScreen):
     """
-    Return a ComboBox that lets the user choose from the appropriate values for the column.
+    Create a splash screen to display prior to app initialisation
     """
-    # Get the column object
-    col = olv.columns[columnIndex]
-    # Set the default display style options
-    style_ordered = wx.CB_DROPDOWN | wx.CB_SORT | wx.TE_PROCESS_ENTER
-    style_unordered = wx.CB_DROPDOWN | wx.TE_PROCESS_ENTER
-    style = style_ordered
-    # Select the correct list for the column
-    if col.title == "Matrix":
-        options = globals.MATRIX_TYPES
-    if col.title == "Instrument":
-        options = globals.INSTRUMENTS
-    if col.title == "Sample Collected":
-        options = globals.BOOLEAN
-        # Ensure the sample type displays in the specific order
-        style = style_unordered
-    if col.title == "Sampling Officer":
-        options = globals.FIELD_STAFF
-    if col.title == "Sample Type":
-        options = globals.SAMPLE_TYPES
-        # Ensure the sample type displays in the specific order
-        style = style_unordered
-    # Create the combobox object
-    cb = wx.ComboBox(olv, choices=list(options),
-                     style=style)
-    # Add autocomplete to the combobox
-    CellEditor.AutoCompleteHelper(cb)
-    # Return the combobox object for the column
-    return cb
+    def __init__(self, parent=None):
+        # Set splash screen variables
+        splashImage = wx.Image(name = "logo.jpg").ConvertToBitmap()
+        splashStyle = wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_TIMEOUT
+        splashDuration = 2000  # milliseconds
+        # Call the splash screen constructor
+        wx.SplashScreen.__init__(self, splashImage, splashStyle, splashDuration, parent)
+        # On splash screen close
+        self.Bind(wx.EVT_CLOSE, self.OnExit)
+        wx.Yield()
+
+# -----------------------------------------------------------------------------
+    def OnExit(self, evt):
+        # Hide the splash screen
+        self.Hide()
+        # Get the app instance
+        app = wx.GetApp()
+        # Set the frame to be displayed
+        frame = loadDialog()
+        # Place the frame at the top and show it
+        app.SetTopWindow(frame)
+        frame.Show(True)
+        evt.Skip()
 
 
 ###############################################################################
-# Main loop - initiate data window
+# Main app constructor and initialisation
 ###############################################################################
+class MainApp(wx.App):
+    """
+    Constructor for the main application
+    """
+    def OnInit(self):
+        # Show the splash screen on app startup
+        Splash = SplashScreen()
+        Splash.Show()
+        return True
+
+
+# -----------------------------------------------------------------------------
 def main():
     """
     Run the field data importer app
     """
+    # Comment the following 2 lines when ready to use the splash screen
     app = wx.App(False)
     frame = loadDialog()
+    # Uncomment the following when ready to use the splash screen
+    # app = MainApp()
     app.MainLoop()
 
 
