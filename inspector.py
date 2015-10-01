@@ -113,7 +113,7 @@ class loadDialog (wx.Frame):
 class EditWindow(wx.Frame):
     def __init__(self):
         wx.Frame.__init__(self, parent=None, id=wx.ID_ANY,
-                          title="KiWQM Field Data Importer (Data Editing Mode)", size=(800, 600))
+                          title="KiWQM Field Data Importer (Data Editing Mode)", size=(1000, 600))
         panel = EditPanel(self)
 
 
