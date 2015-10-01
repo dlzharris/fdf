@@ -384,8 +384,8 @@ def get_parameter_name(key):
         "do_sat": "DO (% sat)",
         "ph": "pH",
         "temp_c": "Temp (deg C)",
-        "conductivity_uncomp": "Conductivity",
-        "turbidity": "Turbidity"}
+        "conductivity_uncomp": "EC (uS/cm)",
+        "turbidity": "Turbidity (NTU)"}
     return param_names[key]
 
 

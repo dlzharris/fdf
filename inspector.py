@@ -311,13 +311,13 @@ class EditPanel(wx.Panel):
 
     # -------------------------------------------------------------------------
     def checkCompletenessMsg(self, incomplete_fields):
-        msg = "The following fields have incomplete values:\n%s\nPlease complete before continuing." \
+        msg = "The following fields have incomplete values:\n\n%s\n\nPlease complete before continuing." \
               % '\n'.join(incomplete_fields)
         wx.MessageBox(msg, "Incomplete data!", wx.OK | wx.ICON_EXCLAMATION)
 
     # -------------------------------------------------------------------------
     def checkZeroValuesMsg(self, zero_value_fields):
-        msg = "The following fields have items with values of zero (0):\n%s\n\n" \
+        msg = "The following fields have items with values of zero (0):\n\n%s\n\n" \
               "A value of zero generally indicates a sensor failure, or a non-measured parameter.\n" \
               "Please review and adjust before continuing." \
               % '\n'.join(zero_value_fields)
