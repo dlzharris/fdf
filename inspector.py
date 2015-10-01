@@ -1,6 +1,7 @@
 import wx
 from ObjectListView import ObjectListView, ColumnDefn, CellEditor
 from wx.lib.pubsub import pub
+from wx.lib.wordwrap import wordwrap
 import functions
 import globals
 
@@ -78,12 +79,51 @@ class loadDialog (wx.Frame):
         self.Layout()
         self.Centre(wx.BOTH)
 
+        # Create the menubar
+        self.createMenu()
+
         # Show the window
         self.Show()
 
     def __del__(self):
         pass
 
+    # -------------------------------------------------------------------------
+    def createMenu(self):
+        """
+        Create the application menus
+        """
+        menuBar = wx.MenuBar()
+        # Create the file menu, add items and add it to the menu bar
+        fileMenu = wx.Menu()
+        fileMenu_item_close = fileMenu.Append(wx.ID_EXIT)
+        self.Bind(wx.EVT_MENU, self.onClose, fileMenu_item_close)
+        menuBar.Append(fileMenu, "&File")
+        # Creat the help menu, add items and add it to the menu bar
+        helpMenu = wx.Menu()
+        helpMenu_item_about = helpMenu.Append(wx.ID_ABOUT)
+        self.Bind(wx.EVT_MENU, self.onAboutDlg, helpMenu_item_about)
+        menuBar.Append(helpMenu, "&Help")
+        # Add the menu bar to the frame
+        self.SetMenuBar(menuBar)
+
+    # -------------------------------------------------------------------------
+    def onAboutDlg(self, event):
+        info = wx.AboutDialogInfo()
+        info.Name = "KiWQM Field Data Importer"
+        info.Version = "0.1 Beta"
+        info.Copyright = "(C) 2015 DPI Water"
+        info.Description = wordwrap("KiWQM Field Data Importer formats field water quality data into a CSV file "
+                                    "suitable for import to the KiWQM database.", 350, wx.ClientDC(self))
+        info.Developers = [wordwrap("Daniel Harris (Data & Procedures Officer, DPI Water)", 250, wx.ClientDC(self))]
+        # Show the About box
+        wx.AboutBox(info)
+
+    # -------------------------------------------------------------------------
+    def onClose(self, event):
+        self.Close()
+
+    # -------------------------------------------------------------------------
     def sendAndClose(self, event):
         # Check input mode
         input_mode = self.m_radioBox_entryMode.GetSelection()
@@ -115,6 +155,42 @@ class EditWindow(wx.Frame):
         wx.Frame.__init__(self, parent=None, id=wx.ID_ANY,
                           title="KiWQM Field Data Importer (Data Editing Mode)", size=(1000, 600))
         panel = EditPanel(self)
+        self.createMenu()
+
+    # -------------------------------------------------------------------------
+    def createMenu(self):
+        """
+        Create the application menus
+        """
+        menuBar = wx.MenuBar()
+        # Create the file menu, add items and add it to the menu bar
+        fileMenu = wx.Menu()
+        fileMenu_item_close = fileMenu.Append(wx.ID_EXIT)
+        self.Bind(wx.EVT_MENU, self.onClose, fileMenu_item_close)
+        menuBar.Append(fileMenu, "&File")
+        # Creat the help menu, add items and add it to the menu bar
+        helpMenu = wx.Menu()
+        helpMenu_item_about = helpMenu.Append(wx.ID_ABOUT)
+        self.Bind(wx.EVT_MENU, self.onAboutDlg, helpMenu_item_about)
+        menuBar.Append(helpMenu, "&Help")
+        # Add the menu bar to the frame
+        self.SetMenuBar(menuBar)
+
+    # -------------------------------------------------------------------------
+    def onAboutDlg(self, event):
+        info = wx.AboutDialogInfo()
+        info.Name = "KiWQM Field Data Importer"
+        info.Version = "0.1 Beta"
+        info.Copyright = "(C) 2015 DPI Water"
+        info.Description = wordwrap("KiWQM Field Data Importer formats field water quality data into a CSV file "
+                                    "suitable for import to the KiWQM database.", 350, wx.ClientDC(self))
+        info.Developers = [wordwrap("Daniel Harris (Data & Procedures Officer, DPI Water)", 250, wx.ClientDC(self))]
+        # Show the About box
+        wx.AboutBox(info)
+
+    # -------------------------------------------------------------------------
+    def onClose(self, event):
+        self.Close()
 
 
 class EditPanel(wx.Panel):
@@ -280,32 +356,32 @@ class EditPanel(wx.Panel):
         """
         self.dataOlv.SetColumns([
             ColumnDefn("", "center", 20, "checked"),
-            ColumnDefn("MP#", "left", 80, "mp_number"),
-            ColumnDefn("Station#", "center", 100, "station_number",  valueSetter=self.updateSampleStation),
-            ColumnDefn("Sampling Number", "center", 220, "sampling_number", isEditable=False),
-            ColumnDefn("Date", "center", 100, "date"),
+            ColumnDefn("MP#", "left", 60, "mp_number"),
+            ColumnDefn("Station#", "center", 90, "station_number",  valueSetter=self.updateSampleStation),
+            ColumnDefn("Sampling Number", "center", 140, "sampling_number", isEditable=False),
+            ColumnDefn("Date", "center", -1, "date"),
             ColumnDefn("Time", "center", -1, "sample_time"),
-            ColumnDefn("Loc#", "left", 80, "location_id"),
-            ColumnDefn("Seq#", "left", 80, "sample_cid"),
-            ColumnDefn("Rep#", "left", 50, "replicate_number"),
-            ColumnDefn("Matrix", "left", 100, "sample_matrix", cellEditorCreator=self.dropDownComboBox, valueSetter=self.updateSampleMatrix),
+            ColumnDefn("Loc#", "left", 50, "location_id"),
+            ColumnDefn("Seq#", "left", 50, "sample_cid"),
+            # ColumnDefn("Rep#", "left", 50, "replicate_number"),
+            ColumnDefn("Matrix", "left", 60, "sample_matrix", cellEditorCreator=self.dropDownComboBox, valueSetter=self.updateSampleMatrix),
             ColumnDefn("Sample Type", "left", 100, "sample_type", cellEditorCreator=self.dropDownComboBox),
             # ColumnDefn("Collection Method", "left", 100, "collection_method"),
-            ColumnDefn("Calibration Record", "left", 100, "calibration_record"),
-            ColumnDefn("Instrument", "left", 100, "sampling_instrument", cellEditorCreator=self.dropDownComboBox),
-            ColumnDefn("Sampling Officer", "left", 100, "sampling_officer", cellEditorCreator=self.dropDownComboBox),
+            ColumnDefn("Calibration Record", "left", 140, "calibration_record"),
+            ColumnDefn("Instrument", "left", 110, "sampling_instrument", cellEditorCreator=self.dropDownComboBox),
+            ColumnDefn("Sampling Officer", "left", 125, "sampling_officer", cellEditorCreator=self.dropDownComboBox),
             # ColumnDefn("Event Time", "left", 100, "event_time"),
-            ColumnDefn("Sample Collected", "left", 100, "sample_collected", cellEditorCreator=self.dropDownComboBox),
-            ColumnDefn("Depth Upper (m)", "left", 100, "depth_upper"),
-            ColumnDefn("Depth Lower (m)", "left", 100, "depth_lower"),
-            ColumnDefn("DO (mg/L)", "left", 100, "do"),
-            ColumnDefn("DO (% sat)", "left", 100, "do_sat"),
-            ColumnDefn("pH", "left", 100, "ph"),
-            ColumnDefn("Temp (deg C)", "left", 50, "temp_c"),
-            ColumnDefn("Conductivity", "left", 100, "conductivity_uncomp"),
-            ColumnDefn("Turbidity", "left", 100, "turbidity"),
-            ColumnDefn("Water Depth", "left", 100, "water_depth"),
-            ColumnDefn("Gauge Height (m)", "left", 100, "gauge_height"),
+            ColumnDefn("Sample Collected", "left", 130, "sample_collected", cellEditorCreator=self.dropDownComboBox),
+            ColumnDefn("Depth Upper (m)", "left", 125, "depth_upper"),
+            ColumnDefn("Depth Lower (m)", "left", 125, "depth_lower"),
+            ColumnDefn("DO (mg/L)", "left", 85, "do"),
+            ColumnDefn("DO (% sat)", "left", 85, "do_sat"),
+            ColumnDefn("pH", "left", 50, "ph"),
+            ColumnDefn("Temp (deg C)", "left", 110, "temp_c"),
+            ColumnDefn("EC (uS/cm)", "left", 90, "conductivity_uncomp"),
+            ColumnDefn("Turbidity (NTU)", "left", 120, "turbidity"),
+            ColumnDefn("Water Depth (m)", "left", 130, "water_depth"),
+            ColumnDefn("Gauge Height (m)", "left", 135, "gauge_height"),
             ColumnDefn("Comments", "left", 200, "sampling_comment")
         ])
 
