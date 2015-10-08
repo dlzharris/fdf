@@ -14,7 +14,7 @@ class loadDialog (wx.Frame):
 
     def __init__(self, parent=None):
         # Set up the frames we will be using
-        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"KiWQM Field Data Import Tool",
+        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"KiWQM Field Data Formatter",
                           pos=wx.DefaultPosition, size=wx.Size(691, 349), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
         self.editWindow = EditWindow()
 
@@ -27,7 +27,7 @@ class loadDialog (wx.Frame):
         bSizer3 = wx.BoxSizer(wx.HORIZONTAL)
 
         # Introductory text
-        intro_text = u"Welcome to the KiWQM Field Data Import Tool. " \
+        intro_text = u"Welcome to the KiWQM Field Data Formatter. " \
                      u"This tool will format your field data ready for importing to KiWQM. " \
                      u"To get started, select an instrument type, the sampler name, " \
                      u"and select the logger file for the instrument."
@@ -113,10 +113,10 @@ class loadDialog (wx.Frame):
     # -------------------------------------------------------------------------
     def onAboutDlg(self, event):
         info = wx.AboutDialogInfo()
-        info.Name = "KiWQM Field Data Importer"
+        info.Name = "KiWQM Field Data Formatter"
         info.Version = "0.1 Beta"
         info.Copyright = "(C) 2015 DPI Water"
-        info.Description = wordwrap("KiWQM Field Data Importer formats field water quality data into a CSV file "
+        info.Description = wordwrap("KiWQM Field Data Formatter formats field water quality data into a CSV file "
                                     "suitable for import to the KiWQM database.", 350, wx.ClientDC(self))
         info.Developers = [wordwrap("Daniel Harris (Data & Procedures Officer, DPI Water)", 250, wx.ClientDC(self))]
         # Show the About box
@@ -156,7 +156,7 @@ class loadDialog (wx.Frame):
 class EditWindow(wx.Frame):
     def __init__(self):
         wx.Frame.__init__(self, parent=None, id=wx.ID_ANY,
-                          title="KiWQM Field Data Importer (Data Editing Mode)", size=(1000, 600))
+                          title="KiWQM Field Data Formatter (Data Editing Mode)", size=(1000, 600))
         panel = EditPanel(self)
         self.createMenu()
 
@@ -189,10 +189,10 @@ class EditWindow(wx.Frame):
     # -------------------------------------------------------------------------
     def onAboutDlg(self, event):
         info = wx.AboutDialogInfo()
-        info.Name = "KiWQM Field Data Importer"
+        info.Name = "KiWQM Field Data Formatter"
         info.Version = "0.1 Beta"
         info.Copyright = "(C) 2015 DPI Water"
-        info.Description = wordwrap("KiWQM Field Data Importer formats field water quality data into a CSV file "
+        info.Description = wordwrap("KiWQM Field Data Formatter formats field water quality data into a CSV file "
                                     "suitable for import to the KiWQM database.", 350, wx.ClientDC(self))
         info.Developers = [wordwrap("Daniel Harris (Data & Procedures Officer, DPI Water)", 250, wx.ClientDC(self))]
         # Show the About box
@@ -454,7 +454,7 @@ class SplashScreen(wx.SplashScreen):
     """
     def __init__(self, parent=None):
         # Set splash screen variables
-        splashImage = wx.Image(name = "logo.jpg").ConvertToBitmap()
+        splashImage = wx.Image(name = "splash_screen_scribus_01beta.jpg").ConvertToBitmap()
         splashStyle = wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_TIMEOUT
         splashDuration = 2000  # milliseconds
         # Call the splash screen constructor
@@ -516,13 +516,13 @@ class MainApp(wx.App):
 # -----------------------------------------------------------------------------
 def main():
     """
-    Run the field data importer app
+    Run the Field Data Formatter app
     """
     # Comment the following 2 lines when ready to use the splash screen
-    app = wx.App(False)
-    frame = loadDialog()
+    #app = wx.App(False)
+    #frame = loadDialog()
     # Uncomment the following when ready to use the splash screen
-    # app = MainApp()
+    app = MainApp()
     app.MainLoop()
 
 
