@@ -27,6 +27,7 @@ REQUIRED_FIELDS = [
     'sample_matrix',
     'sample_type',
     # 'sampling_reason',
+    'sampling_instrument',
     'sampling_officer',
     'location_id',
     'sample_cid',
