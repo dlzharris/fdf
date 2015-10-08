@@ -1,9 +1,12 @@
 import wx
+import wx.html
 from ObjectListView import ObjectListView, ColumnDefn, CellEditor
 from wx.lib.pubsub import pub
 from wx.lib.wordwrap import wordwrap
+import webbrowser
 import functions
 import globals
+from help.help_html import page
 
 
 ###############################################################################
@@ -171,10 +174,17 @@ class EditWindow(wx.Frame):
         # Creat the help menu, add items and add it to the menu bar
         helpMenu = wx.Menu()
         helpMenu_item_about = helpMenu.Append(wx.ID_ABOUT)
+        helpMenu_item_help = helpMenu.Append(wx.ID_HELP)
         self.Bind(wx.EVT_MENU, self.onAboutDlg, helpMenu_item_about)
+        self.Bind(wx.EVT_MENU, self.onHelpDlg, helpMenu_item_help)
         menuBar.Append(helpMenu, "&Help")
         # Add the menu bar to the frame
         self.SetMenuBar(menuBar)
+
+    # -------------------------------------------------------------------------
+    def onHelpDlg(self, event):
+        helpDlg = AboutHTMLDlg(None)
+        helpDlg.Show()
 
     # -------------------------------------------------------------------------
     def onAboutDlg(self, event):
@@ -358,7 +368,7 @@ class EditPanel(wx.Panel):
             ColumnDefn("", "center", 20, "checked"),
             ColumnDefn("MP#", "left", 60, "mp_number"),
             ColumnDefn("Station#", "center", 90, "station_number",  valueSetter=self.updateSampleStation),
-            ColumnDefn("Sampling Number", "center", 140, "sampling_number", isEditable=False),
+            ColumnDefn("Sampling ID", "center", 140, "sampling_number", isEditable=False),
             ColumnDefn("Date", "center", -1, "date"),
             ColumnDefn("Time", "center", -1, "sample_time"),
             ColumnDefn("Loc#", "left", 50, "location_id"),
@@ -466,6 +476,28 @@ class SplashScreen(wx.SplashScreen):
         frame.Show(True)
         evt.Skip()
 
+
+###############################################################################
+# HTML Help
+###############################################################################
+class AboutHTMLDlg(wx.Frame):
+
+    def __init__(self, parent):
+
+        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title="About", size=(600, 700))
+
+        html = wxHTML(self)
+
+        html.SetPage(page)
+
+
+class wxHTML(wx.html.HtmlWindow):
+    def OnLinkClicked(self, link):
+        a = link.GetHref()
+        if a.startswith('#'):
+            self.base_OnLinkClicked(link)
+        else:
+            webbrowser.open(a)
 
 ###############################################################################
 # Main app constructor and initialisation
