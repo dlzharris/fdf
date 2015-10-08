@@ -1,16 +1,20 @@
+# Standard Python packages
+import webbrowser
+# wx widgets
 import wx
 import wx.html
-from ObjectListView import ObjectListView, ColumnDefn, CellEditor
 from wx.lib.pubsub import pub
 from wx.lib.wordwrap import wordwrap
-import webbrowser
+# Custom wx objects
+from ObjectListView import ObjectListView, ColumnDefn, CellEditor
+# Local packages
 import functions
 import globals
 from help.help_html import page
 
 
 ###############################################################################
-class loadDialog (wx.Frame):
+class LoadDialog (wx.Frame):
 
     def __init__(self, parent=None):
         # Set up the frames we will be using
@@ -18,6 +22,7 @@ class loadDialog (wx.Frame):
                           pos=wx.DefaultPosition, size=wx.Size(691, 349), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
         self.editWindow = EditWindow()
 
+        # TODO: Move this stuff into a panel, then use the CreateMenu class to create the menu
         # Set the frame size and background colour
         self.SetSizeHintsSz(wx.DefaultSize, wx.DefaultSize)
         self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INFOBK))
@@ -157,46 +162,47 @@ class EditWindow(wx.Frame):
     def __init__(self):
         wx.Frame.__init__(self, parent=None, id=wx.ID_ANY,
                           title="KiWQM Field Data Formatter (Data Editing Mode)", size=(1000, 600))
-        panel = EditPanel(self)
-        self.createMenu()
+        self.panel = EditPanel(self)
+        #self.createMenu()
+        CreateMenu(self)
 
-    # -------------------------------------------------------------------------
-    def createMenu(self):
-        """
-        Create the application menus
-        """
-        menuBar = wx.MenuBar()
-        # Create the file menu, add items and add it to the menu bar
-        fileMenu = wx.Menu()
-        fileMenu_item_close = fileMenu.Append(wx.ID_EXIT)
-        self.Bind(wx.EVT_MENU, self.onClose, fileMenu_item_close)
-        menuBar.Append(fileMenu, "&File")
-        # Creat the help menu, add items and add it to the menu bar
-        helpMenu = wx.Menu()
-        helpMenu_item_about = helpMenu.Append(wx.ID_ABOUT)
-        helpMenu_item_help = helpMenu.Append(wx.ID_HELP)
-        self.Bind(wx.EVT_MENU, self.onAboutDlg, helpMenu_item_about)
-        self.Bind(wx.EVT_MENU, self.onHelpDlg, helpMenu_item_help)
-        menuBar.Append(helpMenu, "&Help")
-        # Add the menu bar to the frame
-        self.SetMenuBar(menuBar)
-
-    # -------------------------------------------------------------------------
-    def onHelpDlg(self, event):
-        helpDlg = AboutHTMLDlg(None)
-        helpDlg.Show()
-
-    # -------------------------------------------------------------------------
-    def onAboutDlg(self, event):
-        info = wx.AboutDialogInfo()
-        info.Name = "KiWQM Field Data Formatter"
-        info.Version = "0.1 Beta"
-        info.Copyright = "(C) 2015 DPI Water"
-        info.Description = wordwrap("KiWQM Field Data Formatter formats field water quality data into a CSV file "
-                                    "suitable for import to the KiWQM database.", 350, wx.ClientDC(self))
-        info.Developers = [wordwrap("Daniel Harris (Data & Procedures Officer, DPI Water)", 250, wx.ClientDC(self))]
-        # Show the About box
-        wx.AboutBox(info)
+    # # -------------------------------------------------------------------------
+    # def createMenu(self):
+    #     """
+    #     Create the application menus
+    #     """
+    #     menuBar = wx.MenuBar()
+    #     # Create the file menu, add items and add it to the menu bar
+    #     fileMenu = wx.Menu()
+    #     fileMenu_item_close = fileMenu.Append(wx.ID_EXIT)
+    #     self.Bind(wx.EVT_MENU, self.onClose, fileMenu_item_close)
+    #     menuBar.Append(fileMenu, "&File")
+    #     # Creat the help menu, add items and add it to the menu bar
+    #     helpMenu = wx.Menu()
+    #     helpMenu_item_about = helpMenu.Append(wx.ID_ABOUT)
+    #     helpMenu_item_help = helpMenu.Append(wx.ID_HELP)
+    #     self.Bind(wx.EVT_MENU, self.onAboutDlg, helpMenu_item_about)
+    #     self.Bind(wx.EVT_MENU, self.onHelpDlg, helpMenu_item_help)
+    #     menuBar.Append(helpMenu, "&Help")
+    #     # Add the menu bar to the frame
+    #     self.SetMenuBar(menuBar)
+    #
+    # # -------------------------------------------------------------------------
+    # def onHelpDlg(self, event):
+    #     helpDlg = AboutHTMLDlg(None)
+    #     helpDlg.Show()
+    #
+    # # -------------------------------------------------------------------------
+    # def onAboutDlg(self, event):
+    #     info = wx.AboutDialogInfo()
+    #     info.Name = "KiWQM Field Data Formatter"
+    #     info.Version = "0.1 Beta"
+    #     info.Copyright = "(C) 2015 DPI Water"
+    #     info.Description = wordwrap("KiWQM Field Data Formatter formats field water quality data into a CSV file "
+    #                                 "suitable for import to the KiWQM database.", 350, wx.ClientDC(self))
+    #     info.Developers = [wordwrap("Daniel Harris (Data & Procedures Officer, DPI Water)", 250, wx.ClientDC(self))]
+    #     # Show the About box
+    #     wx.AboutBox(info)
 
     # -------------------------------------------------------------------------
     def onClose(self, event):
@@ -287,7 +293,7 @@ class EditPanel(wx.Panel):
         # If the reset is confirmed, clear data, close window and return to the load screen.
         if result == wx.ID_OK:
             self.dataOlv.DeleteAllItems()
-            loadDlg = loadDialog()
+            loadDlg = LoadDialog()
             self.parent.Destroy()
             loadDlg.Show()
 
@@ -470,7 +476,7 @@ class SplashScreen(wx.SplashScreen):
         # Get the app instance
         app = wx.GetApp()
         # Set the frame to be displayed
-        frame = loadDialog()
+        frame = LoadDialog()
         # Place the frame at the top and show it
         app.SetTopWindow(frame)
         frame.Show(True)
@@ -498,6 +504,47 @@ class wxHTML(wx.html.HtmlWindow):
             self.base_OnLinkClicked(link)
         else:
             webbrowser.open(a)
+
+
+class CreateMenu(wx.MenuBar):
+    """
+    Create the application menus
+    """
+    def __init__(self, frame):
+        wx.MenuBar.__init__(self)
+        self.panel = frame.panel
+        # Create the file menu, add items and add it to the menu bar
+        fileMenu = wx.Menu()
+        fileMenu_item_close = fileMenu.Append(wx.ID_EXIT)
+        self.Bind(wx.EVT_MENU, frame.onClose, fileMenu_item_close)
+        self.Append(fileMenu, "&File")
+        # Creat the help menu, add items and add it to the menu bar
+        helpMenu = wx.Menu()
+        helpMenu_item_about = helpMenu.Append(wx.ID_ABOUT)
+        helpMenu_item_help = helpMenu.Append(wx.ID_HELP)
+        self.Bind(wx.EVT_MENU, self.onAboutDlg, helpMenu_item_about)
+        self.Bind(wx.EVT_MENU, self.onHelpDlg, helpMenu_item_help)
+        self.Append(helpMenu, "&Help")
+        # Add the menu bar to the frame
+        frame.SetMenuBar(self)
+
+    # -------------------------------------------------------------------------
+    def onHelpDlg(self, event):
+        helpDlg = AboutHTMLDlg(None)
+        helpDlg.Show()
+
+    # -------------------------------------------------------------------------
+    def onAboutDlg(self, event):
+        info = wx.AboutDialogInfo()
+        info.Name = "KiWQM Field Data Formatter"
+        info.Version = "0.1 Beta"
+        info.Copyright = "(C) 2015 DPI Water"
+        info.Description = wordwrap("KiWQM Field Data Formatter formats field water quality data into a CSV file "
+                                    "suitable for import to the KiWQM database.", 350, wx.ClientDC(self.panel))
+        info.Developers = [wordwrap("Daniel Harris (Data & Procedures Officer, DPI Water)", 250, wx.ClientDC(self.panel))]
+        # Show the About box
+        wx.AboutBox(info)
+
 
 ###############################################################################
 # Main app constructor and initialisation
