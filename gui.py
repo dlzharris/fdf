@@ -111,7 +111,7 @@ class LoadDialog (wx.Frame):
         # Set up the frames we will be using
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"KiWQM Field Data Formatter",
                           pos=wx.DefaultPosition, size=wx.Size(691, 349), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
-        self.panel = LoadPanel()
+        self.panel = LoadPanel(self)
         # TODO: Move this stuff into a panel, then use the CreateMenu class to create the menu
         # Set the frame size and background colour
         self.SetSizeHintsSz(wx.DefaultSize, wx.DefaultSize)
