@@ -14,79 +14,86 @@ from help.help_html import page
 
 
 ###############################################################################
+# Load Window (Main Frame)
+###############################################################################
 class LoadPanel (wx.Panel):
+
     def __init__(self, parent):
+        # Set up the panel
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
         self.parent = parent
-        self.editWindow = EditWindow()
         self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INFOBK))
 
+        # Set the edit window (opens after closing the load window)
+        self.EditWindow = EditFrame()
+
+        # Set up the load panel's objects
         # Create the sizers
-        bSizer2 = wx.BoxSizer(wx.VERTICAL)
-        bSizer3 = wx.BoxSizer(wx.HORIZONTAL)
+        SizerVertical = wx.BoxSizer(wx.VERTICAL)
+        SizerHorizontal = wx.BoxSizer(wx.HORIZONTAL)
 
         # Introductory text
-        intro_text = u"Welcome to the KiWQM Field Data Formatter. " \
-                     u"This tool will format your field data ready for importing to KiWQM. " \
-                     u"To get started, select an instrument type, the sampler name, " \
-                     u"and select the logger file for the instrument."
-        self.m_staticText1 = wx.StaticText(self, wx.ID_ANY, intro_text, wx.DefaultPosition, wx.Size(-1,-1), wx.ALIGN_CENTRE)
-        self.m_staticText1.Wrap(1500)
-        bSizer2.Add(self.m_staticText1, 1, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND, 5)
+        TextIntroduction = u"Welcome to the KiWQM Field Data Formatter. " \
+                           u"This tool will format your field data ready for importing to KiWQM. " \
+                           u"To get started, select an instrument type, the sampler name, " \
+                           u"and select the logger file for the instrument."
+        self.StaticTextIntroduction = wx.StaticText(self, wx.ID_ANY, TextIntroduction, wx.DefaultPosition, wx.Size(-1,-1), wx.ALIGN_CENTRE)
+        self.StaticTextIntroduction.Wrap(1500)
+        SizerVertical.Add(self.StaticTextIntroduction, 1, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND, 5)
 
         # Instrument selection box
-        m_choice_instrumentChoices = [u"Pick an instrument..."]
-        m_choice_instrumentChoices.extend(globals.INSTRUMENTS)
-        self.m_choice_instrument = wx.Choice(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_instrumentChoices, 0)
-        self.m_choice_instrument.SetSelection(0)
-        bSizer3.Add(self.m_choice_instrument, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        MultiChoiseInstrumentsList = [u"Pick an instrument..."]
+        MultiChoiseInstrumentsList.extend(globals.INSTRUMENTS)
+        self.MultiChoiceInstrumentsSelection = wx.Choice(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, MultiChoiseInstrumentsList, 0)
+        self.MultiChoiceInstrumentsSelection.SetSelection(0)
+        SizerHorizontal.Add(self.MultiChoiceInstrumentsSelection, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         # Sampler selection box
-        m_choice_samplerChoices = [u"Select sampler..."]
-        m_choice_samplerChoices.extend(globals.FIELD_STAFF)
-        self.m_choice_sampler = wx.Choice(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_samplerChoices, 0)
-        self.m_choice_sampler.SetSelection(0)
-        bSizer3.Add(self.m_choice_sampler, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        MultiChoiceSamplersList = [u"Select sampler..."]
+        MultiChoiceSamplersList.extend(globals.FIELD_STAFF)
+        self.MultiChoiceSamplersSelection = wx.Choice(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, MultiChoiceSamplersList, 0)
+        self.MultiChoiceSamplersSelection.SetSelection(0)
+        SizerHorizontal.Add(self.MultiChoiceSamplersSelection, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         # Data entry mode radio box
-        m_radioBox_entryModeChoices = [u"Load logger file", u"Manual data entry"]
-        self.m_radioBox_entryMode = wx.RadioBox(self, wx.ID_ANY, u"Data entry mode", wx.DefaultPosition,
-                                                wx.DefaultSize, m_radioBox_entryModeChoices, 2, wx.RA_SPECIFY_COLS)
-        self.m_radioBox_entryMode.SetSelection(0)
-        bSizer3.Add(self.m_radioBox_entryMode, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        RadioBoxEntryModeList = [u"Load logger file", u"Manual data entry"]
+        self.RadioBoxEntryModeSelection = wx.RadioBox(self, wx.ID_ANY, u"Data entry mode", wx.DefaultPosition,
+                                                wx.DefaultSize, RadioBoxEntryModeList, 2, wx.RA_SPECIFY_COLS)
+        self.RadioBoxEntryModeSelection.SetSelection(0)
+        SizerHorizontal.Add(self.RadioBoxEntryModeSelection, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         # Place the selection boxes in the vertical sizer
-        bSizer2.Add(bSizer3, 1, wx.EXPAND, 5)
+        SizerVertical.Add(SizerHorizontal, 1, wx.EXPAND, 5)
 
         # File selection explanatory text
-        explan_text = u"If you are importing data from a logger file, " \
-                      u"select the file with the \"Browse\" button below."
-        self.m_staticText2 = wx.StaticText(self, wx.ID_ANY, explan_text, wx.DefaultPosition, wx.DefaultSize, 0)
-        self.m_staticText2.Wrap(-1)
-        bSizer2.Add(self.m_staticText2, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
+        TextExplanation = u"If you are importing data from a logger file, " \
+                          u"select the file with the \"Browse\" button below."
+        self.StaticTextExplanation = wx.StaticText(self, wx.ID_ANY, TextExplanation, wx.DefaultPosition, wx.DefaultSize, 0)
+        self.StaticTextExplanation.Wrap(-1)
+        SizerVertical.Add(self.StaticTextExplanation, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
         # File browser
-        self.m_filePicker1 = wx.FilePickerCtrl(self, wx.ID_ANY, wx.EmptyString, u"Select a file", u"*.*",
+        self.FilePicker = wx.FilePickerCtrl(self, wx.ID_ANY, wx.EmptyString, u"Select a file", u"*.*",
                                                wx.DefaultPosition, wx.DefaultSize,
                                                wx.FLP_CHANGE_DIR | wx.FLP_DEFAULT_STYLE | wx.FLP_FILE_MUST_EXIST)
-        bSizer2.Add(self.m_filePicker1, 0, wx.ALL | wx.EXPAND, 5)
+        SizerVertical.Add(self.FilePicker, 0, wx.ALL | wx.EXPAND, 5)
 
         # Load file button
-        self.m_button_loadFile = wx.Button(self, wx.ID_ANY, u"Continue", wx.DefaultPosition, wx.DefaultSize, 0)
-        self.m_button_loadFile.Bind(wx.EVT_BUTTON, self.sendAndClose)
-        bSizer2.Add(self.m_button_loadFile, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
+        self.ButtonLoadFile = wx.Button(self, wx.ID_ANY, u"Continue", wx.DefaultPosition, wx.DefaultSize, 0)
+        self.ButtonLoadFile.Bind(wx.EVT_BUTTON, self.SendAndClose)
+        SizerVertical.Add(self.ButtonLoadFile, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
         # Set up the sizer and frame layout
-        self.SetSizer(bSizer2)
+        self.SetSizer(SizerVertical)
         self.Layout()
 
     # -------------------------------------------------------------------------
-    def sendAndClose(self, event):
+    def SendAndClose(self, event):
         # Check input mode
-        input_mode = self.m_radioBox_entryMode.GetSelection()
+        InputMode = self.RadioBoxEntryModeSelection.GetSelection()
         # Load from file
-        if input_mode == 0:
-            path = self.m_filePicker1.GetPath()
+        if InputMode == 0:
+            path = self.FilePicker.GetPath()
             if path == "":
                 wx.MessageBox("Please select a valid file or switch to manual mode.", "No file specified.",
                               wx.OK | wx.ICON_EXCLAMATION)
@@ -95,32 +102,27 @@ class LoadPanel (wx.Panel):
         else:
             path = None
         # Generic components
-        sampler = self.m_choice_sampler.GetStringSelection()
-        instrument = self.m_choice_instrument.GetStringSelection()
+        sampler = self.MultiChoiceSamplersSelection.GetStringSelection()
+        instrument = self.MultiChoiceInstrumentsSelection.GetStringSelection()
         # Publish data to listener
         pub.sendMessage("importDataListener", path=path, sampler=sampler, instrument=instrument)
         # Show the edit window and hide the load dialog
-        self.editWindow.Show()
+        self.EditWindow.Show()
         self.parent.Hide()
 
 
-###############################################################################
-class LoadDialog (wx.Frame):
+class LoadFrame (wx.Frame):
 
     def __init__(self, parent=None):
         # Set up the frames we will be using
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"KiWQM Field Data Formatter",
                           pos=wx.DefaultPosition, size=wx.Size(691, 349), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
         self.panel = LoadPanel(self)
-        # TODO: Move this stuff into a panel, then use the CreateMenu class to create the menu
         # Set the frame size and background colour
         self.SetSizeHintsSz(wx.DefaultSize, wx.DefaultSize)
-
         self.Centre(wx.BOTH)
-
-        # Create the menubar
+        # Create the menu bar
         CreateMenu(self)
-
         # Show the window
         self.Show()
 
@@ -128,62 +130,67 @@ class LoadDialog (wx.Frame):
         pass
 
     # -------------------------------------------------------------------------
-    def onClose(self, event):
+    def OnClose(self, event):
         self.Close()
 
 
 ###############################################################################
 # Edit window configuration
 ###############################################################################
-class EditWindow(wx.Frame):
+class EditFrame(wx.Frame):
+
     def __init__(self):
+        # Set up the frames we will be using
         wx.Frame.__init__(self, parent=None, id=wx.ID_ANY,
                           title="KiWQM Field Data Formatter (Data Editing Mode)", size=(1000, 600))
         self.panel = EditPanel(self)
-        #self.createMenu()
+        # Create the menu bar
         CreateMenu(self)
 
     # -------------------------------------------------------------------------
-    def onClose(self, event):
+    def OnClose(self, event):
         self.Close()
 
 
 class EditPanel(wx.Panel):
+
     def __init__(self, parent):
+        # Set up the panel
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
         self.parent = parent
-        # Set up the panel to listen for messages from the opening screen
-        pub.subscribe(self.dataListener, "importDataListener")
+
+        # Set the panel to listen for messages from the opening screen
+        pub.subscribe(self.DataListener, "importDataListener")
 
         # Create a placeholder for the save as filename
-        self.saveAsFilename = None
+        self.SaveAsFilename = None
 
         # Create the ObjectListView object instance and set the instance properties
-        self.dataOlv = ObjectListView(self, wx.ID_ANY, style=wx.LC_REPORT | wx.SUNKEN_BORDER)
-        self.dataOlv.cellEditMode = ObjectListView.CELLEDIT_SINGLECLICK  # Really only happens on double-click
+        self.DataContainer = ObjectListView(self, wx.ID_ANY, style=wx.LC_REPORT | wx.SUNKEN_BORDER)
+        self.DataContainer.cellEditMode = ObjectListView.CELLEDIT_SINGLECLICK  # Really only happens on double-click
 
         # Set the column names and column data sources
-        self.setColumns()
+        self.SetColumns()
 
         # Reset button
-        resetBtn = wx.Button(self, wx.ID_ANY, "Reset data")
-        resetBtn.Bind(wx.EVT_BUTTON, self.resetData)
+        ButtonReset = wx.Button(self, wx.ID_ANY, "Reset data")
+        ButtonReset.Bind(wx.EVT_BUTTON, self.ResetData)
 
         # Export button
-        exportBtn = wx.Button(self, wx.ID_ANY, "Export data")
-        exportBtn.Bind(wx.EVT_BUTTON, self.exportData)
+        ButtonExport = wx.Button(self, wx.ID_ANY, "Export data")
+        ButtonExport.Bind(wx.EVT_BUTTON, self.ExportData)
 
         # Create sizer and add gui elements
-        mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(self.dataOlv, 1, wx.ALL | wx.EXPAND, 5)
-        mainSizer.Add(resetBtn, 0, wx.ALL | wx.CENTER, 5)
-        mainSizer.Add(exportBtn, 0, wx.ALL | wx.CENTER, 5)
-        self.SetSizer(mainSizer)
+        SizerMain = wx.BoxSizer(wx.VERTICAL)
+        SizerMain.Add(self.DataContainer, 1, wx.ALL | wx.EXPAND, 5)
+        SizerMain.Add(ButtonReset, 0, wx.ALL | wx.CENTER, 5)
+        SizerMain.Add(ButtonExport, 0, wx.ALL | wx.CENTER, 5)
+        self.SetSizer(SizerMain)
 
     # -------------------------------------------------------------------------
-    def dataListener(self, path, sampler=None, instrument=None):
+    def DataListener(self, path, sampler=None, instrument=None):
         """
-        Receives data from the load dialog and sends it to the objectlistview
+        Receives data from the load dialog and sends it to the Objectlistview data container
         This function is triggered by a publisher-subscriber listener
         """
         # Check if the selected instrument is a valid instrument, that is
@@ -193,34 +200,42 @@ class EditPanel(wx.Panel):
             pass
         else:
             instrument = globals.DEFAULT_INSTRUMENT
-        # If a file path is provided, open it, otherwise create blank lines in the table
+
+        # If a file path is provided, open it. If no path is provided, then we
+        # are entering manual entry mode, so we need to create blank lines in
+        # the table.
         if path is not None:
-            # Check the instrument file and load it
-            data_to_load = functions.load_instrument_file(path, instrument)
+            # Load mode: Check the instrument file and load it
+            DataToLoad = functions.load_instrument_file(path, instrument)
         else:
-            # Ask the user for the number of lines (samples) required
-            text_valid = False
-            while text_valid is False:
-                dlg_number_lines = wx.TextEntryDialog(self, "Enter the number of samples below:", "Data entry set-up", "5")
-                if dlg_number_lines.ShowModal() == wx.ID_OK:
-                    number_lines = dlg_number_lines.GetValue()
+            # Manual mode: Ask the user for the number of lines (samples) required
+            TextValid = False
+            while TextValid is False:
+                TxtDlgNumberLines = wx.TextEntryDialog(self,
+                                                       message="Enter the number of samples below:",
+                                                       caption="Data entry set-up",
+                                                       defaultValue="5")
+                # When OK button is clicked
+                if TxtDlgNumberLines.ShowModal() == wx.ID_OK:
+                    NumberLines = TxtDlgNumberLines.GetValue()
                     try:
-                        data_to_load = functions.load_manual_entry(int(number_lines))
-                        text_valid = True
+                        DataToLoad = functions.load_manual_entry(int(NumberLines))
+                        TextValid = True
                     except ValueError:
                         wx.MessageBox(message="Please enter a valid number!",
                                       caption="Invalid number!",
                                       style=wx.OK | wx.ICON_EXCLAMATION)
+
         # Update the sampler and instrument
-        self.dataOlv.SetObjects(data_to_load)
-        objects = self.dataOlv.GetObjects()
+        self.DataContainer.SetObjects(DataToLoad)
+        objects = self.DataContainer.GetObjects()
         for obj in objects:
             obj['sampling_officer'] = sampler
             obj['sampling_instrument'] = instrument
-            self.dataOlv.RefreshObject(obj)
+            self.DataContainer.RefreshObject(obj)
 
     # -------------------------------------------------------------------------
-    def resetData(self, event):
+    def ResetData(self, event):
         """
         Confirms a data reset with the user, closes the edit window and reopens the load dialog.
         """
@@ -231,102 +246,112 @@ class EditPanel(wx.Panel):
         dlg.Destroy()
         # If the reset is confirmed, clear data, close window and return to the load screen.
         if result == wx.ID_OK:
-            self.dataOlv.DeleteAllItems()
-            loadDlg = LoadDialog()
+            self.DataContainer.DeleteAllItems()
+            LoadDlg = LoadFrame()
             self.parent.Destroy()
-            loadDlg.Show()
+            LoadDlg.Show()
 
     # -------------------------------------------------------------------------
-    def exportData(self, event):
+    def ExportData(self, event):
         """
         Prepare the dictionary for export and write to csv
         """
         # Put the data in a dictionary for processing
-        data_dicts = self.dataOlv.GetObjects()
-        # TODO: Check required fields are filled
+        data_dicts = self.DataContainer.GetObjects()
+        # Check the data for completeness and validity
         incomplete_fields = functions.check_data_completeness(data_dicts)
         zero_value_fields = functions.check_data_zero_values(data_dicts)
-
         if incomplete_fields:
-            self.checkCompletenessMsg(incomplete_fields)
+            self.CheckCompletenessMsg(incomplete_fields)
             return None
         if zero_value_fields:
-            self.checkZeroValuesMsg(zero_value_fields)
+            self.CheckZeroValuesMsg(zero_value_fields)
             return None
-
         # Open the save as dialog
-        self.onSaveFile()
+        self.OnSaveFile()
         # Reformat the data in parameter-oriented format
         data_reformatted = functions.prepare_dictionary(data_dicts)
         # Write the data to csv
         try:
-            functions.write_to_csv(data_reformatted, self.saveAsFilename, globals.FIELDNAMES)
+            functions.write_to_csv(data_reformatted, self.SaveAsFilename, globals.FIELDNAMES)
         except IOError:
-            self.saveFileErrorMsg()
+            self.SaveFileErrorMsg()
 
     # -------------------------------------------------------------------------
-    def checkCompletenessMsg(self, incomplete_fields):
+    def CheckCompletenessMsg(self, incomplete_fields):
         msg = "The following fields have incomplete values:\n\n%s\n\nPlease complete before continuing." \
               % '\n'.join(incomplete_fields)
-        wx.MessageBox(msg, "Incomplete data!", wx.OK | wx.ICON_EXCLAMATION)
+        wx.MessageBox(message=msg,
+                      caption="Incomplete data!",
+                      style=wx.OK | wx.ICON_EXCLAMATION)
 
     # -------------------------------------------------------------------------
-    def checkZeroValuesMsg(self, zero_value_fields):
+    def CheckZeroValuesMsg(self, zero_value_fields):
         msg = "The following fields have items with values of zero (0):\n\n%s\n\n" \
               "A value of zero generally indicates a sensor failure, or a non-measured parameter.\n" \
               "Please review and adjust before continuing." \
               % '\n'.join(zero_value_fields)
-        wx.MessageBox(msg, "Data quality error!", wx.OK | wx.ICON_EXCLAMATION)
+        wx.MessageBox(message=msg,
+                      caption="Data quality error!",
+                      style=wx.OK | wx.ICON_EXCLAMATION)
 
     # -------------------------------------------------------------------------
-    def saveFileErrorMsg(self):
-        wx.MessageBox("File currently in use.  Please close file to continue.", "Warning!", wx.OK | wx.ICON_EXCLAMATION)
+    def SaveFileErrorMsg(self):
+        wx.MessageBox(message="File currently in use.  Please close file to continue.",
+                      caption="Warning!",
+                      style=wx.OK | wx.ICON_EXCLAMATION)
 
     # -------------------------------------------------------------------------
-    def updateSampleStation(self, sampleObject, value):
+    def UpdateSampleStation(self, SampleObject, value):
         """
         Tries to generate sampling number if station number has been updated
         """
-        sampleObject['station_number'] = value
-        if sampleObject['sample_matrix'] != "":
-            sampleObject['sampling_number'] = functions.get_sampling_number(sampleObject)
+        SampleObject['station_number'] = value
+        if SampleObject['sample_matrix'] != "":
+            SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
         else:
             pass
 
     # -------------------------------------------------------------------------
-    def updateSampleMatrix(self, sampleObject, value):
+    def UpdateSampleMatrix(self, SampleObject, value):
         """
         Tries to generate sampling number if matrix has been updated
         """
-        sampleObject['sample_matrix'] = value
-        if sampleObject['sample_matrix'] != "":
-            sampleObject['sampling_number'] = functions.get_sampling_number(sampleObject)
+        SampleObject['sample_matrix'] = value
+        if SampleObject['sample_matrix'] != "":
+            SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
         else:
             pass
 
     # -------------------------------------------------------------------------
-    def setColumns(self, data=None):
+    def SetColumns(self, data=None):
         """
         Defines columns and associated data sources
         """
-        self.dataOlv.SetColumns([
+        self.DataContainer.SetColumns([
             ColumnDefn("", "center", 20, "checked"),
             ColumnDefn("MP#", "left", 60, "mp_number"),
-            ColumnDefn("Station#", "center", 90, "station_number",  valueSetter=self.updateSampleStation),
-            ColumnDefn("Sampling ID", "center", 140, "sampling_number", isEditable=False),
+            ColumnDefn("Station#", "center", 90, "station_number",
+                       valueSetter=self.UpdateSampleStation),
+            ColumnDefn("Sampling ID", "center", 140, "sampling_number",
+                       isEditable=False),
             ColumnDefn("Date", "center", -1, "date"),
             ColumnDefn("Time", "center", -1, "sample_time"),
             ColumnDefn("Loc#", "left", 50, "location_id"),
             ColumnDefn("Seq#", "left", 50, "sample_cid"),
-            # ColumnDefn("Rep#", "left", 50, "replicate_number"),
-            ColumnDefn("Matrix", "left", 60, "sample_matrix", cellEditorCreator=self.dropDownComboBox, valueSetter=self.updateSampleMatrix),
-            ColumnDefn("Sample Type", "left", 100, "sample_type", cellEditorCreator=self.dropDownComboBox),
+            ColumnDefn("Matrix", "left", 60, "sample_matrix",
+                       cellEditorCreator=self.DropDownComboBox,
+                       valueSetter=self.UpdateSampleMatrix),
+            ColumnDefn("Sample Type", "left", 100, "sample_type",
+                       cellEditorCreator=self.DropDownComboBox),
             # ColumnDefn("Collection Method", "left", 100, "collection_method"),
             ColumnDefn("Calibration Record", "left", 140, "calibration_record"),
-            ColumnDefn("Instrument", "left", 110, "sampling_instrument", cellEditorCreator=self.dropDownComboBox),
-            ColumnDefn("Sampling Officer", "left", 125, "sampling_officer", cellEditorCreator=self.dropDownComboBox),
-            # ColumnDefn("Event Time", "left", 100, "event_time"),
-            ColumnDefn("Sample Collected", "left", 130, "sample_collected", cellEditorCreator=self.dropDownComboBox),
+            ColumnDefn("Instrument", "left", 110, "sampling_instrument",
+                       cellEditorCreator=self.DropDownComboBox),
+            ColumnDefn("Sampling Officer", "left", 125, "sampling_officer",
+                       cellEditorCreator=self.DropDownComboBox),
+            ColumnDefn("Sample Collected", "left", 130, "sample_collected",
+                       cellEditorCreator=self.DropDownComboBox),
             ColumnDefn("Depth Upper (m)", "left", 125, "depth_upper"),
             ColumnDefn("Depth Lower (m)", "left", 125, "depth_lower"),
             ColumnDefn("DO (mg/L)", "left", 85, "do"),
@@ -341,12 +366,12 @@ class EditPanel(wx.Panel):
         ])
 
     # -------------------------------------------------------------------------
-    def dropDownComboBox(self, olv, rowIndex, columnIndex):
+    def DropDownComboBox(self, olv, RowIndex, ColumnIndex):
         """
         Return a ComboBox that lets the user choose from the appropriate values for the column.
         """
         # Get the column object
-        col = olv.columns[columnIndex]
+        col = olv.columns[ColumnIndex]
         # Set the default display style options
         style_ordered = wx.CB_DROPDOWN | wx.CB_SORT | wx.TE_PROCESS_ENTER
         style_unordered = wx.CB_DROPDOWN | wx.TE_PROCESS_ENTER
@@ -366,28 +391,32 @@ class EditPanel(wx.Panel):
             options = globals.SAMPLE_TYPES
             # Ensure the sample type displays in the specific order
             style = style_unordered
+        else:
+            options = None
         # Create the combobox object
-        cb = wx.ComboBox(olv, choices=list(options),
-                         style=style)
+        ComboBox = wx.ComboBox(olv, choices=list(options), style=style)
         # Add autocomplete to the combobox
-        CellEditor.AutoCompleteHelper(cb)
+        CellEditor.AutoCompleteHelper(ComboBox)
         # Return the combobox object for the column
-        return cb
+        return ComboBox
 
     # -------------------------------------------------------------------------
-    def onSaveFile(self):
+    def OnSaveFile(self):
         """
         Create and show the Save FileDialog
         """
         wildcard = "Comma-separated values (*.csv)|*.csv"
-        dlg = wx.FileDialog(
-            self, message="Save file as ...",
-            #defaultDir=self.currentDirectory,
-            defaultFile="", wildcard=wildcard, style=wx.SAVE | wx.OVERWRITE_PROMPT)
-        if dlg.ShowModal() == wx.ID_OK:
-            self.saveAsFilename = dlg.GetPath()
+        SaveDialog = wx.FileDialog(self,
+                                   message="Save file as ...",
+                                   # defaultDir=self.currentDirectory,
+                                   defaultFile="",
+                                   wildcard=wildcard,
+                                   style=wx.SAVE | wx.OVERWRITE_PROMPT)
+        # When OK button is clicked
+        if SaveDialog.ShowModal() == wx.ID_OK:
+            self.SaveAsFilename = SaveDialog.GetPath()
         # Destroy the save file dialog
-        dlg.Destroy()
+        SaveDialog.Destroy()
 
 
 ###############################################################################
@@ -399,23 +428,27 @@ class SplashScreen(wx.SplashScreen):
     """
     def __init__(self, parent=None):
         # Set splash screen variables
-        splashImage = wx.Image(name = "splash_screen_scribus_01beta.jpg").ConvertToBitmap()
-        splashStyle = wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_TIMEOUT
-        splashDuration = 2000  # milliseconds
+        SplashImage = wx.Image(name="splash_screen_scribus_01beta.jpg").ConvertToBitmap()
+        SplashStyle = wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_TIMEOUT
+        SplashDuration = 2000  # milliseconds
         # Call the splash screen constructor
-        wx.SplashScreen.__init__(self, splashImage, splashStyle, splashDuration, parent)
+        wx.SplashScreen.__init__(self,
+                                 bitmap=SplashImage,
+                                 splashStyle=SplashStyle,
+                                 milliseconds=SplashDuration,
+                                 parent=parent)
         # On splash screen close
         self.Bind(wx.EVT_CLOSE, self.OnExit)
         wx.Yield()
 
-# -----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     def OnExit(self, evt):
         # Hide the splash screen
         self.Hide()
         # Get the app instance
         app = wx.GetApp()
         # Set the frame to be displayed
-        frame = LoadDialog()
+        frame = LoadFrame()
         # Place the frame at the top and show it
         app.SetTopWindow(frame)
         frame.Show(True)
@@ -425,56 +458,72 @@ class SplashScreen(wx.SplashScreen):
 ###############################################################################
 # HTML Help
 ###############################################################################
-class AboutHTMLDlg(wx.Frame):
+class HelpHTML(wx.Frame):
 
     def __init__(self, parent):
-
+        # Construct the frame
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title="About", size=(600, 700))
-
-        html = wxHTML(self)
-
+        # Set the frame to display HTML
+        html = HTMLWindow(self)
+        # Grab the HTML code and display the page
         html.SetPage(page)
 
 
-class wxHTML(wx.html.HtmlWindow):
+class HTMLWindow(wx.html.HtmlWindow):
+
     def OnLinkClicked(self, link):
+        # Get the link that was clicked
         a = link.GetHref()
+        # If the link was an HTML anchor to an internal header,
+        # go to the header, otherwise open the link in a browser.
         if a.startswith('#'):
             self.base_OnLinkClicked(link)
         else:
             webbrowser.open(a)
 
+
+#######################################################################
+# Menus
 #######################################################################
 class CreateMenu(wx.MenuBar):
     """
     Create the application menus
     """
     def __init__(self, frame):
+        # Construce the menu bar
         wx.MenuBar.__init__(self)
         self.panel = frame.panel
         # Create the file menu, add items and add it to the menu bar
-        fileMenu = wx.Menu()
-        fileMenu_item_close = fileMenu.Append(wx.ID_EXIT)
-        self.Bind(wx.EVT_MENU, frame.onClose, fileMenu_item_close)
-        self.Append(fileMenu, "&File")
-        # Creat the help menu, add items and add it to the menu bar
-        helpMenu = wx.Menu()
-        helpMenu_item_about = helpMenu.Append(wx.ID_ABOUT)
-        helpMenu_item_help = helpMenu.Append(wx.ID_HELP)
-        self.Bind(wx.EVT_MENU, self.onAboutDlg, helpMenu_item_about)
-        self.Bind(wx.EVT_MENU, self.onHelpDlg, helpMenu_item_help)
-        self.Append(helpMenu, "&Help")
+        FileMenu = wx.Menu()
+        FileMenuItemClose = FileMenu.Append(wx.ID_EXIT)
+        self.Bind(wx.EVT_MENU, frame.OnClose, FileMenuItemClose)
+        self.Append(FileMenu, "&File")
+        # Create the help menu, add items and add it to the menu bar
+        HelpMenu = wx.Menu()
+        HelpMenuItemAbout = HelpMenu.Append(wx.ID_ABOUT)
+        HelpMenuItemHelp = HelpMenu.Append(wx.ID_HELP)
+        self.Bind(wx.EVT_MENU, self.OnAboutDialog, HelpMenuItemAbout)
+        self.Bind(wx.EVT_MENU, self.OnHelpDialog, HelpMenuItemHelp)
+        self.Append(HelpMenu, "&Help")
         # Add the menu bar to the frame
         frame.SetMenuBar(self)
 
     # -------------------------------------------------------------------------
-    def onHelpDlg(self, event):
-        helpDlg = AboutHTMLDlg(None)
-        helpDlg.Show()
+    def OnHelpDialog(self, event):
+        """
+        Invoke an instance of the HelpHTML window and display it.
+        """
+        HelpDialog = HelpHTML(None)
+        HelpDialog.Show()
 
     # -------------------------------------------------------------------------
-    def onAboutDlg(self, event):
+    def OnAboutDialog(self, event):
+        """
+        Invoke an instance of the About dialog box and display it.
+        """
+        # Create an About instance
         info = wx.AboutDialogInfo()
+        # Set the properties of the About box
         info.Name = "KiWQM Field Data Formatter"
         info.Version = "0.1 Beta"
         info.Copyright = "(C) 2015 DPI Water"
