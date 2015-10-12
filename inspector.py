@@ -14,6 +14,13 @@ from help.help_html import page
 
 
 ###############################################################################
+class LoadPanel (wx.Panel):
+    def __init__(self, parent):
+        wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+        self.parent = parent
+        self.editWindow = EditWindow()
+
+###############################################################################
 class LoadDialog (wx.Frame):
 
     def __init__(self, parent=None):
@@ -516,7 +523,7 @@ class CreateMenu(wx.MenuBar):
         # Create the file menu, add items and add it to the menu bar
         fileMenu = wx.Menu()
         fileMenu_item_close = fileMenu.Append(wx.ID_EXIT)
-        self.Bind(wx.EVT_MENU, frame.onClose, fileMenu_item_close)
+        self.Bind(wx.EVT_MENU, frame.OnClose, fileMenu_item_close)
         self.Append(fileMenu, "&File")
         # Creat the help menu, add items and add it to the menu bar
         helpMenu = wx.Menu()
