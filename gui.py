@@ -445,13 +445,6 @@ class SplashScreen(wx.SplashScreen):
     def OnExit(self, evt):
         # Hide the splash screen
         self.Hide()
-        # Get the app instance
-        app = wx.GetApp()
-        # Set the frame to be displayed
-        frame = LoadFrame()
-        # Place the frame at the top and show it
-        app.SetTopWindow(frame)
-        frame.Show(True)
         evt.Skip()
 
 

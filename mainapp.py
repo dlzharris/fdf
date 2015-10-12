@@ -13,6 +13,13 @@ class MainApp(wx.App):
         # Show the splash screen on app startup
         splash = gui.SplashScreen()
         splash.Show()
+        # Get the app instance
+        app = wx.GetApp()
+        # Set the frame to be displayed
+        frame = gui.LoadFrame()
+        # Place the frame at the top and show it
+        app.SetTopWindow(frame)
+        frame.Show(True)
         return True
 
 
