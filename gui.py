@@ -10,12 +10,36 @@ from ObjectListView import ObjectListView, ColumnDefn, CellEditor
 # Local packages
 import functions
 import globals
-from help.help_html import page
+import help
 
 
 ###############################################################################
 # Load Window (Main Frame)
 ###############################################################################
+class LoadFrame (wx.Frame):
+
+    def __init__(self, parent=None):
+        # Set up the frames we will be using
+        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"KiWQM Field Data Formatter",
+                          pos=wx.DefaultPosition, size=wx.Size(691, 349), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+        self.panel = LoadPanel(self)
+        # Set the frame size and background colour
+        self.SetSizeHintsSz(wx.DefaultSize, wx.DefaultSize)
+        self.Centre(wx.BOTH)
+        # Create the menu bar
+        CreateMenu(self)
+        # Show the window
+        self.Show()
+
+    # -------------------------------------------------------------------------
+    def __del__(self):
+        pass
+
+    # -------------------------------------------------------------------------
+    def OnClose(self, event):
+        self.Close()
+
+
 class LoadPanel (wx.Panel):
 
     def __init__(self, parent):
@@ -109,29 +133,6 @@ class LoadPanel (wx.Panel):
         # Show the edit window and hide the load dialog
         self.EditWindow.Show()
         self.parent.Hide()
-
-
-class LoadFrame (wx.Frame):
-
-    def __init__(self, parent=None):
-        # Set up the frames we will be using
-        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"KiWQM Field Data Formatter",
-                          pos=wx.DefaultPosition, size=wx.Size(691, 349), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
-        self.panel = LoadPanel(self)
-        # Set the frame size and background colour
-        self.SetSizeHintsSz(wx.DefaultSize, wx.DefaultSize)
-        self.Centre(wx.BOTH)
-        # Create the menu bar
-        CreateMenu(self)
-        # Show the window
-        self.Show()
-
-    def __del__(self):
-        pass
-
-    # -------------------------------------------------------------------------
-    def OnClose(self, event):
-        self.Close()
 
 
 ###############################################################################
@@ -235,95 +236,6 @@ class EditPanel(wx.Panel):
             self.DataContainer.RefreshObject(obj)
 
     # -------------------------------------------------------------------------
-    def ResetData(self, event):
-        """
-        Confirms a data reset with the user, closes the edit window and reopens the load dialog.
-        """
-        msg = "All current data will be lost. Do you want to continue?"
-        dlg = wx.MessageDialog(parent=None, message=msg, caption="Confirm reset!", style=wx.OK | wx.CANCEL | wx.ICON_EXCLAMATION)
-        result = dlg.ShowModal()
-        # Close the reset data dialog box
-        dlg.Destroy()
-        # If the reset is confirmed, clear data, close window and return to the load screen.
-        if result == wx.ID_OK:
-            self.DataContainer.DeleteAllItems()
-            LoadDlg = LoadFrame()
-            self.parent.Destroy()
-            LoadDlg.Show()
-
-    # -------------------------------------------------------------------------
-    def ExportData(self, event):
-        """
-        Prepare the dictionary for export and write to csv
-        """
-        # Put the data in a dictionary for processing
-        data_dicts = self.DataContainer.GetObjects()
-        # Check the data for completeness and validity
-        incomplete_fields = functions.check_data_completeness(data_dicts)
-        zero_value_fields = functions.check_data_zero_values(data_dicts)
-        if incomplete_fields:
-            self.CheckCompletenessMsg(incomplete_fields)
-            return None
-        if zero_value_fields:
-            self.CheckZeroValuesMsg(zero_value_fields)
-            return None
-        # Open the save as dialog
-        self.OnSaveFile()
-        # Reformat the data in parameter-oriented format
-        data_reformatted = functions.prepare_dictionary(data_dicts)
-        # Write the data to csv
-        try:
-            functions.write_to_csv(data_reformatted, self.SaveAsFilename, globals.FIELDNAMES)
-        except IOError:
-            self.SaveFileErrorMsg()
-
-    # -------------------------------------------------------------------------
-    def CheckCompletenessMsg(self, incomplete_fields):
-        msg = "The following fields have incomplete values:\n\n%s\n\nPlease complete before continuing." \
-              % '\n'.join(incomplete_fields)
-        wx.MessageBox(message=msg,
-                      caption="Incomplete data!",
-                      style=wx.OK | wx.ICON_EXCLAMATION)
-
-    # -------------------------------------------------------------------------
-    def CheckZeroValuesMsg(self, zero_value_fields):
-        msg = "The following fields have items with values of zero (0):\n\n%s\n\n" \
-              "A value of zero generally indicates a sensor failure, or a non-measured parameter.\n" \
-              "Please review and adjust before continuing." \
-              % '\n'.join(zero_value_fields)
-        wx.MessageBox(message=msg,
-                      caption="Data quality error!",
-                      style=wx.OK | wx.ICON_EXCLAMATION)
-
-    # -------------------------------------------------------------------------
-    def SaveFileErrorMsg(self):
-        wx.MessageBox(message="File currently in use.  Please close file to continue.",
-                      caption="Warning!",
-                      style=wx.OK | wx.ICON_EXCLAMATION)
-
-    # -------------------------------------------------------------------------
-    def UpdateSampleStation(self, SampleObject, value):
-        """
-        Tries to generate sampling number if station number has been updated
-        """
-        SampleObject['station_number'] = value
-        if SampleObject['sample_matrix'] != "":
-            SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
-        else:
-            pass
-
-    # -------------------------------------------------------------------------
-    def UpdateSampleMatrix(self, SampleObject, value):
-        """
-        Tries to generate sampling number if matrix has been updated
-        """
-        SampleObject['sample_matrix'] = value
-        if SampleObject['sample_matrix'] != "":
-            SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
-        else:
-            pass
-
-    # -------------------------------------------------------------------------
     def SetColumns(self, data=None):
         """
         Defines columns and associated data sources
@@ -401,6 +313,89 @@ class EditPanel(wx.Panel):
         return ComboBox
 
     # -------------------------------------------------------------------------
+    def UpdateSampleStation(self, SampleObject, value):
+        """
+        Tries to generate sampling number if station number has been updated
+        """
+        SampleObject['station_number'] = value
+        if SampleObject['sample_matrix'] != "":
+            SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
+        else:
+            pass
+
+    # -------------------------------------------------------------------------
+    def UpdateSampleMatrix(self, SampleObject, value):
+        """
+        Tries to generate sampling number if matrix has been updated
+        """
+        SampleObject['sample_matrix'] = value
+        if SampleObject['sample_matrix'] != "":
+            SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
+        else:
+            pass
+
+    # -------------------------------------------------------------------------
+    def ResetData(self, event):
+        """
+        Confirms a data reset with the user, closes the edit window and reopens the load dialog.
+        """
+        msg = "All current data will be lost. Do you want to continue?"
+        dlg = wx.MessageDialog(parent=None, message=msg, caption="Confirm reset!", style=wx.OK | wx.CANCEL | wx.ICON_EXCLAMATION)
+        result = dlg.ShowModal()
+        # Close the reset data dialog box
+        dlg.Destroy()
+        # If the reset is confirmed, clear data, close window and return to the load screen.
+        if result == wx.ID_OK:
+            self.DataContainer.DeleteAllItems()
+            LoadDlg = LoadFrame()
+            self.parent.Destroy()
+            LoadDlg.Show()
+
+    # -------------------------------------------------------------------------
+    def ExportData(self, event):
+        """
+        Prepare the dictionary for export and write to csv
+        """
+        # Put the data in a dictionary for processing
+        data_dicts = self.DataContainer.GetObjects()
+        # Check the data for completeness and validity
+        incomplete_fields = functions.check_data_completeness(data_dicts)
+        zero_value_fields = functions.check_data_zero_values(data_dicts)
+        if incomplete_fields:
+            self.CheckCompletenessMsg(incomplete_fields)
+            return None
+        if zero_value_fields:
+            self.CheckZeroValuesMsg(zero_value_fields)
+            return None
+        # Open the save as dialog
+        self.OnSaveFile()
+        # Reformat the data in parameter-oriented format
+        data_reformatted = functions.prepare_dictionary(data_dicts)
+        # Write the data to csv
+        try:
+            functions.write_to_csv(data_reformatted, self.SaveAsFilename, globals.FIELDNAMES)
+        except IOError:
+            self.SaveFileErrorMsg()
+
+    # -------------------------------------------------------------------------
+    def CheckCompletenessMsg(self, incomplete_fields):
+        msg = "The following fields have incomplete values:\n\n%s\n\nPlease complete before continuing." \
+              % '\n'.join(incomplete_fields)
+        wx.MessageBox(message=msg,
+                      caption="Incomplete data!",
+                      style=wx.OK | wx.ICON_EXCLAMATION)
+
+    # -------------------------------------------------------------------------
+    def CheckZeroValuesMsg(self, zero_value_fields):
+        msg = "The following fields have items with values of zero (0):\n\n%s\n\n" \
+              "A value of zero generally indicates a sensor failure, or a non-measured parameter.\n" \
+              "Please review and adjust before continuing." \
+              % '\n'.join(zero_value_fields)
+        wx.MessageBox(message=msg,
+                      caption="Data quality error!",
+                      style=wx.OK | wx.ICON_EXCLAMATION)
+
+    # -------------------------------------------------------------------------
     def OnSaveFile(self):
         """
         Create and show the Save FileDialog
@@ -417,6 +412,12 @@ class EditPanel(wx.Panel):
             self.SaveAsFilename = SaveDialog.GetPath()
         # Destroy the save file dialog
         SaveDialog.Destroy()
+
+    # -------------------------------------------------------------------------
+    def SaveFileErrorMsg(self):
+        wx.MessageBox(message="File currently in use.  Please close file to continue.",
+                      caption="Warning!",
+                      style=wx.OK | wx.ICON_EXCLAMATION)
 
 
 ###############################################################################
@@ -459,7 +460,7 @@ class HelpHTML(wx.Frame):
         # Set the frame to display HTML
         html = HTMLWindow(self)
         # Grab the HTML code and display the page
-        html.SetPage(page)
+        html.SetPage(help.page)
 
 
 class HTMLWindow(wx.html.HtmlWindow):
@@ -483,7 +484,7 @@ class CreateMenu(wx.MenuBar):
     Create the application menus
     """
     def __init__(self, frame):
-        # Construce the menu bar
+        # Construct the menu bar
         wx.MenuBar.__init__(self)
         self.panel = frame.panel
         # Create the file menu, add items and add it to the menu bar
