@@ -45,8 +45,9 @@ Thumbs.db
 #####################
 test
 sample_hydrolab_files
+sample_output
 
-# Unctracked project files #
+# Untracked project files #
 ############################
 *.csv
-test.py
+field_data_importer_todo.txt
