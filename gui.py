@@ -285,10 +285,10 @@ class EditPanel(wx.Panel):
             ColumnDefn("Loc#", "left", 50, "location_id"),
             ColumnDefn("Seq#", "left", 50, "sample_cid"),
             ColumnDefn("Matrix", "left", 60, "sample_matrix",
-                       cellEditorCreator=self.DropDownComboBox,
-                       valueSetter=self.UpdateSampleMatrix),
-            ColumnDefn("Sample Type", "left", 100, "sample_type",
                        cellEditorCreator=self.DropDownComboBox),
+            ColumnDefn("Sample Type", "left", 100, "sample_type",
+                       cellEditorCreator=self.DropDownComboBox,
+                       valueSetter=self.UpdateSampleType),
             # ColumnDefn("Collection Method", "left", 100, "collection_method"),
             ColumnDefn("Calibration Record", "left", 140, "calibration_record"),
             ColumnDefn("Instrument", "left", 110, "sampling_instrument",
@@ -349,18 +349,18 @@ class EditPanel(wx.Panel):
         Try to generate sampling number if station number has been updated.
         """
         SampleObject['station_number'] = value
-        if SampleObject['sample_matrix'] != "":
-            SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
-        else:
-            pass
+        #if SampleObject['sample_matrix'] != "":
+        SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
+        #else:
+        #    pass
 
     # -------------------------------------------------------------------------
-    def UpdateSampleMatrix(self, SampleObject, value):
+    def UpdateSampleType(self, SampleObject, value):
         """
         Try to generate sampling number if matrix has been updated.
         """
-        SampleObject['sample_matrix'] = value
-        if SampleObject['sample_matrix'] != "":
+        SampleObject['sample_type'] = value
+        if SampleObject['station_number'] != "":
             SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
         else:
             pass

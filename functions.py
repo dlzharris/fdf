@@ -289,12 +289,9 @@ def get_sampling_number(field_dict):
         date = datetime.datetime.strptime(field_dict['date'], '%d/%m/%y').strftime(date_format)
     except ValueError:
         date = datetime.datetime.strptime(field_dict['date'], '%d%m%y').strftime(date_format)
-    matrix = field_dict['sample_matrix']
     sample_type = field_dict['sample_type']
-    # Create the sampling number in format STATION#-DDMMYY[-MATRIX]
-    if matrix in ["SED", "PDMS"]:
-        sampling_number = sampling_delimiter.join([station, date, matrix])
-    elif sample_type in ["QR", "QB", "QT"]:
+    # Create the sampling number in format STATION#-DDMMYY[-SAMPLE_TYPE]
+    if sample_type in ["QR", "QB", "QT"]:
         sampling_number = sampling_delimiter.join([station, date, sample_type])
     else:
         sampling_number = sampling_delimiter.join([station, date])
