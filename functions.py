@@ -402,6 +402,21 @@ def get_parameter_name(key):
     return param_names[key]
 
 
+def get_replicate_number(rep_code):
+    """
+    Get the replicate number used in KiWQM based on the sample type code.
+    """
+    replicate_numbers = {
+        "P": 0,
+        "RE": 1,
+        "DU": 1,
+        "TR": 2,
+        "QR": 0,
+        "QB": 0,
+        "QT": 0}
+    return replicate_numbers[rep_code]
+
+
 def check_data_completeness(data_list):
     """
     Check the data entered by the user for completeness. This is used
@@ -468,8 +483,9 @@ def prepare_dictionary(data_list):
     dt_format = '%Y-%m-%d %H:%M:%S'
     # Each item in the list is a single dictionary representing a single sample
     for sample in data_list:
-        # Get the sampling event time
+        # Get the sampling event time and replicate number
         sample['event_time'] = get_sampling_time(data_list, sample['station_number'], sample['date'])
+        sample['replicate_number'] = get_replicate_number(sample['sample_type'])
         # Assign the static fraction information to the sample
         sample['fraction_lab_shortname'] = "FLD"                                         # Static text
         sample['fraction_data_source'] = "Field Data"                                    # Static text
@@ -484,11 +500,15 @@ def prepare_dictionary(data_list):
                 sample_param_oriented["parameter"] = param
                 sample_param_oriented["value"] = sample_param_oriented.pop(param)
                 sample_param_oriented["units"] = get_parameter_unit(param)
+                # If the value is empty, skip to the next value
+                if sample_param_oriented["value"] != "":
+                    # Add the dictionary to the parameter-oriented container
+                    data_list_param_oriented.append(sample_param_oriented)
+                else:
+                    pass
             # If the parameter wasn't found in the list, skip to the next one
             except KeyError:
                 pass
-            # Add the dictionary to the parameter-oriented container
-            data_list_param_oriented.append(sample_param_oriented)
     return data_list_param_oriented
 
 
