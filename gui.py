@@ -349,10 +349,7 @@ class EditPanel(wx.Panel):
         Try to generate sampling number if station number has been updated.
         """
         SampleObject['station_number'] = value
-        #if SampleObject['sample_matrix'] != "":
         SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
-        #else:
-        #    pass
 
     # -------------------------------------------------------------------------
     def UpdateSampleType(self, SampleObject, value):
