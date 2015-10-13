@@ -336,8 +336,6 @@ class EditPanel(wx.Panel):
             options = globals.SAMPLE_TYPES
             # Ensure the sample type displays in the specific order
             style = style_unordered
-        else:
-            options = None
         # Create the combobox object
         ComboBox = wx.ComboBox(olv, choices=list(options), style=style)
         # Add autocomplete to the combobox
