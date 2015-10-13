@@ -274,8 +274,6 @@ def get_sampling_time(sample_set, station, sample_date):
     return sampling_time
 
 
-
-
 def get_sampling_number(field_dict):
     """
     Return a new sampling number
@@ -292,9 +290,12 @@ def get_sampling_number(field_dict):
     except ValueError:
         date = datetime.datetime.strptime(field_dict['date'], '%d%m%y').strftime(date_format)
     matrix = field_dict['sample_matrix']
+    sample_type = field_dict['sample_type']
     # Create the sampling number in format STATION#-DDMMYY[-MATRIX]
-    if matrix in ['SED', 'PDMS']:
+    if matrix in ["SED", "PDMS"]:
         sampling_number = sampling_delimiter.join([station, date, matrix])
+    elif sample_type in ["QR", "QB", "QT"]:
+        sampling_number = sampling_delimiter.join([station, date, sample_type])
     else:
         sampling_number = sampling_delimiter.join([station, date])
     return sampling_number
@@ -491,6 +492,19 @@ def prepare_dictionary(data_list):
         sample['fraction_data_source'] = "Field Data"                                    # Static text
         sample['fraction_number'] = get_fraction_number(sample)                          # Calculated value
         sample['fraction_entry_datetime'] = datetime.datetime.now().strftime(dt_format)  # Current time
+        # If more than one replicate per sampling, increment replicate number on export
+        rep_depth_tolerance = 0.15
+        min_depth = float(sample['depth_upper']) - rep_depth_tolerance
+        max_depth = float(sample['depth_upper']) + rep_depth_tolerance
+        reps_in_sampling = [r['sample_time'] for r in data_list
+                            if r['sampling_number'] == sample['sampling_number']
+                            and r['sample_type'] == sample['sample_type']
+                            and min_depth <= float(r['depth_upper']) <= max_depth]
+        if len(reps_in_sampling) > 1:
+            sorted(reps_in_sampling, key=lambda x: x[0])
+            sample_idx = reps_in_sampling.index(sample['sample_time'])
+            sample['replicate_number'] += sample_idx
+        # Transform the data to paremeter-oriented
         for param in globals.PARAMETERS:
             # Store sample metadata for reuse. We use deepcopy here so we create
             # a new object from the sample data.
