@@ -1,4 +1,32 @@
-# functions.py: functions required for field data import gui
+"""
+Module: functions.py
+Provides the functions necessary for data manipulations and verification
+of data used in KiWQM Field Data Formatter to generate a valid
+import file for KiWQM.
+
+Author: Daniel Harris
+Title: Data & Procedures Officer
+Organisation: DPI Water
+Date modified: 13/10/2015
+
+Functions:
+check_file_validity: check the validity of the instrument file
+load_instrument_file: load the instrument file to memory
+load_manual_entry: prepare an empty dictionary for manual data entry
+parse_time_from_string: format a time string
+parse_date_from_string: format a date string
+get_sampling_time: get the sampling time from a group of samples
+get_sampling_number: generate the sampling number for a sample
+get_fraction_number: generate the field fraction number for a sample
+get_new_dict_key: update the dictionary key to a friendlier version
+get_parameter_unit: get the parameter code for a variable
+get_column_title: get the display name for a required field
+get_parameter_name: get the display name for a parameter
+check_data_completeness: check that required fields are not empty
+check_data_zero_values: check that parameter values are not zero
+prepare_dictionary: transform the data to parameter-oriented format
+write_to_csv: write the data to a dictionary for import to KiWQM
+"""
 import csv
 import copy
 import datetime
@@ -7,13 +35,9 @@ import re
 import globals
 
 
-# Instrument names as variables
-hydrolab_instruments = ["Hydrolab DS5", "Hydrolab MS4", "Hydrolab MS5"]
-
-
 def check_file_validity(instrument_file, instrument_type):
     """
-    Checks the validity of the user-selected input file for the selected instrument
+    Check the validity of the user-selected input file for the selected instrument
     :param instrument_file: Open instrument file object
     :param instrument_type: The instrument from which the file was obtained (str)
     :return: Boolean indicating the validity of the file (True for valid, False for invalid)
@@ -41,7 +65,7 @@ def check_file_validity(instrument_file, instrument_type):
 
 def load_instrument_file(instrument_file, instrument_type):
     """
-    Reads the provided csv file, parses and loads the file to memory
+    Read the provided csv file, parses and loads the file to memory
     :param instrument_file: The csv file to be loaded
     :param instrument_type: The instrument from which the file was obtained
     :return: List of dictionaries, with each dictionary representing a
@@ -142,7 +166,7 @@ def load_instrument_file(instrument_file, instrument_type):
 
 def load_manual_entry(number_lines):
     """
-    Creates a dictionary with empty items for use in the manual entry screen.
+    Create a dictionary with empty items for use in the manual entry screen.
     :param number_lines:
     :return:
     """
@@ -180,30 +204,10 @@ def load_manual_entry(number_lines):
         empty_data.append(new_line)
     return empty_data
 
-def get_sampling_time(sample_set, station, sample_date):
-    """
-    Finds the sampling time for a set of samples collected at the same station
-    on a given date. The sampling time is different from the sample time and
-    is used in KiWQM to collect related samples into a group (depth profiles or
-    primary and replicate samples).
-    :param sample_set: The entire set of field data from the instrument as a
-    dictionary, with extra metadata such as station already added in.
-    :param station: String of the station number to be queried
-    :param sample_date: String of the date used for the query
-    :return: The sampling time used to identify samplings in KiWQM.
-    """
-    # sample_set is a dictionary of samples extracted from the csv
-    # with extra attributes
-    sample_times = [datetime.datetime.strptime(parse_time_from_string(s['sample_time']), '%H:%M:%S')
-                    for s in sample_set if s['station_number'] == station and s['date'] == sample_date]
-    # Find the earliest time and convert it to a string
-    sampling_time = min(sample_times).strftime('%H:%M:%S')
-    return sampling_time
-
 
 def parse_time_from_string(time_string):
     """
-    Takes a string that stores time information (in any format) and parses it
+    Take a string that stores time information (in any format) and parse it
     to the format HH:MM:SS.
     :param time_string: The string that contains time information
     :return: Formatted time string as HH:MM:SS
@@ -226,7 +230,7 @@ def parse_time_from_string(time_string):
 
 def parse_date_from_string(date_string, date_idx):
     """
-    Takes a string that stores date information and parses it to the format DD/MM/YY
+    Take a string that stores date information and parse it to the format DD/MM/YY
     :param date_string: The string that contains date information
     :param date_idx: List of tuples that provide the indices of date components
     in the date_digits extracted from the date string
@@ -247,6 +251,29 @@ def parse_date_from_string(date_string, date_idx):
     # Concatenate date components with delimiter
     date_string = day + delimiter + month + delimiter + year
     return date_string
+
+
+def get_sampling_time(sample_set, station, sample_date):
+    """
+    Find the sampling time for a set of samples collected at the same station
+    on a given date. The sampling time is different from the sample time and
+    is used in KiWQM to collect related samples into a group (depth profiles or
+    primary and replicate samples).
+    :param sample_set: The entire set of field data from the instrument as a
+    dictionary, with extra metadata such as station already added in.
+    :param station: String of the station number to be queried
+    :param sample_date: String of the date used for the query
+    :return: The sampling time used to identify samplings in KiWQM.
+    """
+    # sample_set is a dictionary of samples extracted from the csv
+    # with extra attributes
+    sample_times = [datetime.datetime.strptime(parse_time_from_string(s['sample_time']), '%H:%M:%S')
+                    for s in sample_set if s['station_number'] == station and s['date'] == sample_date]
+    # Find the earliest time and convert it to a string
+    sampling_time = min(sample_times).strftime('%H:%M:%S')
+    return sampling_time
+
+
 
 
 def get_sampling_number(field_dict):
@@ -295,41 +322,12 @@ def get_fraction_number(field_dict):
     return fraction_number
 
 
-def write_to_csv(data_list, out_filepath, fieldnames_list):
-    """
-    Write entire data dictionary to a csv file
-    :param data_list: List of dictionaries to be written. Each dictionary
-        represents one line of data to be written
-    :param out_file: File object to be written to
-    :param fieldnames_list: List of fieldnames to be used when writing
-    :return: No return value
-    """
-    with open(out_filepath, 'wb') as f:
-        writer = csv.DictWriter(f, delimiter=',', extrasaction='ignore',
-                                fieldnames=fieldnames_list)
-        writer.writeheader()
-        writer.writerows(data_list)
-    return None
-
-
-def get_data_col_order(key):
-    order = {
-        "Date": 1,
-        "Time": 2,
-        "IBVSvr4": 3,
-        "TempC": 4,
-        "pH": 5,
-        "Dep25": 6,
-        "LDO%": 7,
-        "SpCond": 8,
-        "LDO": 9,
-        "BP": 10,
-        "BPSvr4": 11,
-        "TempF": 12}
-    return order[key]
-
-
 def get_new_dict_key(key):
+    """
+    Generate a new "friendly" dictionary key for the variables loaded in load_instrument_file.
+    :param key: The original dictionary key
+    :return: The new dictioanry key
+    """
     new_keys = {
         "Date": "date",
         "Time": "sample_time",
@@ -350,6 +348,11 @@ def get_new_dict_key(key):
 
 
 def get_parameter_unit(key):
+    """
+    Get the unit code as used in KiWQM for use in prepare_dictionary.
+    :param key: The variable name.
+    :return: The unit code for the variable.
+    """
     units = {
         "conductivity_uncomp": "MISC",
         "do": "MGL",
@@ -363,6 +366,11 @@ def get_parameter_unit(key):
 
 
 def get_column_title(key):
+    """
+    Get the column title used in the GUI ObjectListView based on the
+    original dictionary key. Used in check_data_completeness to
+    tell the user which required columns have been left empty.
+    """
     titles = {
         'mp_number': "MP#",
         'station_number': "Station#",
@@ -379,6 +387,11 @@ def get_column_title(key):
 
 
 def get_parameter_name(key):
+    """
+    Get the display name of the dictionary key. Used in
+    check_data_zero_values to tell the user which parameters have
+    values of zero.
+    """
     param_names = {
         "do": "DO (mg/L)",
         "do_sat": "DO (% sat)",
@@ -389,7 +402,66 @@ def get_parameter_name(key):
     return param_names[key]
 
 
+def check_data_completeness(data_list):
+    """
+    Check the data entered by the user for completeness. This is used
+    to alert the user to the presence of any required fields that have
+    empty values prior to exporting.
+    :param data_list: The list of dictionaries to be checked.
+    :return: A list of column titles of incomplete fields.
+    """
+    # Create container for list of incomplete required fields
+    incomplete_fields = []
+    # Loop through required fields and check each item in the field for completeness
+    for field in globals.REQUIRED_FIELDS:
+        # Extract the values with the given key
+        column = (i[field] for i in data_list)
+        for item in column:
+            # If we have an incomplete item in a required field
+            # add the item to our incomplete list and
+            if item == "":
+                incomplete_fields.append(get_column_title(field))
+                break
+            else:
+                pass
+    return incomplete_fields
+
+
+def check_data_zero_values(data_list):
+    """
+    Check the data entered by the user for any variable with a value
+    of zero. This is used to alert the user to the presence of these
+    values prior to exporting.
+    :param data_list: The list of dictionaries to be checked.
+    :return: A list of column titles with zero values.
+    """
+    # Create container for list of incomplete required fields
+    zero_value_fields = []
+    # Loop through required fields and check each item in the field for completeness
+    for field in globals.NON_ZERO_FIELDS:
+        # Extract the values with the given key
+        column = (i[field] for i in data_list)
+        for item in column:
+            # If we have an incomplete item in a required field
+            # add the item to our incomplete list.
+            if item == "0":
+                zero_value_fields.append(get_parameter_name(field))
+                break
+            else:
+                pass
+    return zero_value_fields
+
+
 def prepare_dictionary(data_list):
+    """
+    Transform the orientation of the field data to "parameter oriented"
+    as used in KiWQM. The original dictionary orientation is one sample
+    per list entry, while the new orientation is one sample value per
+    list entry.
+    :param data_list: The list of dictionaries to be transformed.
+    :return: A list of dictionaries containing data in "parameter
+    oriented" format.
+    """
     # Create the container for the parameter-oriented data
     data_list_param_oriented = []
     # Set the datetime format for the entry datetime
@@ -420,37 +492,18 @@ def prepare_dictionary(data_list):
     return data_list_param_oriented
 
 
-def check_data_completeness(data_list):
-    # Create container for list of incomplete required fields
-    incomplete_fields = []
-    # Loop through required fields and check each item in the field for completeness
-    for field in globals.REQUIRED_FIELDS:
-        # Extract the values with the given key
-        column = (i[field] for i in data_list)
-        for item in column:
-            # If we have an incomplete item in a required field
-            # add the item to our incomplete list and
-            if item == "":
-                incomplete_fields.append(get_column_title(field))
-                break
-            else:
-                pass
-    return incomplete_fields
-
-
-def check_data_zero_values(data_list):
-    # Create container for list of incomplete required fields
-    zero_value_fields = []
-    # Loop through required fields and check each item in the field for completeness
-    for field in globals.NON_ZERO_FIELDS:
-        # Extract the values with the given key
-        column = (i[field] for i in data_list)
-        for item in column:
-            # If we have an incomplete item in a required field
-            # add the item to our incomplete list and
-            if item == "0":
-                zero_value_fields.append(get_parameter_name(field))
-                break
-            else:
-                pass
-    return zero_value_fields
+def write_to_csv(data_list, out_filepath, fieldnames_list):
+    """
+    Write a list of data dictionaries to a csv file
+    :param data_list: List of dictionaries to be written. Each dictionary
+        represents one line of data to be written
+    :param out_file: File object to be written to
+    :param fieldnames_list: List of fieldnames to be used when writing
+    :return: No return value
+    """
+    with open(out_filepath, 'wb') as f:
+        writer = csv.DictWriter(f, delimiter=',', extrasaction='ignore',
+                                fieldnames=fieldnames_list)
+        writer.writeheader()
+        writer.writerows(data_list)
+    return None

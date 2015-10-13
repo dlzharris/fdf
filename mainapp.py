@@ -1,3 +1,20 @@
+"""
+Module: mainapp.py
+Runs the KiWQM Field Data Formatter GUI, used to generate a valid
+field data import file for KiWQM.
+
+Author: Daniel Harris
+Title: Data & Procedures Officer
+Organisation: DPI Water
+Date modified: 13/10/2015
+
+Classes:
+MainApp: Constructor for the main application.
+
+Functions:
+Main: Runs the Field Data Formatter app.
+"""
+
 import wx
 import gui
 

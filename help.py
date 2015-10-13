@@ -1,3 +1,12 @@
+"""
+Module: help.py
+Defines the HTML code used in the help dialog of the KiWQM Field Data
+Formatter application.
+
+Title: Data & Procedures Officer
+Organisation: DPI Water
+Date modified: 13/10/2015
+"""
 page = r"""
 <h1 id="kiwqm-field-data-importer-help">KiWQM Field Data Importer Help</h1>
 <h2 id="introduction">Introduction</h2>

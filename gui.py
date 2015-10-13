@@ -1,3 +1,23 @@
+"""
+Module: gui.py
+Defines the classes and methods for the GUI portion of the KiWQM Field
+Data Formatter.
+
+Author: Daniel Harris
+Title: Data & Procedures Officer
+Organisation: DPI Water
+Date modified: 13/10/2015
+
+Classes:
+LoadFrame: Initialises window for the opening load screen.
+LoadPanel: Constructs GUI elements for load screen.
+EditFrame: Initialises window for the editing screen.
+EditPanel: Constructs GUI elements for the editing screen.
+SplashScreen: Displays the splash screen on app load.
+HelpHTML: Initialises window for the help dialog.
+HTMLWindow: Behaviours for the HTML code in the help dialog.
+Menus: Constructs and displays the menu bar and menu items.
+"""
 # Standard Python packages
 import webbrowser
 # wx widgets
@@ -17,7 +37,9 @@ import help
 # Load Window (Main Frame)
 ###############################################################################
 class LoadFrame (wx.Frame):
-
+    """
+    Initialise the window for the opening load screen.
+    """
     def __init__(self, parent=None):
         # Set up the frames we will be using
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"KiWQM Field Data Formatter",
@@ -27,7 +49,7 @@ class LoadFrame (wx.Frame):
         self.SetSizeHintsSz(wx.DefaultSize, wx.DefaultSize)
         self.Centre(wx.BOTH)
         # Create the menu bar
-        CreateMenu(self)
+        Menus(self)
         # Show the window
         self.Show()
 
@@ -41,7 +63,9 @@ class LoadFrame (wx.Frame):
 
 
 class LoadPanel (wx.Panel):
-
+    """
+    Construct the GUI elements for the load screen.
+    """
     def __init__(self, parent):
         # Set up the panel
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
@@ -113,6 +137,10 @@ class LoadPanel (wx.Panel):
 
     # -------------------------------------------------------------------------
     def SendAndClose(self, event):
+        """
+        Send the data from the load screen to the DataListener in the
+        edit screen.
+        """
         # Check input mode
         InputMode = self.RadioBoxEntryModeSelection.GetSelection()
         # Load from file
@@ -139,14 +167,16 @@ class LoadPanel (wx.Panel):
 # Edit window configuration
 ###############################################################################
 class EditFrame(wx.Frame):
-
+    """
+    Initialise the window for the editing screen.
+    """
     def __init__(self):
         # Set up the frames we will be using
         wx.Frame.__init__(self, parent=None, id=wx.ID_ANY,
                           title="KiWQM Field Data Formatter (Data Editing Mode)", size=(1000, 600))
         self.panel = EditPanel(self)
         # Create the menu bar
-        CreateMenu(self)
+        Menus(self)
 
     # -------------------------------------------------------------------------
     def OnClose(self, event):
@@ -154,7 +184,9 @@ class EditFrame(wx.Frame):
 
 
 class EditPanel(wx.Panel):
-
+    """
+    Construct the GUI elements for the editing screen.
+    """
     def __init__(self, parent):
         # Set up the panel
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
@@ -191,8 +223,9 @@ class EditPanel(wx.Panel):
     # -------------------------------------------------------------------------
     def DataListener(self, path, sampler=None, instrument=None):
         """
-        Receives data from the load dialog and sends it to the Objectlistview data container
-        This function is triggered by a publisher-subscriber listener
+        Receive data from the load dialog and send it to the
+        Objectlistview data container. This function is triggered by a
+        publisher-subscriber listener.
         """
         # Check if the selected instrument is a valid instrument, that is
         # the selection is not the "Please select an instrument..." option in the
@@ -238,7 +271,7 @@ class EditPanel(wx.Panel):
     # -------------------------------------------------------------------------
     def SetColumns(self, data=None):
         """
-        Defines columns and associated data sources
+        Define columns and associated data sources.
         """
         self.DataContainer.SetColumns([
             ColumnDefn("", "center", 20, "checked"),
@@ -315,7 +348,7 @@ class EditPanel(wx.Panel):
     # -------------------------------------------------------------------------
     def UpdateSampleStation(self, SampleObject, value):
         """
-        Tries to generate sampling number if station number has been updated
+        Try to generate sampling number if station number has been updated.
         """
         SampleObject['station_number'] = value
         if SampleObject['sample_matrix'] != "":
@@ -326,7 +359,7 @@ class EditPanel(wx.Panel):
     # -------------------------------------------------------------------------
     def UpdateSampleMatrix(self, SampleObject, value):
         """
-        Tries to generate sampling number if matrix has been updated
+        Try to generate sampling number if matrix has been updated.
         """
         SampleObject['sample_matrix'] = value
         if SampleObject['sample_matrix'] != "":
@@ -337,7 +370,8 @@ class EditPanel(wx.Panel):
     # -------------------------------------------------------------------------
     def ResetData(self, event):
         """
-        Confirms a data reset with the user, closes the edit window and reopens the load dialog.
+        Confirm a data reset with the user, close the edit window and
+        reopen the load dialog.
         """
         msg = "All current data will be lost. Do you want to continue?"
         dlg = wx.MessageDialog(parent=None, message=msg, caption="Confirm reset!", style=wx.OK | wx.CANCEL | wx.ICON_EXCLAMATION)
@@ -354,7 +388,7 @@ class EditPanel(wx.Panel):
     # -------------------------------------------------------------------------
     def ExportData(self, event):
         """
-        Prepare the dictionary for export and write to csv
+        Prepare the dictionary for export and write to csv.
         """
         # Put the data in a dictionary for processing
         data_dicts = self.DataContainer.GetObjects()
@@ -379,6 +413,10 @@ class EditPanel(wx.Panel):
 
     # -------------------------------------------------------------------------
     def CheckCompletenessMsg(self, incomplete_fields):
+        """
+        Display a message to the user if there are required fields that
+        have been left incomplete.
+        """
         msg = "The following fields have incomplete values:\n\n%s\n\nPlease complete before continuing." \
               % '\n'.join(incomplete_fields)
         wx.MessageBox(message=msg,
@@ -387,6 +425,10 @@ class EditPanel(wx.Panel):
 
     # -------------------------------------------------------------------------
     def CheckZeroValuesMsg(self, zero_value_fields):
+        """
+        Display a message to the user if there are parameter values
+        of zero in the data set.
+        """
         msg = "The following fields have items with values of zero (0):\n\n%s\n\n" \
               "A value of zero generally indicates a sensor failure, or a non-measured parameter.\n" \
               "Please review and adjust before continuing." \
@@ -398,7 +440,7 @@ class EditPanel(wx.Panel):
     # -------------------------------------------------------------------------
     def OnSaveFile(self):
         """
-        Create and show the Save FileDialog
+        Create and show the Save FileDialog.
         """
         wildcard = "Comma-separated values (*.csv)|*.csv"
         SaveDialog = wx.FileDialog(self,
@@ -415,6 +457,10 @@ class EditPanel(wx.Panel):
 
     # -------------------------------------------------------------------------
     def SaveFileErrorMsg(self):
+        """
+        Display an error message to the user if the attempted save
+        location is currently in use.
+        """
         wx.MessageBox(message="File currently in use.  Please close file to continue.",
                       caption="Warning!",
                       style=wx.OK | wx.ICON_EXCLAMATION)
@@ -425,7 +471,7 @@ class EditPanel(wx.Panel):
 ###############################################################################
 class SplashScreen(wx.SplashScreen):
     """
-    Create a splash screen to display prior to app initialisation
+    Create a splash screen to display prior to app initialisation.
     """
     def __init__(self, parent=None):
         # Set splash screen variables
@@ -453,7 +499,9 @@ class SplashScreen(wx.SplashScreen):
 # HTML Help
 ###############################################################################
 class HelpHTML(wx.Frame):
-
+    """
+    Initialise the window for the help dialog.
+    """
     def __init__(self, parent):
         # Construct the frame
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title="About", size=(600, 700))
@@ -464,7 +512,9 @@ class HelpHTML(wx.Frame):
 
 
 class HTMLWindow(wx.html.HtmlWindow):
-
+    """
+    Behaviours for HTML code in help dialog.
+    """
     def OnLinkClicked(self, link):
         # Get the link that was clicked
         a = link.GetHref()
@@ -479,9 +529,9 @@ class HTMLWindow(wx.html.HtmlWindow):
 #######################################################################
 # Menus
 #######################################################################
-class CreateMenu(wx.MenuBar):
+class Menus(wx.MenuBar):
     """
-    Create the application menus
+    Create the application menus.
     """
     def __init__(self, frame):
         # Construct the menu bar

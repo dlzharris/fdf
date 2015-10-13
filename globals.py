@@ -1,3 +1,12 @@
+"""
+Module: globals.py
+Defines the global constants and lists used in the KiWQM Field Data
+Formatter application.
+
+Title: Data & Procedures Officer
+Organisation: DPI Water
+Date modified: 13/10/2015
+"""
 # Global constants
 LABORATORY = "Field Measurement"
 DATA_SOURCE = "Field Data"
