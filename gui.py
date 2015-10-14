@@ -29,6 +29,7 @@ from wx.lib.wordwrap import wordwrap
 from ObjectListView import ObjectListView, ColumnDefn, CellEditor
 # Local packages
 import functions
+from functions import DateError, TimeError, ValidityError
 import globals
 import help
 
@@ -240,7 +241,16 @@ class EditPanel(wx.Panel):
         # the table.
         if path is not None:
             # Load mode: Check the instrument file and load it
-            DataToLoad = functions.load_instrument_file(path, instrument)
+            try:
+                DataToLoad = functions.load_instrument_file(path, instrument)
+            except ValidityError:
+                # Display error message and return to load screen.
+                self.FileInvalidErrorMsg()
+                self.DataContainer.DeleteAllItems()
+                LoadDlg = LoadFrame()
+                self.parent.Destroy()
+                LoadDlg.Show()
+                return None
         else:
             # Manual mode: Ask the user for the number of lines (samples) required
             TextValid = False
@@ -401,7 +411,10 @@ class EditPanel(wx.Panel):
         # Reformat the data in parameter-oriented format
         try:
             data_reformatted = functions.prepare_dictionary(data_dicts)
-        except ValueError:
+        except DateError:
+            self.DateFormatErrorMsg()
+            return None
+        except TimeError:
             self.TimeFormatErrorMsg()
             return None
         # Write the data to csv
@@ -437,6 +450,19 @@ class EditPanel(wx.Panel):
                       style=wx.OK | wx.ICON_EXCLAMATION)
 
     # -------------------------------------------------------------------------
+    def DateFormatErrorMsg(self):
+        """
+        Display a message to the user if there are required fields that
+        have been left incomplete.
+        """
+        msg = "Date format error.\n\nOne or more of the sample dates contain non-numeric characters.\n" \
+              "Please correct these before exporting."
+        wx.MessageBox(message=msg,
+                      caption="Date format error!",
+                      style=wx.OK | wx.ICON_EXCLAMATION)
+
+
+    # -------------------------------------------------------------------------
     def TimeFormatErrorMsg(self):
         """
         Display a message to the user if there are required fields that
@@ -446,6 +472,18 @@ class EditPanel(wx.Panel):
               "Please correct these before exporting."
         wx.MessageBox(message=msg,
                       caption="Time format error!",
+                      style=wx.OK | wx.ICON_EXCLAMATION)
+
+    # -------------------------------------------------------------------------
+    def FileInvalidErrorMsg(self):
+        """
+        Display a message to the user if there are required fields that
+        have been left incomplete.
+        """
+        msg = "File format error.\n\nYou have selected an invalid data file or a file that does not " \
+              "match the selected instrument.\nPlease select a different file or instrument to continue."
+        wx.MessageBox(message=msg,
+                      caption="File format error!",
                       style=wx.OK | wx.ICON_EXCLAMATION)
 
     # -------------------------------------------------------------------------

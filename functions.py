@@ -9,6 +9,10 @@ Title: Data & Procedures Officer
 Organisation: DPI Water
 Date modified: 13/10/2015
 
+Exceptions:
+TimeError: Custom exception for time format errors
+DateError: Custom exception for date format errors
+
 Functions:
 check_file_validity: check the validity of the instrument file
 load_instrument_file: load the instrument file to memory
@@ -33,6 +37,27 @@ import datetime
 from itertools import islice
 import re
 import globals
+
+
+class TimeError(Exception):
+    """
+    Custom exception for time format errors
+    """
+    pass
+
+
+class DateError(Exception):
+    """
+    Custom exception for date format errors
+    """
+    pass
+
+
+class ValidityError(Exception):
+    """
+    Custom exception for file format errors
+    """
+    pass
 
 
 def check_file_validity(instrument_file, instrument_type):
@@ -60,7 +85,11 @@ def check_file_validity(instrument_file, instrument_type):
     # the file is invalid.
     else:
         file_valid = False
-    return file_valid
+    # Raise an exception if the file is not valid
+    if file_valid is False:
+        raise ValidityError
+    else:
+        return file_valid
 
 
 def load_instrument_file(instrument_file, instrument_type):
@@ -81,9 +110,10 @@ def load_instrument_file(instrument_file, instrument_type):
         # Open the file
         with open(instrument_file, "rb") as f:
             # Check the validity of the file
-            # TODO: Can we do this more elegantly with a custom exception?
-            if check_file_validity(f, instrument_type) is not True:
-                return None
+            try:
+                check_file_validity(f, instrument_type)
+            except ValidityError:
+                raise ValidityError
             # Rewind the file head
             f.seek(0)
             # Read the file into a list for initial interrogation and processing. We will
@@ -216,7 +246,7 @@ def parse_time_from_string(time_string):
     delimiter = ':'
     # Check for invalid characters
     if not str(time_string).replace(":", "").isdigit():
-        raise ValueError
+        raise TimeError
     # Filter out the digits from the time string (force to str type)
     time_digits = filter(str.isdigit, str(time_string))
     # Ensure two-digits used for hour
@@ -486,7 +516,7 @@ def prepare_dictionary(data_list):
     for sample in data_list:
         try:
             sample['sample_time'] = parse_time_from_string(sample['sample_time'])
-        except ValueError:
+        except TimeError:
             break
     # Each item in the list is a single dictionary representing a single sample
     for sample in data_list:
