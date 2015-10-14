@@ -275,6 +275,9 @@ def parse_date_from_string(date_string, date_idx):
     day_idx = date_idx[0]
     month_idx = date_idx[1]
     year_idx = date_idx[2]
+    # Check for invalid characters
+    if not str(date_string).replace("/", "").isdigit():
+        raise DateError
     # Filter out the digits from the date string
     date_digits = filter(str.isdigit, date_string)
     # Extract the date components
@@ -513,11 +516,24 @@ def prepare_dictionary(data_list):
     # Set the datetime format for the entry datetime
     dt_format = '%Y-%m-%d %H:%M:%S'
     # Ensure the validity of time formats before continuing
+    regex = re.compile('/')
     for sample in data_list:
         try:
+            delimiter_locations = []
+
+            for match in regex.finditer(sample['date']):
+                loc = match.start()
+                delimiter_locations.append(loc)
+            try:
+                date_idx = [(delimiter_locations[0] - 2, delimiter_locations[0] - 1),
+                            (delimiter_locations[1] - 2, delimiter_locations[1] - 1),
+                            (delimiter_locations[1] + 1, delimiter_locations[1] + 2)]
+            except IndexError:
+                raise DateError
+            sample['date'] = parse_date_from_string(sample['date'], date_idx)
             sample['sample_time'] = parse_time_from_string(sample['sample_time'])
-        except TimeError:
-            break
+        except (TimeError, DateError):
+            raise
     # Each item in the list is a single dictionary representing a single sample
     for sample in data_list:
         # Get the sampling event time and replicate number
