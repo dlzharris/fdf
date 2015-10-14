@@ -400,11 +400,15 @@ class EditPanel(wx.Panel):
         # Check the data for completeness and validity
         incomplete_fields = functions.check_data_completeness(data_dicts)
         zero_value_fields = functions.check_data_zero_values(data_dicts)
+        matrix_consistent = functions.check_matrix_consistency(data_dicts)
         if incomplete_fields:
             self.CheckCompletenessMsg(incomplete_fields)
             return None
         if zero_value_fields:
             self.CheckZeroValuesMsg(zero_value_fields)
+            return None
+        if not matrix_consistent:
+            self.CheckMatrixConsistencyMsg()
             return None
         # Open the save as dialog
         self.OnSaveFile()
@@ -447,6 +451,20 @@ class EditPanel(wx.Panel):
               % '\n'.join(zero_value_fields)
         wx.MessageBox(message=msg,
                       caption="Data quality error!",
+                      style=wx.OK | wx.ICON_EXCLAMATION)
+
+    # -------------------------------------------------------------------------
+    def CheckMatrixConsistencyMsg(self):
+        """
+        Display a message to the user if there are more than one matrix
+        defined per sampling.
+        """
+        msg = "Matrix error.\n\nMore than one matrix has been defined " \
+              "for a single sampling event.\nPlease ensure that only a " \
+              "single matrix is used for all samples in a sampling " \
+              "event (for primary and replicates) before exporting."
+        wx.MessageBox(message=msg,
+                      caption="Date format error!",
                       style=wx.OK | wx.ICON_EXCLAMATION)
 
     # -------------------------------------------------------------------------

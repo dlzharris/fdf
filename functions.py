@@ -281,9 +281,12 @@ def parse_date_from_string(date_string, date_idx):
     # Filter out the digits from the date string
     date_digits = filter(str.isdigit, date_string)
     # Extract the date components
-    day = date_digits[day_idx[0]:day_idx[1] + 1]
-    month = date_digits[month_idx[0]:month_idx[1] + 1]
-    year = date_digits[year_idx[0]:year_idx[1] + 1]
+    try:
+        day = date_digits[day_idx[0]:day_idx[1] + 1]
+        month = date_digits[month_idx[0]:month_idx[1] + 1]
+        year = date_digits[year_idx[0]:year_idx[1] + 1]
+    except IndexError:
+        raise DateError
     # Concatenate date components with delimiter
     date_string = day + delimiter + month + delimiter + year
     return date_string
@@ -476,6 +479,23 @@ def check_data_completeness(data_list):
     return incomplete_fields
 
 
+def check_matrix_consistency(data_list):
+    """
+    Check that all samples in a single sampling use the same matrix.
+    This is a requirement for KiWQM.
+    :param data_list: The list of dictionaries to be checked.
+    :return: Boolean value indicating if the matrix is consistent for
+    all samplings.
+    """
+    matrix_consistent = True
+    for sample in data_list:
+        sampling_matrix = [s['sample_matrix'] for s in data_list
+                           if s['sampling_number'] == sample['sampling_number']]
+        if len(set(sampling_matrix)) > 1:
+            matrix_consistent = False
+    return matrix_consistent
+
+
 def check_data_zero_values(data_list):
     """
     Check the data entered by the user for any variable with a value
@@ -516,20 +536,9 @@ def prepare_dictionary(data_list):
     # Set the datetime format for the entry datetime
     dt_format = '%Y-%m-%d %H:%M:%S'
     # Ensure the validity of time formats before continuing
-    regex = re.compile('/')
+    date_idx = [(0, 1), (2, 3), (4, 5)]
     for sample in data_list:
         try:
-            delimiter_locations = []
-
-            for match in regex.finditer(sample['date']):
-                loc = match.start()
-                delimiter_locations.append(loc)
-            try:
-                date_idx = [(delimiter_locations[0] - 2, delimiter_locations[0] - 1),
-                            (delimiter_locations[1] - 2, delimiter_locations[1] - 1),
-                            (delimiter_locations[1] + 1, delimiter_locations[1] + 2)]
-            except IndexError:
-                raise DateError
             sample['date'] = parse_date_from_string(sample['date'], date_idx)
             sample['sample_time'] = parse_time_from_string(sample['sample_time'])
         except (TimeError, DateError):
