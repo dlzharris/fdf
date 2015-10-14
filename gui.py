@@ -399,7 +399,11 @@ class EditPanel(wx.Panel):
         # Open the save as dialog
         self.OnSaveFile()
         # Reformat the data in parameter-oriented format
-        data_reformatted = functions.prepare_dictionary(data_dicts)
+        try:
+            data_reformatted = functions.prepare_dictionary(data_dicts)
+        except ValueError:
+            self.TimeFormatErrorMsg()
+            return None
         # Write the data to csv
         try:
             functions.write_to_csv(data_reformatted, self.SaveAsFilename, globals.FIELDNAMES)
@@ -430,6 +434,18 @@ class EditPanel(wx.Panel):
               % '\n'.join(zero_value_fields)
         wx.MessageBox(message=msg,
                       caption="Data quality error!",
+                      style=wx.OK | wx.ICON_EXCLAMATION)
+
+    # -------------------------------------------------------------------------
+    def TimeFormatErrorMsg(self):
+        """
+        Display a message to the user if there are required fields that
+        have been left incomplete.
+        """
+        msg = "Time format error.\n\nOne or more of the sample times contain non-numeric characters.\n" \
+              "Please correct these before exporting."
+        wx.MessageBox(message=msg,
+                      caption="Time format error!",
                       style=wx.OK | wx.ICON_EXCLAMATION)
 
     # -------------------------------------------------------------------------

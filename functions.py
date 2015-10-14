@@ -214,8 +214,11 @@ def parse_time_from_string(time_string):
     """
     # Set the time component delimiter
     delimiter = ':'
-    # Filter out the digits from the time string
-    time_digits = filter(str.isdigit, time_string)
+    # Check for invalid characters
+    if not str(time_string).replace(":", "").isdigit():
+        raise ValueError
+    # Filter out the digits from the time string (force to str type)
+    time_digits = filter(str.isdigit, str(time_string))
     # Ensure two-digits used for hour
     if len(time_digits) < 6:
         time_digits = "".join(['0', time_digits])
@@ -479,6 +482,12 @@ def prepare_dictionary(data_list):
     data_list_param_oriented = []
     # Set the datetime format for the entry datetime
     dt_format = '%Y-%m-%d %H:%M:%S'
+    # Ensure the validity of time formats before continuing
+    for sample in data_list:
+        try:
+            sample['sample_time'] = parse_time_from_string(sample['sample_time'])
+        except ValueError:
+            break
     # Each item in the list is a single dictionary representing a single sample
     for sample in data_list:
         # Get the sampling event time and replicate number
@@ -494,9 +503,9 @@ def prepare_dictionary(data_list):
         min_depth = float(sample['depth_upper']) - rep_depth_tolerance
         max_depth = float(sample['depth_upper']) + rep_depth_tolerance
         reps_in_sampling = [r['sample_time'] for r in data_list
-                            if r['sampling_number'] == sample['sampling_number']
-                            and r['sample_type'] == sample['sample_type']
-                            and min_depth <= float(r['depth_upper']) <= max_depth]
+                            if r['sampling_number'] == sample['sampling_number'] and
+                            r['sample_type'] == sample['sample_type'] and
+                            min_depth <= float(r['depth_upper']) <= max_depth]
         if len(reps_in_sampling) > 1:
             sorted(reps_in_sampling, key=lambda x: x[0])
             sample_idx = reps_in_sampling.index(sample['sample_time'])
