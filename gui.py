@@ -303,14 +303,14 @@ class EditPanel(wx.Panel):
         Define columns and associated data sources.
         """
         self.DataContainer.SetColumns([
-            ColumnDefn("", "center", 20, "checked"),
+            ColumnDefn("", "center", 0, "checked"),
             ColumnDefn("MP#", "left", 60, "mp_number"),
             ColumnDefn("Station#", "center", 90, "station_number",
                        valueSetter=self.UpdateSampleStation),
             ColumnDefn("Sampling ID", "center", 140, "sampling_number",
                        isEditable=False),
-            ColumnDefn("Date", "center", -1, "date"),
-            ColumnDefn("Time", "center", -1, "sample_time"),
+            ColumnDefn("Date", "center", 75, "date"),
+            ColumnDefn("Time", "center", 75, "sample_time"),
             ColumnDefn("Loc#", "left", 50, "location_id"),
             ColumnDefn("Seq#", "left", 50, "sample_cid"),
             ColumnDefn("Matrix", "left", 60, "sample_matrix",
