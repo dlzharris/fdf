@@ -202,7 +202,7 @@ def load_manual_entry(number_lines):
     :return:
     """
     empty_data = []
-    for i in range(1, number_lines):
+    for i in range(0, number_lines):
         new_line = {
             'checked': "",
             'mp_number': "",

@@ -281,7 +281,7 @@ class EditPanel(wx.Panel):
                 if TxtDlgNumberLines.ShowModal() == wx.ID_OK:
                     NumberLines = TxtDlgNumberLines.GetValue()
                     try:
-                        DataToLoad = functions.load_manual_entry(int(NumberLines) + 1)
+                        DataToLoad = functions.load_manual_entry(int(NumberLines))
                         TextValid = True
                     except ValueError:
                         wx.MessageBox(message="Please enter a valid number!",
