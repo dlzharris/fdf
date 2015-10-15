@@ -17,6 +17,8 @@ SplashScreen: Displays the splash screen on app load.
 HelpHTML: Initialises window for the help dialog.
 HTMLWindow: Behaviours for the HTML code in the help dialog.
 Menus: Constructs and displays the menu bar and menu items.
+ConfirmCheck: Constructs and displays data validation confirmation
+dialog box for
 """
 # Standard Python packages
 import webbrowser

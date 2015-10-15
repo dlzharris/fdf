@@ -27,6 +27,7 @@ get_parameter_unit: get the parameter code for a variable
 get_column_title: get the display name for a required field
 get_parameter_name: get the display name for a parameter
 check_data_completeness: check that required fields are not empty
+check_matrix_consistency: check that each sampling only uses a single matrix
 check_data_zero_values: check that parameter values are not zero
 prepare_dictionary: transform the data to parameter-oriented format
 write_to_csv: write the data to a dictionary for import to KiWQM
