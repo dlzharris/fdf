@@ -521,6 +521,27 @@ def check_data_zero_values(data_list):
     return zero_value_fields
 
 
+def check_sequence_numbers(data_list):
+    """
+    Check that all samples in a single sampling use distinct sequence
+    numbers and that they start at 1 and increment sequentially.
+    :param data_list:
+    :return:
+    """
+    for sample in data_list:
+        sequence_correct = True
+        # Get a list of all sequence numbers at a single location in a
+        # single sampling.
+        sequence_numbers = [int(s['sample_cid']) for s in data_list if
+                            s['sampling_number'] == sample['sampling_number'] and
+                            s['location_id'] == sample['location_id']]
+        # Check that sequence numbers in a single sampling are distinct,
+        # start at 1, and increment sequentially
+        if not all(a == b for a, b in list(enumerate(sorted(sequence_numbers), start=1))):
+            sequence_correct = False
+    return sequence_correct
+
+
 def prepare_dictionary(data_list):
     """
     Transform the orientation of the field data to "parameter oriented"

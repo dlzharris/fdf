@@ -401,6 +401,7 @@ class EditPanel(wx.Panel):
         incomplete_fields = functions.check_data_completeness(data_dicts)
         zero_value_fields = functions.check_data_zero_values(data_dicts)
         matrix_consistent = functions.check_matrix_consistency(data_dicts)
+        sequence_nums_ok = functions.check_sequence_numbers(data_dicts)
         if incomplete_fields:
             self.CheckCompletenessMsg(incomplete_fields)
             return None
@@ -409,6 +410,9 @@ class EditPanel(wx.Panel):
             return None
         if not matrix_consistent:
             self.CheckMatrixConsistencyMsg()
+            return None
+        if not sequence_nums_ok:
+            self.CheckSequenceNumbersMsg()
             return None
         # Open the save as dialog
         self.OnSaveFile()
@@ -459,12 +463,29 @@ class EditPanel(wx.Panel):
         Display a message to the user if there are more than one matrix
         defined per sampling.
         """
-        msg = "Matrix error.\n\nMore than one matrix has been defined " \
+        msg = "Matrix error\n\nMore than one matrix has been defined " \
               "for a single sampling event.\nPlease ensure that only a " \
               "single matrix is used for all samples in a sampling " \
               "event (for primary and replicates) before exporting."
         wx.MessageBox(message=msg,
-                      caption="Date format error!",
+                      caption="Matrix error!",
+                      style=wx.OK | wx.ICON_EXCLAMATION)
+
+    # -------------------------------------------------------------------------
+    def CheckSequenceNumbersMsg(self):
+        """
+        Display a message to the user if there are problems with the
+        provided sequence numbers.
+        """
+        msg = "Sequence number error\n\nOne or more problems have been " \
+              "detected with the provided sequence numbers. Please ensure that:\n" \
+              "- All samples in a single sampling event use distinct sequence numbers;\n" \
+              "- The first sample in all sampling events is 1;\n" \
+              "- All sequence numbers in a single sampling event increment sequentially." \
+              "\n\nA sampling event consists of all samples collected at the same station " \
+              "on the same date."
+        wx.MessageBox(message=msg,
+                      caption="Sequence number error!",
                       style=wx.OK | wx.ICON_EXCLAMATION)
 
     # -------------------------------------------------------------------------
@@ -473,7 +494,7 @@ class EditPanel(wx.Panel):
         Display a message to the user if there are required fields that
         have been left incomplete.
         """
-        msg = "Date format error.\n\nOne or more of the sample dates contain non-numeric characters.\n" \
+        msg = "Date format error\n\nOne or more of the sample dates contain non-numeric characters.\n" \
               "Please correct these before exporting."
         wx.MessageBox(message=msg,
                       caption="Date format error!",
@@ -486,7 +507,7 @@ class EditPanel(wx.Panel):
         Display a message to the user if there are required fields that
         have been left incomplete.
         """
-        msg = "Time format error.\n\nOne or more of the sample times contain non-numeric characters.\n" \
+        msg = "Time format error\n\nOne or more of the sample times contain non-numeric characters.\n" \
               "Please correct these before exporting."
         wx.MessageBox(message=msg,
                       caption="Time format error!",
@@ -498,7 +519,7 @@ class EditPanel(wx.Panel):
         Display a message to the user if there are required fields that
         have been left incomplete.
         """
-        msg = "File format error.\n\nYou have selected an invalid data file or a file that does not " \
+        msg = "File format error\n\nYou have selected an invalid data file or a file that does not " \
               "match the selected instrument.\nPlease select a different file or instrument to continue."
         wx.MessageBox(message=msg,
                       caption="File format error!",
