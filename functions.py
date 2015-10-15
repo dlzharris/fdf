@@ -596,6 +596,10 @@ def prepare_dictionary(data_list):
                 sample_param_oriented["parameter"] = param
                 sample_param_oriented["value"] = sample_param_oriented.pop(param)
                 sample_param_oriented["units"] = get_parameter_unit(param)
+                if param == 'turbidity':
+                    sample_param_oriented["device"] = sample['sampling_turb_instrument']
+                else:
+                    sample_param_oriented["device"] = sample['sampling_instrument']
                 # If the value is empty, skip to the next value
                 if sample_param_oriented["value"] != "":
                     # Add the dictionary to the parameter-oriented container

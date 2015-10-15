@@ -12,7 +12,9 @@ LABORATORY = "Field Measurement"
 DATA_SOURCE = "Field Data"
 # List of available instruments
 INSTRUMENTS = ["Hydrolab DS5", "Hydrolab MS4", "Hydrolab MS5"]
+TURBIDITY_INSTRUMENT = ["HACH Tubiditimeter 2100P", "HACH Tubiditimeter 2100Q"]
 DEFAULT_INSTRUMENT = "Hydrolab DS5"
+DEFAULT_TURB_INSTRUMENT = "HACH Tubiditimeter 2100P"
 # List of available field officers
 FIELD_STAFF = ["Andy Wise", "Sarah McGeoch"]
 # List of available sample types
@@ -78,5 +80,6 @@ FIELDNAMES = [
     'fraction_entry_datetime',   # Current time (datetime.now)
     'parameter',
     'value',
-    'units']
+    'units',
+    'device']
 

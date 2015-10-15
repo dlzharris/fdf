@@ -44,7 +44,7 @@ class LoadFrame (wx.Frame):
     def __init__(self, parent=None):
         # Set up the frames we will be using
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"KiWQM Field Data Formatter",
-                          pos=wx.DefaultPosition, size=wx.Size(691, 349), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+                          pos=wx.DefaultPosition, size=wx.Size(600, 390), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
         self.panel = LoadPanel(self)
         # Set the frame size and background colour
         self.SetSizeHintsSz(wx.DefaultSize, wx.DefaultSize)
@@ -79,6 +79,7 @@ class LoadPanel (wx.Panel):
         # Set up the load panel's objects
         # Create the sizers
         SizerVertical = wx.BoxSizer(wx.VERTICAL)
+        SizerVerticalSelections = wx.BoxSizer(wx.VERTICAL)
         SizerHorizontal = wx.BoxSizer(wx.HORIZONTAL)
 
         # Introductory text
@@ -91,18 +92,27 @@ class LoadPanel (wx.Panel):
         SizerVertical.Add(self.StaticTextIntroduction, 1, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND, 5)
 
         # Instrument selection box
-        MultiChoiseInstrumentsList = [u"Pick an instrument..."]
-        MultiChoiseInstrumentsList.extend(globals.INSTRUMENTS)
-        self.MultiChoiceInstrumentsSelection = wx.Choice(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, MultiChoiseInstrumentsList, 0)
+        MultiChoiceInstrumentsList = [u"Pick an instrument...             "]
+        MultiChoiceInstrumentsList.extend(globals.INSTRUMENTS)
+        self.MultiChoiceInstrumentsSelection = wx.Choice(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, MultiChoiceInstrumentsList, 0)
         self.MultiChoiceInstrumentsSelection.SetSelection(0)
-        SizerHorizontal.Add(self.MultiChoiceInstrumentsSelection, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        SizerVerticalSelections.Add(self.MultiChoiceInstrumentsSelection, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+
+        # Turbiditimeter selection box
+        MultiChoiseTurbidityList = [u"Pick a tubiditimeter..."]
+        MultiChoiseTurbidityList.extend(globals.TURBIDITY_INSTRUMENT)
+        self.MultiChoiceTurbiditySelection = wx.Choice(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, MultiChoiseTurbidityList, 0)
+        self.MultiChoiceTurbiditySelection.SetSelection(0)
+        SizerVerticalSelections.Add(self.MultiChoiceTurbiditySelection, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         # Sampler selection box
-        MultiChoiceSamplersList = [u"Select sampler..."]
+        MultiChoiceSamplersList = [u"Select sampler...                   "]
         MultiChoiceSamplersList.extend(globals.FIELD_STAFF)
         self.MultiChoiceSamplersSelection = wx.Choice(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, MultiChoiceSamplersList, 0)
         self.MultiChoiceSamplersSelection.SetSelection(0)
-        SizerHorizontal.Add(self.MultiChoiceSamplersSelection, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        SizerVerticalSelections.Add(self.MultiChoiceSamplersSelection, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+
+        SizerHorizontal.Add(SizerVerticalSelections, 1, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND, 5)
 
         # Data entry mode radio box
         RadioBoxEntryModeList = [u"Load logger file", u"Manual data entry"]
@@ -157,8 +167,10 @@ class LoadPanel (wx.Panel):
         # Generic components
         sampler = self.MultiChoiceSamplersSelection.GetStringSelection()
         instrument = self.MultiChoiceInstrumentsSelection.GetStringSelection()
+        turbidmeter = self.MultiChoiceTurbiditySelection.GetStringSelection()
         # Publish data to listener
-        pub.sendMessage("importDataListener", path=path, sampler=sampler, instrument=instrument)
+        pub.sendMessage("importDataListener", path=path, sampler=sampler,
+                        instrument=instrument, turbidmeter=turbidmeter)
         # Show the edit window and hide the load dialog
         self.EditWindow.Show()
         self.parent.Hide()
@@ -221,8 +233,11 @@ class EditPanel(wx.Panel):
         SizerMain.Add(ButtonExport, 0, wx.ALL | wx.CENTER, 5)
         self.SetSizer(SizerMain)
 
+        # Create a variable to store the data entry mode
+        self.ManualMode = False
+
     # -------------------------------------------------------------------------
-    def DataListener(self, path, sampler=None, instrument=None):
+    def DataListener(self, path, sampler=None, instrument=None, turbidmeter=None):
         """
         Receive data from the load dialog and send it to the
         Objectlistview data container. This function is triggered by a
@@ -253,9 +268,10 @@ class EditPanel(wx.Panel):
                 return None
         else:
             # Manual mode: Ask the user for the number of lines (samples) required
+            self.ManualMode = True
             TextValid = False
             while TextValid is False:
-                TxtDlgNumberLines = wx.TextEntryDialog(self,
+                TxtDlgNumberLines = wx.TextEntryDialog(self.parent,
                                                        message="Enter the number of samples below:",
                                                        caption="Data entry set-up",
                                                        defaultValue="5")
@@ -263,7 +279,7 @@ class EditPanel(wx.Panel):
                 if TxtDlgNumberLines.ShowModal() == wx.ID_OK:
                     NumberLines = TxtDlgNumberLines.GetValue()
                     try:
-                        DataToLoad = functions.load_manual_entry(int(NumberLines))
+                        DataToLoad = functions.load_manual_entry(int(NumberLines) + 1)
                         TextValid = True
                     except ValueError:
                         wx.MessageBox(message="Please enter a valid number!",
@@ -276,6 +292,7 @@ class EditPanel(wx.Panel):
         for obj in objects:
             obj['sampling_officer'] = sampler
             obj['sampling_instrument'] = instrument
+            obj['sampling_turb_instrument'] = turbidmeter
             self.DataContainer.RefreshObject(obj)
 
     # -------------------------------------------------------------------------
@@ -358,8 +375,9 @@ class EditPanel(wx.Panel):
         """
         Try to generate sampling number if station number has been updated.
         """
-        SampleObject['station_number'] = value
-        SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
+        if value != "":
+            SampleObject['station_number'] = value
+            SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
 
     # -------------------------------------------------------------------------
     def UpdateSampleType(self, SampleObject, value):
@@ -416,13 +434,14 @@ class EditPanel(wx.Panel):
             return None
         # Display the confirmation check dialog and check if the
         # validation declaration has been confirmed.
-        CheckBoxConfirm = ConfirmCheck(self)
-        if CheckBoxConfirm.ShowModal() == wx.ID_OK:
-            if not CheckBoxConfirm.CheckBoxConfirm.GetValue():
+        if self.ManualMode is False:
+            CheckBoxConfirm = ConfirmCheck(self)
+            if CheckBoxConfirm.ShowModal() == wx.ID_OK:
+                if not CheckBoxConfirm.CheckBoxConfirm.GetValue():
+                    return None
+            else:
                 return None
-        else:
-            return None
-        CheckBoxConfirm.Destroy()
+            CheckBoxConfirm.Destroy()
         # Open the save as dialog
         self.OnSaveFile()
         # Reformat the data in parameter-oriented format
