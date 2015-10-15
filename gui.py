@@ -455,7 +455,9 @@ class EditPanel(wx.Panel):
             return None
         # Write the data to csv
         try:
-            functions.write_to_csv(data_reformatted, self.SaveAsFilename, globals.FIELDNAMES)
+            if functions.write_to_csv(data_reformatted, self.SaveAsFilename, globals.FIELDNAMES):
+                self.ExportSuccessfulMsg()
+                return None
         except IOError:
             self.SaveFileErrorMsg()
 
@@ -497,7 +499,7 @@ class EditPanel(wx.Panel):
               "event (for primary and replicates) before exporting."
         wx.MessageBox(message=msg,
                       caption="Matrix error!",
-                      style=wx.OK | wx.ICON_EXCLAMATION)
+                      style=wx.OK | wx.ICON_ERROR)
 
     # -------------------------------------------------------------------------
     def CheckSequenceNumbersMsg(self):
@@ -514,7 +516,7 @@ class EditPanel(wx.Panel):
               "on the same date."
         wx.MessageBox(message=msg,
                       caption="Sequence number error!",
-                      style=wx.OK | wx.ICON_EXCLAMATION)
+                      style=wx.OK | wx.ICON_ERROR)
 
     # -------------------------------------------------------------------------
     def DateFormatErrorMsg(self):
@@ -526,7 +528,7 @@ class EditPanel(wx.Panel):
               "Please correct these before exporting."
         wx.MessageBox(message=msg,
                       caption="Date format error!",
-                      style=wx.OK | wx.ICON_EXCLAMATION)
+                      style=wx.OK | wx.ICON_ERROR)
 
 
     # -------------------------------------------------------------------------
@@ -539,7 +541,7 @@ class EditPanel(wx.Panel):
               "Please correct these before exporting."
         wx.MessageBox(message=msg,
                       caption="Time format error!",
-                      style=wx.OK | wx.ICON_EXCLAMATION)
+                      style=wx.OK | wx.ICON_ERROR)
 
     # -------------------------------------------------------------------------
     def FileInvalidErrorMsg(self):
@@ -551,7 +553,18 @@ class EditPanel(wx.Panel):
               "match the selected instrument.\nPlease select a different file or instrument to continue."
         wx.MessageBox(message=msg,
                       caption="File format error!",
-                      style=wx.OK | wx.ICON_EXCLAMATION)
+                      style=wx.OK | wx.ICON_ERROR)
+
+    # -------------------------------------------------------------------------
+    def ExportSuccessfulMsg(self):
+        """
+        Display a message to notify the user that the data has been
+        successfully exported to csv.
+        """
+        msg = "Export successful\n\nYour data has been successfully exported!"
+        wx.MessageBox(message=msg,
+                      caption="Export successful",
+                      style=wx.OK | wx.ICON_INFORMATION)
 
     # -------------------------------------------------------------------------
     def OnSaveFile(self):

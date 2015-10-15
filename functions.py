@@ -628,4 +628,4 @@ def write_to_csv(data_list, out_filepath, fieldnames_list):
                                 fieldnames=fieldnames_list)
         writer.writeheader()
         writer.writerows(data_list)
-    return None
+    return True
