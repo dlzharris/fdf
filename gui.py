@@ -414,6 +414,15 @@ class EditPanel(wx.Panel):
         if not sequence_nums_ok:
             self.CheckSequenceNumbersMsg()
             return None
+        # Display the confirmation check dialog and check if the
+        # validation declaration has been confirmed.
+        CheckBoxConfirm = ConfirmCheck(self)
+        if CheckBoxConfirm.ShowModal() == wx.ID_OK:
+            if not CheckBoxConfirm.CheckBoxConfirm.GetValue():
+                return None
+        else:
+            return None
+        CheckBoxConfirm.Destroy()
         # Open the save as dialog
         self.OnSaveFile()
         # Reformat the data in parameter-oriented format
@@ -664,3 +673,65 @@ class Menus(wx.MenuBar):
         info.Developers = [wordwrap("Daniel Harris (Data & Procedures Officer, DPI Water)", 250, wx.ClientDC(self.panel))]
         # Show the About box
         wx.AboutBox(info)
+
+
+class ConfirmCheck(wx.Dialog):
+    """
+    Create a dialog box to confirm if logged data has been validated
+    against the physical Water Sample Log record.
+    """
+    def __init__(self, parent):
+        # Set up the dialog box
+        wx.Dialog.__init__ (self, parent, id=wx.ID_ANY, title="Confirm data validation", pos=wx.DefaultPosition,
+                            size=wx.Size(450, 470), style=wx.DEFAULT_DIALOG_STYLE)
+
+        # Create the sizer
+        self.SetSizeHintsSz(wx.DefaultSize, wx.DefaultSize)
+        SizerVertical = wx.BoxSizer(wx.VERTICAL)
+
+        # Explanatory text
+        TextConfirmation = "In order to continue, you must check the box below, which confirms that:\n\n" \
+                           "- The dates, times and depths imported from the data logger file have been " \
+                           "verified against the physical Water Sample Log and are consistent with that " \
+                           "document; and\n\n" \
+                           "- Where differences have been observed, the data imported from the logger " \
+                           "file has been modified to match the data recorded in the physical Water " \
+                           "Sample Log.\n\nThis is a requirement of DPIWater, as outlined in \"STOP " \
+                           "32054: Data Download from Hydrolab Surveyor4\".\n"
+        self.StaticTextConfirmation = wx.StaticText(self, wx.ID_ANY, TextConfirmation,
+                                                    wx.DefaultPosition, wx.DefaultSize, 0)
+        self.StaticTextConfirmation.Wrap(400)
+        SizerVertical.Add(self.StaticTextConfirmation, 0, wx.ALL, 5)
+
+        # Line separator
+        self.StaticLine1 = wx.StaticLine(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL)
+        SizerVertical.Add(self.StaticLine1, 0, wx.EXPAND | wx.ALL, 5)
+
+        # Confirmation check box
+        TextCheckBox = "I hereby confirm that I have verified the data imported\n" \
+                       "from the logger file against the physical Water Sample Log as required by STOP 32054."
+        self.CheckBoxConfirm = wx.CheckBox(self, wx.ID_ANY, TextCheckBox,
+                                           wx.DefaultPosition, wx.DefaultSize, wx.CHK_2STATE)
+        self.CheckBoxConfirm.SetMinSize(wx.Size(-1, 60))
+        SizerVertical.Add(self.CheckBoxConfirm, 0, wx.ALL, 5)
+
+        # Line separator
+        self.StaticLine2 = wx.StaticLine(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL)
+        SizerVertical.Add(self.StaticLine2, 0, wx.EXPAND | wx.ALL, 5)
+
+        # Create the OK and Cancel buttons
+        SizerSDB = wx.StdDialogButtonSizer()
+        self.SizerSDBButtonOK = wx.Button(self, wx.ID_OK)
+        SizerSDB.AddButton(self.SizerSDBButtonOK)
+        self.SizerSDBButtonCancel = wx.Button(self, wx.ID_CANCEL)
+        SizerSDB.AddButton(self.SizerSDBButtonCancel)
+        SizerSDB.Realize()
+        SizerVertical.Add(SizerSDB, 1, wx.EXPAND, 5)
+
+        # Set up the sizer and layout
+        self.Centre(wx.BOTH)
+        self.SetSizer(SizerVertical)
+        self.Layout()
+
+    def __del__(self):
+        pass
