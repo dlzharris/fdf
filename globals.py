@@ -78,6 +78,7 @@ FIELDNAMES = [
     'fraction_data_source',      # Static text
     'fraction_number',           # Calculated value
     'fraction_entry_datetime',   # Current time (datetime.now)
+    'method',
     'parameter',
     'value',
     'units',

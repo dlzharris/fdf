@@ -592,14 +592,16 @@ def prepare_dictionary(data_list):
             # a new object from the sample data.
             sample_param_oriented = copy.deepcopy(sample)
             try:
-                # Create dictionary items for parameter, value and unit
+                # Create dictionary items for parameter, value, unit, device & method
                 sample_param_oriented["parameter"] = param
                 sample_param_oriented["value"] = sample_param_oriented.pop(param)
                 sample_param_oriented["units"] = get_parameter_unit(param)
                 if param == 'turbidity':
                     sample_param_oriented["device"] = sample['sampling_turb_instrument']
+                    sample_param_oriented["method"] = "FLD_TURB"
                 else:
                     sample_param_oriented["device"] = sample['sampling_instrument']
+                    sample_param_oriented["method"] = "FLD_MULTI_PROBE"
                 # If the value is empty, skip to the next value
                 if sample_param_oriented["value"] != "":
                     # Add the dictionary to the parameter-oriented container
