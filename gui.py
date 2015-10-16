@@ -606,7 +606,7 @@ class SplashScreen(wx.SplashScreen):
     """
     def __init__(self, parent=None):
         # Set splash screen variables
-        SplashImage = wx.Image(name="splash_screen_scribus_01beta.jpg").ConvertToBitmap()
+        SplashImage = wx.Image(name=globals.SPLASH_FN).ConvertToBitmap()
         SplashStyle = wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_TIMEOUT
         SplashDuration = 2000  # milliseconds
         # Call the splash screen constructor

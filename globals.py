@@ -7,6 +7,9 @@ Title: Data & Procedures Officer
 Organisation: DPI Water
 Date modified: 13/10/2015
 """
+# Splash screen image
+SPLASH_FN = "img/splash_screen_scribus_01beta.jpg"
+
 # Global constants
 LABORATORY = "Field Measurement"
 DATA_SOURCE = "Field Data"
