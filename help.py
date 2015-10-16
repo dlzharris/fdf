@@ -15,7 +15,7 @@ page = r"""
 <p>KiWQM requires that any imported data is loaded in a specific format. The <em>KiWQM Field Data Importer</em> helps get your field data into that format easily. The application can be used to load data from a data logger file (such as that created by the Hydrolab instruments when measurements are saved in the field) or to input data collected manually on a <em>Water Sample Log</em>.</p>
 <p>After starting the application, you will see the <em>Load screen</em> and should do the following:</p>
 <ol style="list-style-type: decimal">
-<li>Select the instrument used for data collection from the drop-down list of available instruments.</li>
+<li>Select the water quality instrument and turbiditimeter used for data collection from the drop-down lists of available instruments.</li>
 <li>Select the sampler that collected the data.</li>
 <li>Select the data entry mode:
 <ol style="list-style-type: lower-alpha">
@@ -23,13 +23,14 @@ page = r"""
 <li>If you are entering data manually, select <em>Manual data entry</em>.</li>
 </ol></li>
 <li>Press the <em>Continue</em> button. You will be taken to the data entry screen. If you have selected <em>Manual data entry</em> you will first be asked how many samples you are entering data for.</li>
-<li>Enter the measurement details (e.g. measuring program, station number etc.) as described in the <a href="#description-of-fields">Description of fields</a> table below. Some of the fields require text, some fields are drop-down selections. The Sampling ID field is automatically generated once the <em>Station number</em> and <em>Date</em> have been entered.</li>
+<li>Enter the measurement details (e.g. measuring program, station number etc.) as described in the <a href="#description-of-fields">Description of fields</a> table below. Some of the fields require text, some fields are drop-down selections. The Sampling ID field is automatically generated once the <em>Station number</em> and <em>Date</em> have been entered. If you have imported data from a logger file, ensure that the dates, times and depths are consistent with the physical <em>Water Sample Log</em> sheet.</li>
 <li>Once you have entered all the required data, press the <em>Export data</em> button at the bottom of the screen. If you have left any required fields empty, you will be prompted to complete those fields. Note that not <em>all</em> the fields are mandatory--see <a href="#description-of-fields">Description of fields</a> for details on mandatory and optional fields.</li>
+<li>If you have imported data from a logger file, you will be asked to confirm that you have validated the dates, times and depths as recorded by the logger against the physical <em>Water Sample Log</em> sheet to ensure they are consistent. If you have not yet done this, go back and validate these parameters before exporting.</li>
 <li>After the data has been exported, it is ready for importing to KiWQM. See the procedure <a href="http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/32055.pdf"><em>Bulk Data Import into KiWQM Database</em> (STOP 32055)</a>.</li>
 <li>If you need to start again, you can press the <em>Reset data</em> button to clear all data and go back to the first screen.</li>
 </ol>
 <h2 id="description-of-fields">Description of fields<a name="description-of-fields"></a></h2>
-<table border = "1">
+<table border="1">
 <colgroup>
 <col width="23%" />
 <col width="58%" />
@@ -130,7 +131,7 @@ page = r"""
 </table>
 <h2 id="field-measurements">Field measurements</h2>
 <p>The following columns are available for data collected in the field.</p>
-<table border = "1">
+<table border="1">
 <thead>
 <tr class="header">
 <th align="left">Parameter</th>
@@ -170,7 +171,7 @@ page = r"""
 </table>
 <h2 id="code-definitions">Code definitions</h2>
 <h3 id="matrix-codes">Matrix codes<a name="matrix-codes"></a></h3>
-<table border = "1">
+<table border="1">
 <thead>
 <tr class="header">
 <th align="left">Code</th>
@@ -205,7 +206,7 @@ page = r"""
 </tbody>
 </table>
 <h3 id="sample-type-codes">Sample type codes<a name="sample-type-codes"></a></h3>
-<table border = "1">
+<table border="1">
 <thead>
 <tr class="header">
 <th align="left">Code</th>
@@ -218,15 +219,15 @@ page = r"""
 <td align="left">Primary</td>
 </tr>
 <tr class="even">
-<td align="left">RE</td>
+<td align="left">R</td>
 <td align="left">Replicate</td>
 </tr>
 <tr class="odd">
-<td align="left">DU</td>
+<td align="left">D</td>
 <td align="left">Duplicate</td>
 </tr>
 <tr class="even">
-<td align="left">TR</td>
+<td align="left">T</td>
 <td align="left">Triplicate</td>
 </tr>
 <tr class="odd">
@@ -244,4 +245,10 @@ page = r"""
 </tbody>
 </table>
 <h1 id="references">References</h1>
+<p><a href="http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/32055.pdf"><em>Bulk Data Import into KiWQM Database</em> (STOP 32055)</a></p>
+<p><a href="http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/39004.doc"><em>Instrument Calibration Log and Maintenance Schedule</em> (STOP 39004)</a></p>
+<p><a href="http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/32057.pdf"><em>Instrument calibration log user guide</em> (STOP 32057)</a></p>
+<p><a href="http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/32005.pdf"><em>Water quality project, sample, fraction and station numbers (product identification and traceability)</em> (STOP 32005)</a></p>
+<p><a href="http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/39057.doc"><em>Water Sample Log</em> (STOP 39057)</a></p>
+
 """
