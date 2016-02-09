@@ -259,31 +259,6 @@ class EditPanel(wx.Panel):
         # Create a variable to store the data entry mode
         self.ManualMode = False
 
-    # TODO: Put this at correct place
-    def DeleteRow(self, event):
-        objs = self.DataContainer.GetSelectedObjects()
-        self.DataContainer.RemoveObjects(objs)
-        self.DataContainer.RefreshObjects(self.DataContainer.GetObjects())
-
-    # TODO: Separate the dlg etc into a separate function and use this also for manual entry
-    def AddRow(self, event):
-        TextValid = False
-        while TextValid is False:
-            TxtDlgNumberLines = wx.TextEntryDialog(self.parent,
-                                                   message="Enter the number of samples below:",
-                                                   caption="Data entry set-up",
-                                                   defaultValue="1")
-            # When OK button is clicked
-            if TxtDlgNumberLines.ShowModal() == wx.ID_OK:
-                NumberLines = TxtDlgNumberLines.GetValue()
-                try:
-                    DataToLoad = functions.get_empty_dict(int(NumberLines))
-                    TextValid = True
-                except ValueError:
-                    wx.MessageBox(message="Please enter a valid number!",
-                                  caption="Invalid number!",
-                                  style=wx.OK | wx.ICON_EXCLAMATION)
-        self.DataContainer.AddObjects(DataToLoad)
 
 
     # -------------------------------------------------------------------------
@@ -319,22 +294,7 @@ class EditPanel(wx.Panel):
         else:
             # Manual mode: Ask the user for the number of lines (samples) required
             self.ManualMode = True
-            TextValid = False
-            while TextValid is False:
-                TxtDlgNumberLines = wx.TextEntryDialog(self.parent,
-                                                       message="Enter the number of samples below:",
-                                                       caption="Data entry set-up",
-                                                       defaultValue="5")
-                # When OK button is clicked
-                if TxtDlgNumberLines.ShowModal() == wx.ID_OK:
-                    NumberLines = TxtDlgNumberLines.GetValue()
-                    try:
-                        DataToLoad = functions.get_empty_dict(int(NumberLines))
-                        TextValid = True
-                    except ValueError:
-                        wx.MessageBox(message="Please enter a valid number!",
-                                      caption="Invalid number!",
-                                      style=wx.OK | wx.ICON_EXCLAMATION)
+            DataToLoad = NumberSamplesDlg("5", self)
 
         # Update the sampler and instrument
         self.DataContainer.SetObjects(DataToLoad)
@@ -439,6 +399,17 @@ class EditPanel(wx.Panel):
             SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
         else:
             pass
+
+    # -------------------------------------------------------------------------
+    def DeleteRow(self, event):
+        objs = self.DataContainer.GetSelectedObjects()
+        self.DataContainer.RemoveObjects(objs)
+        self.DataContainer.RefreshObjects(self.DataContainer.GetObjects())
+
+    # -------------------------------------------------------------------------
+    def AddRow(self, event):
+        DataToLoad = NumberSamplesDlg("1", self)
+        self.DataContainer.AddObjects(DataToLoad)
 
     # -------------------------------------------------------------------------
     def ResetData(self, event):
@@ -817,3 +788,30 @@ class ConfirmCheck(wx.Dialog):
 
     def __del__(self):
         pass
+
+
+def NumberSamplesDlg(defaultValue, frame):
+    """
+    Create a dialog to accept the number of samples to add
+    :param defaultValue: Default number of samples to add as displayed in dialog
+    :param frame: The current frame
+    :return: An empty dictionary with the number of records (samples) to add
+    """
+    # Catch errors in input dialog using while loop
+    TextValid = False
+    while TextValid is False:
+        TxtDlgNumberLines = wx.TextEntryDialog(frame.parent,
+                                               message="Enter the number of samples below:",
+                                               caption="Data entry set-up",
+                                               defaultValue=defaultValue)
+        # When OK button is clicked
+        if TxtDlgNumberLines.ShowModal() == wx.ID_OK:
+            NumberLines = TxtDlgNumberLines.GetValue()
+            try:
+                DataToLoad = functions.get_empty_dict(int(NumberLines))
+                TextValid = True
+            except ValueError:
+                wx.MessageBox(message="Please enter a valid number!",
+                              caption="Invalid number!",
+                              style=wx.OK | wx.ICON_EXCLAMATION)
+    return DataToLoad
