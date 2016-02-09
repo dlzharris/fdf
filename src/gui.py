@@ -34,6 +34,22 @@ import functions
 from functions import DateError, TimeError, ValidityError
 import globals
 import help
+import sys
+
+
+###############################################################################
+# Modified frame class
+###############################################################################
+class BaseFrame (wx.Frame):
+    def OnClose(self, event):
+        dlg = wx.MessageDialog(self, "Do you really want to close this application?",
+                               "Confirm Exit", wx.OK | wx.CANCEL | wx.ICON_QUESTION)
+        result = dlg.ShowModal()
+        dlg.Destroy()
+        if result == wx.ID_OK:
+            self.Destroy()
+        app = wx.GetApp()
+        app.Exit()
 
 
 ###############################################################################
@@ -62,7 +78,26 @@ class LoadFrame (wx.Frame):
 
     # -------------------------------------------------------------------------
     def OnClose(self, event):
-        self.Close()
+        dlg = wx.MessageDialog(self, "Do you really want to close this application?",
+                               "Confirm Exit", wx.OK | wx.CANCEL | wx.ICON_QUESTION)
+        result = dlg.ShowModal()
+        dlg.Destroy()
+        if result == wx.ID_OK:
+            self.Destroy()
+
+        # sys.exit()
+        # self.Destroy()
+        # wx.GetApp().Exit()
+        # for item in wx.GetTopLevelWindows():
+        #     if not isinstance(item, self):
+        #         if isinstance(item, wx.Dialog):
+        #             item.Destroy()
+        #     item.Close()
+            #self.Destroy()
+        #event.Skip()
+        #wx.Exit()
+        app = wx.GetApp()
+        app.Exit()
 
 
 class LoadPanel (wx.Panel):
@@ -195,7 +230,15 @@ class EditFrame(wx.Frame):
 
     # -------------------------------------------------------------------------
     def OnClose(self, event):
-        self.Close()
+        dlg = wx.MessageDialog(self, "Do you really want to close this application?",
+                               "Confirm Exit", wx.OK | wx.CANCEL | wx.ICON_QUESTION)
+        result = dlg.ShowModal()
+        dlg.Destroy()
+        if result == wx.ID_OK:
+            self.Destroy()
+        #self.Destroy()
+        app = wx.GetApp()
+        app.Exit()
 
 
 class EditPanel(wx.Panel):
@@ -307,10 +350,10 @@ class EditPanel(wx.Panel):
             ColumnDefn("MP#", "left", 60, "mp_number"),
             ColumnDefn("Station#", "center", 90, "station_number",
                        valueSetter=self.UpdateSampleStation),
-            ColumnDefn("Sampling ID", "center", 140, "sampling_number",
-                       isEditable=False),
             ColumnDefn("Date", "center", 75, "date"),
             ColumnDefn("Time", "center", 75, "sample_time"),
+            ColumnDefn("Sampling ID", "center", 140, "sampling_number",
+                       isEditable=False),
             ColumnDefn("Loc#", "left", 50, "location_id"),
             ColumnDefn("Seq#", "left", 50, "sample_cid"),
             ColumnDefn("Matrix", "left", 60, "sample_matrix",
@@ -377,7 +420,7 @@ class EditPanel(wx.Panel):
         """
         Try to generate sampling number if station number has been updated.
         """
-        if value != "":
+        if value != "" and SampleObject['date'] != "":
             SampleObject['station_number'] = value
             SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
 
@@ -387,7 +430,7 @@ class EditPanel(wx.Panel):
         Try to generate sampling number if matrix has been updated.
         """
         SampleObject['sample_type'] = value
-        if SampleObject['station_number'] != "":
+        if SampleObject['station_number'] != "" and SampleObject['date'] != "":
             SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
         else:
             pass
