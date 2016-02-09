@@ -239,15 +239,52 @@ class EditPanel(wx.Panel):
         ButtonExport = wx.Button(self, wx.ID_ANY, "Export data")
         ButtonExport.Bind(wx.EVT_BUTTON, self.ExportData)
 
+        # TODO: Tidy up delete and add buttons and put in correct sizer
+        # Delete button
+        ButtonDelete = wx.Button(self, wx.ID_ANY, "Delete row")
+        ButtonDelete.Bind(wx.EVT_BUTTON, self.DeleteRow)
+        # Add button
+        ButtonAdd = wx.Button(self, wx.ID_ANY, "Add row")
+        ButtonAdd.Bind(wx.EVT_BUTTON, self.AddRow)
+
         # Create sizer and add gui elements
         SizerMain = wx.BoxSizer(wx.VERTICAL)
         SizerMain.Add(self.DataContainer, 1, wx.ALL | wx.EXPAND, 5)
         SizerMain.Add(ButtonReset, 0, wx.ALL | wx.CENTER, 5)
         SizerMain.Add(ButtonExport, 0, wx.ALL | wx.CENTER, 5)
+        SizerMain.Add(ButtonDelete, 0, wx.ALL | wx.CENTER, 5)
+        SizerMain.Add(ButtonAdd, 0, wx.ALL | wx.CENTER, 5)
         self.SetSizer(SizerMain)
 
         # Create a variable to store the data entry mode
         self.ManualMode = False
+
+    # TODO: Put this at correct place
+    def DeleteRow(self, event):
+        objs = self.DataContainer.GetSelectedObjects()
+        self.DataContainer.RemoveObjects(objs)
+        self.DataContainer.RefreshObjects(self.DataContainer.GetObjects())
+
+    # TODO: Separate the dlg etc into a separate function and use this also for manual entry
+    def AddRow(self, event):
+        TextValid = False
+        while TextValid is False:
+            TxtDlgNumberLines = wx.TextEntryDialog(self.parent,
+                                                   message="Enter the number of samples below:",
+                                                   caption="Data entry set-up",
+                                                   defaultValue="1")
+            # When OK button is clicked
+            if TxtDlgNumberLines.ShowModal() == wx.ID_OK:
+                NumberLines = TxtDlgNumberLines.GetValue()
+                try:
+                    DataToLoad = functions.get_empty_dict(int(NumberLines))
+                    TextValid = True
+                except ValueError:
+                    wx.MessageBox(message="Please enter a valid number!",
+                                  caption="Invalid number!",
+                                  style=wx.OK | wx.ICON_EXCLAMATION)
+        self.DataContainer.AddObjects(DataToLoad)
+
 
     # -------------------------------------------------------------------------
     def DataListener(self, path, sampler=None, instrument=None, turbidmeter=None):
@@ -292,7 +329,7 @@ class EditPanel(wx.Panel):
                 if TxtDlgNumberLines.ShowModal() == wx.ID_OK:
                     NumberLines = TxtDlgNumberLines.GetValue()
                     try:
-                        DataToLoad = functions.load_manual_entry(int(NumberLines))
+                        DataToLoad = functions.get_empty_dict(int(NumberLines))
                         TextValid = True
                     except ValueError:
                         wx.MessageBox(message="Please enter a valid number!",

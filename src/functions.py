@@ -195,7 +195,7 @@ def load_instrument_file(instrument_file, instrument_type):
     return data
 
 
-def load_manual_entry(number_lines):
+def get_empty_dict(number_lines):
     """
     Create a dictionary with empty items for use in the manual entry screen.
     :param number_lines:
