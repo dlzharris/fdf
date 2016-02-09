@@ -41,21 +41,22 @@ import sys
 # Modified frame class
 ###############################################################################
 class BaseFrame (wx.Frame):
+    # OnClose event used for all frames in app
     def OnClose(self, event):
-        dlg = wx.MessageDialog(self, "Do you really want to close this application?",
+        dlg = wx.MessageDialog(self, "Do you really want to exit Field Data Formatter?",
                                "Confirm Exit", wx.OK | wx.CANCEL | wx.ICON_QUESTION)
         result = dlg.ShowModal()
         dlg.Destroy()
         if result == wx.ID_OK:
             self.Destroy()
-        app = wx.GetApp()
-        app.Exit()
+            app = wx.GetApp()
+            app.Exit()
 
 
 ###############################################################################
 # Load Window (Main Frame)
 ###############################################################################
-class LoadFrame (wx.Frame):
+class LoadFrame (BaseFrame):
     """
     Initialise the window for the opening load screen.
     """
@@ -63,6 +64,7 @@ class LoadFrame (wx.Frame):
         # Set up the frames we will be using
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"KiWQM Field Data Formatter",
                           pos=wx.DefaultPosition, size=wx.Size(600, 390), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+        wx.EVT_CLOSE(self, self.OnClose)
         self.panel = LoadPanel(self)
         # Set the frame size and background colour
         self.SetSizeHintsSz(wx.DefaultSize, wx.DefaultSize)
@@ -75,29 +77,6 @@ class LoadFrame (wx.Frame):
     # -------------------------------------------------------------------------
     def __del__(self):
         pass
-
-    # -------------------------------------------------------------------------
-    def OnClose(self, event):
-        dlg = wx.MessageDialog(self, "Do you really want to close this application?",
-                               "Confirm Exit", wx.OK | wx.CANCEL | wx.ICON_QUESTION)
-        result = dlg.ShowModal()
-        dlg.Destroy()
-        if result == wx.ID_OK:
-            self.Destroy()
-
-        # sys.exit()
-        # self.Destroy()
-        # wx.GetApp().Exit()
-        # for item in wx.GetTopLevelWindows():
-        #     if not isinstance(item, self):
-        #         if isinstance(item, wx.Dialog):
-        #             item.Destroy()
-        #     item.Close()
-            #self.Destroy()
-        #event.Skip()
-        #wx.Exit()
-        app = wx.GetApp()
-        app.Exit()
 
 
 class LoadPanel (wx.Panel):
@@ -216,7 +195,7 @@ class LoadPanel (wx.Panel):
 ###############################################################################
 # Edit window configuration
 ###############################################################################
-class EditFrame(wx.Frame):
+class EditFrame(BaseFrame):
     """
     Initialise the window for the editing screen.
     """
@@ -224,21 +203,10 @@ class EditFrame(wx.Frame):
         # Set up the frames we will be using
         wx.Frame.__init__(self, parent=None, id=wx.ID_ANY,
                           title="KiWQM Field Data Formatter (Data Editing Mode)", size=(1000, 600))
+        wx.EVT_CLOSE(self, self.OnClose)
         self.panel = EditPanel(self)
         # Create the menu bar
         Menus(self)
-
-    # -------------------------------------------------------------------------
-    def OnClose(self, event):
-        dlg = wx.MessageDialog(self, "Do you really want to close this application?",
-                               "Confirm Exit", wx.OK | wx.CANCEL | wx.ICON_QUESTION)
-        result = dlg.ShowModal()
-        dlg.Destroy()
-        if result == wx.ID_OK:
-            self.Destroy()
-        #self.Destroy()
-        app = wx.GetApp()
-        app.Exit()
 
 
 class EditPanel(wx.Panel):
