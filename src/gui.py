@@ -239,27 +239,43 @@ class EditPanel(wx.Panel):
         ButtonExport = wx.Button(self, wx.ID_ANY, "Export data")
         ButtonExport.Bind(wx.EVT_BUTTON, self.ExportData)
 
-        # TODO: Tidy up delete and add buttons and put in correct sizer
         # Delete button
         ButtonDelete = wx.Button(self, wx.ID_ANY, "Delete row")
         ButtonDelete.Bind(wx.EVT_BUTTON, self.DeleteRow)
+
         # Add button
         ButtonAdd = wx.Button(self, wx.ID_ANY, "Add row")
         ButtonAdd.Bind(wx.EVT_BUTTON, self.AddRow)
 
-        # Create sizer and add gui elements
+        # TODO: Increase border thickness around buttons
+        # TODO: Get rid of wasted space at bottom of window
+        # Static box sizers for editing
+        sbTextEdit = wx.StaticBox(self, -1, "Editing:")
+        sbSizerEdit = wx.StaticBoxSizer(sbTextEdit, wx.VERTICAL)
+        sbSizerEdit.Add(ButtonDelete, 0, wx.ALL | wx.CENTER, 5)
+        sbSizerEdit.Add(ButtonAdd, 0, wx.ALL | wx.CENTER, 5)
+
+        # Static box sizer for resetting/exporting
+        sbTextResEx = wx.StaticBox(self, -1, "Reset/Export:")
+        sbSizerResEx = wx.StaticBoxSizer(sbTextResEx, wx.VERTICAL)
+        sbSizerResEx.Add(ButtonReset, 0, wx.ALL | wx.CENTER, 5)
+        sbSizerResEx.Add(ButtonExport, 0, wx.ALL | wx.CENTER, 5)
+
+        # Horizontal sizer to contain all buttons
+        SizerButtons = wx.BoxSizer(wx.HORIZONTAL)
+        SizerButtons.Add(sbSizerEdit, 1, wx.ALL, 0)
+        SizerButtons.Add(sbSizerResEx, 1, wx.ALL, 0)
+
+        # Main sizer for panel - contains all other sizers
         SizerMain = wx.BoxSizer(wx.VERTICAL)
         SizerMain.Add(self.DataContainer, 1, wx.ALL | wx.EXPAND, 5)
-        SizerMain.Add(ButtonReset, 0, wx.ALL | wx.CENTER, 5)
-        SizerMain.Add(ButtonExport, 0, wx.ALL | wx.CENTER, 5)
-        SizerMain.Add(ButtonDelete, 0, wx.ALL | wx.CENTER, 5)
-        SizerMain.Add(ButtonAdd, 0, wx.ALL | wx.CENTER, 5)
+        SizerMain.Add(SizerButtons, 1, wx.ALL | wx.EXPAND, 5)
+
+        # Set the sizer
         self.SetSizer(SizerMain)
 
         # Create a variable to store the data entry mode
         self.ManualMode = False
-
-
 
     # -------------------------------------------------------------------------
     def DataListener(self, path, sampler=None, instrument=None, turbidmeter=None):
