@@ -69,7 +69,7 @@ def check_file_validity(instrument_file, instrument_type):
     :return: Boolean indicating the validity of the file (True for valid, False for invalid)
     """
     # File validity check for Hydrolab instruments:
-    if instrument_type in globals.hydrolab_instruments:
+    if instrument_type in globals.HYDROLAB_INSTRUMENTS:
         # Read the file into a list for interrogation
         in_file = list(instrument_file.readlines())
         # Perform the validity tests
@@ -102,7 +102,7 @@ def load_instrument_file(instrument_file, instrument_type):
     different measurement point
     """
     # File readings procedure for Hydrolab instruments:
-    if instrument_type in globals.hydrolab_instruments:
+    if instrument_type in globals.HYDROLAB_INSTRUMENTS:
         # Set the header and data start rows
         header_start_row = 5
         data_start_row = 8
@@ -550,6 +550,7 @@ def check_sequence_numbers(data_list):
         sequence_correct = False
     return sequence_correct
 
+
 def prepare_dictionary(data_list):
     """
     Transform the orientation of the field data to "parameter oriented"
@@ -594,7 +595,7 @@ def prepare_dictionary(data_list):
             sorted(reps_in_sampling, key=lambda x: x[0])
             sample_idx = reps_in_sampling.index(sample['sample_time'])
             sample['replicate_number'] += sample_idx
-        # Transform the data to paremeter-oriented
+        # Transform the data to parameter-oriented
         for param in globals.PARAMETERS:
             # Store sample metadata for reuse. We use deepcopy here so we create
             # a new object from the sample data.
