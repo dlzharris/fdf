@@ -326,7 +326,8 @@ class EditPanel(wx.Panel):
         """
         self.DataContainer.SetColumns([
             ColumnDefn("", "center", 0, "checked"),
-            ColumnDefn("MP#", "left", 60, "mp_number"),
+            ColumnDefn("MP#", "left", 60, "mp_number",
+                       valueSetter=self.UpdateSampleStation),
             ColumnDefn("Station#", "center", 90, "station_number",
                        valueSetter=self.UpdateSampleStation),
             ColumnDefn("Date", "center", 75, "date"),
@@ -374,6 +375,8 @@ class EditPanel(wx.Panel):
         style_unordered = wx.CB_DROPDOWN | wx.TE_PROCESS_ENTER
         style = style_ordered
         # Select the correct list for the column
+        if col.title == "MP#":
+            options = globals.MP_NUMBERS
         if col.title == "Matrix":
             options = globals.MATRIX_TYPES
         if col.title == "Instrument":

@@ -54,6 +54,24 @@ FIELD_STAFF = ["Alison Lewis",
                "Tracy Fulford",
                "Warwick Mawhinney"]
 
+# List of available measuring program numbers
+MP_NUMBERS = ["MP406",
+              "MP409",
+              "MP418",
+              "MP420",
+              "MP424",
+              "MP430",
+              "MP433",
+              "MP479",
+              "MP514",
+              "MP516",
+              "MP639",
+              "MP676",
+              "MP699",
+              "MP709",
+              "MP720",
+              "MP721"]
+
 # Instrument names as variables
 HYDROLAB_INSTRUMENTS = ["Hydrolab DS5", "Hydrolab MS4", "Hydrolab MS5"]
 
