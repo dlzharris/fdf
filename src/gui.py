@@ -247,8 +247,6 @@ class EditPanel(wx.Panel):
         ButtonAdd = wx.Button(self, wx.ID_ANY, "Add row")
         ButtonAdd.Bind(wx.EVT_BUTTON, self.AddRow)
 
-        # TODO: Increase border thickness around buttons
-        # TODO: Get rid of wasted space at bottom of window
         # Static box sizers for editing
         sbTextEdit = wx.StaticBox(self, -1, "Editing:")
         sbSizerEdit = wx.StaticBoxSizer(sbTextEdit, wx.VERTICAL)
@@ -268,8 +266,8 @@ class EditPanel(wx.Panel):
 
         # Main sizer for panel - contains all other sizers
         SizerMain = wx.BoxSizer(wx.VERTICAL)
-        SizerMain.Add(self.DataContainer, 1, wx.ALL | wx.EXPAND, 5)
-        SizerMain.Add(SizerButtons, 1, wx.ALL | wx.EXPAND, 5)
+        SizerMain.Add(self.DataContainer, 1, wx.ALL, 5)
+        SizerMain.Add(SizerButtons, 0, wx.ALL | wx.EXPAND, 5)
 
         # Set the sizer
         self.SetSizer(SizerMain)
