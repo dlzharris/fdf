@@ -145,7 +145,7 @@ def load_instrument_file(instrument_file, instrument_type):
             n = data_start_row
             for line in in_list[data_start_row:]:
                 # Find if we have reached the end of the data
-                if "Recovery" in line or "Power" in line:
+                if '\x00' in line:
                     break
                 else:
                     n += 1
@@ -159,6 +159,10 @@ def load_instrument_file(instrument_file, instrument_type):
             data = []
             # Change the keys to our standard key values and remove items that are not relevant
             for line in reader:
+                try:
+                    parse_date_from_string(line['Date'], date_idx)
+                except DateError:
+                    continue
                 new_line = {}
                 for item in line:
                     try:
