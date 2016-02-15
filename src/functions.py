@@ -533,19 +533,22 @@ def check_sequence_numbers(data_list):
     :param data_list:
     :return:
     """
-    for sample in data_list:
-        sequence_correct = True
-        # Get a list of all sequence numbers at a single location in a
-        # single sampling.
-        sequence_numbers = [int(s['sample_cid']) for s in data_list if
-                            s['sampling_number'] == sample['sampling_number'] and
-                            s['location_id'] == sample['location_id']]
-        # Check that sequence numbers in a single sampling are distinct,
-        # start at 1, and increment sequentially
-        if not all(a == b for a, b in list(enumerate(sorted(sequence_numbers), start=1))):
-            sequence_correct = False
+    try:
+        for sample in data_list:
+            sequence_correct = True
+            # Get a list of all sequence numbers at a single location in a
+            # single sampling.
+            sequence_numbers = [int(s['sample_cid']) for s in data_list if
+                                s['sampling_number'] == sample['sampling_number'] and
+                                s['location_id'] == sample['location_id']]
+            # Check that sequence numbers in a single sampling are distinct,
+            # start at 1, and increment sequentially
+            if not all(a == b for a, b in list(enumerate(sorted(sequence_numbers), start=1))):
+                sequence_correct = False
+    # If we are missing sampling numbers or location IDs then we will get a ValueError
+    except ValueError:
+        sequence_correct = False
     return sequence_correct
-
 
 def prepare_dictionary(data_list):
     """
