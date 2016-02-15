@@ -30,7 +30,7 @@ MATRIX_TYPES = ["ST", "SG", "GB", "GP", "PR"]
 BOOLEAN = ["Yes", "No"]
 
 # List of available parameters
-PARAMETERS = ["conductivity_uncomp", "do", "do_sat", "gauge_height",
+PARAMETERS = ["conductivity_uncomp", "conductivity_comp", "do", "do_sat", "gauge_height",
               "ph", "temp_c", "turbidity", "water_depth"]
 
 # List of available field officers
@@ -55,7 +55,7 @@ FIELD_STAFF = ["Alison Lewis",
                "Warwick Mawhinney"]
 
 # Instrument names as variables
-hydrolab_instruments = ["Hydrolab DS5", "Hydrolab MS4", "Hydrolab MS5"]
+HYDROLAB_INSTRUMENTS = ["Hydrolab DS5", "Hydrolab MS4", "Hydrolab MS5"]
 
 # Required fields for export
 REQUIRED_FIELDS = [
