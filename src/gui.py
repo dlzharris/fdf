@@ -355,6 +355,7 @@ class EditPanel(wx.Panel):
             ColumnDefn("pH", "left", 50, "ph"),
             ColumnDefn("Temp (deg C)", "left", 110, "temp_c"),
             ColumnDefn("EC (uS/cm)", "left", 90, "conductivity_uncomp"),
+            ColumnDefn("EC@25 (uS/cm)", "left", 115, "conductivity_comp"),
             ColumnDefn("Turbidity (NTU)", "left", 120, "turbidity"),
             ColumnDefn("Water Depth (m)", "left", 130, "water_depth"),
             ColumnDefn("Gauge Height (m)", "left", 135, "gauge_height"),
