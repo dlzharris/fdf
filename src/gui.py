@@ -330,7 +330,8 @@ class EditPanel(wx.Panel):
                        cellEditorCreator=self.DropDownComboBox),
             ColumnDefn("Station#", "center", 90, "station_number",
                        valueSetter=self.UpdateSampleStation),
-            ColumnDefn("Date", "center", 75, "date"),
+            ColumnDefn("Date", "center", 75, "date",
+                       valueSetter=self.UpdateSampleDate),
             ColumnDefn("Time", "center", 75, "sample_time"),
             ColumnDefn("Sampling ID", "center", 140, "sampling_number",
                        isEditable=False),
@@ -399,13 +400,26 @@ class EditPanel(wx.Panel):
         return ComboBox
 
     # -------------------------------------------------------------------------
+    def UpdateSampleDate(self, SampleObject, value):
+        """
+        Try to generate sampling number if station number has been updated.
+        """
+        SampleObject['date'] = value
+        if value != "" and SampleObject['station_number'] != "":
+            SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
+        if value == "":
+            SampleObject['sampling_number'] = ""
+
+    # -------------------------------------------------------------------------
     def UpdateSampleStation(self, SampleObject, value):
         """
         Try to generate sampling number if station number has been updated.
         """
+        SampleObject['station_number'] = value
         if value != "" and SampleObject['date'] != "":
-            SampleObject['station_number'] = value
             SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
+        if value == "":
+            SampleObject['sampling_number'] = ""
 
     # -------------------------------------------------------------------------
     def UpdateSampleType(self, SampleObject, value):
