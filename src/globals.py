@@ -93,6 +93,7 @@ REQUIRED_FIELDS = [
 # Non-zero fields
 NON_ZERO_FIELDS = [
     "conductivity_uncomp",
+    "conductivity_comp",
     "do",
     "do_sat",
     "ph",

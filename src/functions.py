@@ -190,6 +190,8 @@ def load_instrument_file(instrument_file, instrument_type):
                 new_line['sampling_instrument'] = ""
                 new_line['gauge_height'] = ""
                 new_line['turbidity'] = ""
+                new_line['conductivity_comp'] = ""
+                new_line['water_depth'] = ""
                 # Add the new updated dictionary to our list
                 data.append(new_line)
     # If the format for the instrument data file was not found, make the data list None
@@ -440,6 +442,7 @@ def get_parameter_name(key):
         "ph": "pH",
         "temp_c": "Temp (deg C)",
         "conductivity_uncomp": "EC (uS/cm)",
+        "conductivity_comp": "EC@25 (uS/cm)",
         "turbidity": "Turbidity (NTU)"}
     return param_names[key]
 
