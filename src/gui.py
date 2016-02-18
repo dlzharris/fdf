@@ -226,7 +226,7 @@ class EditPanel(wx.Panel):
 
         # Create the ObjectListView object instance and set the instance properties
         self.DataContainer = ObjectListView(self, wx.ID_ANY, style=wx.LC_REPORT | wx.SUNKEN_BORDER)
-        self.DataContainer.cellEditMode = ObjectListView.CELLEDIT_SINGLECLICK  # Really only happens on double-click
+        self.DataContainer.cellEditMode = ObjectListView.CELLEDIT_DOUBLECLICK
 
         # Set the column names and column data sources
         self.SetColumns()
@@ -327,7 +327,7 @@ class EditPanel(wx.Panel):
         self.DataContainer.SetColumns([
             ColumnDefn("", "center", 0, "checked"),
             ColumnDefn("MP#", "left", 60, "mp_number",
-                       valueSetter=self.UpdateSampleStation),
+                       cellEditorCreator=self.DropDownComboBox),
             ColumnDefn("Station#", "center", 90, "station_number",
                        valueSetter=self.UpdateSampleStation),
             ColumnDefn("Date", "center", 75, "date"),
