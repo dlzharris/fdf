@@ -798,8 +798,8 @@ class Menus(wx.MenuBar):
         info = wx.AboutDialogInfo()
         # Set the properties of the About box
         info.Name = "KiWQM Field Data Formatter"
-        info.Version = "0.1 Beta"
-        info.Copyright = "(C) 2015 DPI Water"
+        info.Version = "1.0"
+        info.Copyright = "(C) 2016 DPI Water"
         info.Description = wordwrap("KiWQM Field Data Formatter formats field water quality data into a CSV file "
                                     "suitable for import to the KiWQM database.", 350, wx.ClientDC(self.panel))
         info.Developers = [wordwrap("Daniel Harris (Data & Procedures Officer, DPI Water)", 250, wx.ClientDC(self.panel))]
