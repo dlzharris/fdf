@@ -314,6 +314,13 @@ class EditPanel(wx.Panel):
             # Manual mode: Ask the user for the number of lines (samples) required
             self.ManualMode = True
             DataToLoad = NumberSamplesDlg("5", self)
+            # If the user presses cancel and there is no data to display
+            if DataToLoad is None:
+                self.DataContainer.DeleteAllItems()
+                LoadDlg = LoadFrame()
+                self.parent.Destroy()
+                LoadDlg.Show()
+                return None
 
         # Update the sampler and instrument
         self.DataContainer.SetObjects(DataToLoad)
@@ -882,8 +889,11 @@ def NumberSamplesDlg(defaultValue, frame):
             try:
                 DataToLoad = functions.get_empty_dict(int(NumberLines))
                 TextValid = True
+                return DataToLoad
             except ValueError:
                 wx.MessageBox(message="Please enter a valid number!",
                               caption="Invalid number!",
                               style=wx.OK | wx.ICON_EXCLAMATION)
-    return DataToLoad
+        else:
+            # User has clicked cancel - exit the while loop
+            TextValid = True
