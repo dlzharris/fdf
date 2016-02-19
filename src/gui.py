@@ -247,11 +247,16 @@ class EditPanel(wx.Panel):
         ButtonAdd = wx.Button(self, wx.ID_ANY, "Add row")
         ButtonAdd.Bind(wx.EVT_BUTTON, self.AddRow)
 
+        # Copy down button
+        ButtonCopy = wx.Button(self, wx.ID_ANY, "Copy down")
+        ButtonCopy.Bind(wx.EVT_BUTTON, self.CopyDown)
+
         # Static box sizers for editing
         sbTextEdit = wx.StaticBox(self, -1, "Editing:")
         sbSizerEdit = wx.StaticBoxSizer(sbTextEdit, wx.VERTICAL)
         sbSizerEdit.Add(ButtonDelete, 0, wx.ALL | wx.CENTER, 5)
         sbSizerEdit.Add(ButtonAdd, 0, wx.ALL | wx.CENTER, 5)
+        sbSizerEdit.Add(ButtonCopy, 0, wx.ALL | wx.CENTER, 5)
 
         # Static box sizer for resetting/exporting
         sbTextResEx = wx.StaticBox(self, -1, "Reset/Export:")
@@ -433,13 +438,48 @@ class EditPanel(wx.Panel):
             pass
 
     # -------------------------------------------------------------------------
+    def CopyDown(self, event):
+        """
+        Copy selected values down the selection to facilitate easy bulk editing
+        """
+        # Create the dialog box
+        dlg = wx.MultiChoiceDialog(self,
+                                   message="Select the columns to copy",
+                                   caption="Copy values down",
+                                   choices=globals.COPY_DOWN_FIELDS)
+        # If user clicks OK, then proceed
+        if dlg.ShowModal() == wx.ID_OK:
+            selections = dlg.GetSelections()
+            strings = [globals.COPY_DOWN_FIELDS[x] for x in selections]
+            # Get the rows to be affected
+            objs = self.DataContainer.GetSelectedObjects()
+            # Operations happen on top row of selection down to bottom row
+            for i in range(0, len(objs)):
+                for item in strings:
+                    objs[i][globals.COPY_DOWN_CODES[item]] = objs[0][globals.COPY_DOWN_CODES[item]]
+            # Update the sampling number if possible
+            for obj in objs:
+                if obj['station_number'] != "" and obj['date'] != "":
+                    obj['sampling_number'] = functions.get_sampling_number(obj)
+            # Refresh the data objects for display
+            self.DataContainer.RefreshObjects(self.DataContainer.GetObjects())
+        # Close the dialog
+        dlg.Destroy()
+
+    # -------------------------------------------------------------------------
     def DeleteRow(self, event):
+        """
+        Delete selected DataContainer row
+        """
         objs = self.DataContainer.GetSelectedObjects()
         self.DataContainer.RemoveObjects(objs)
         self.DataContainer.RefreshObjects(self.DataContainer.GetObjects())
 
     # -------------------------------------------------------------------------
     def AddRow(self, event):
+        """
+        Add a row to the bottom of the DataContainer
+        """
         DataToLoad = NumberSamplesDlg("1", self)
         self.DataContainer.AddObjects(DataToLoad)
 

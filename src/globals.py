@@ -130,3 +130,24 @@ FIELDNAMES = [
     'units',
     'device']
 
+COPY_DOWN_FIELDS = [
+    'Measuring Program',
+    'Station',
+    'Date',
+    'Location #',
+    'Sample #',
+    'Matrix',
+    'Sample Type',
+    'Instrument',
+    'Sampling Officer']
+
+COPY_DOWN_CODES = {
+    'Measuring Program': 'mp_number',
+    'Station': 'station_number',
+    'Date': 'date',
+    'Location #': 'location_id',
+    'Sample #': 'sample_cid',
+    'Matrix': 'sample_matrix',
+    'Sample Type': 'sample_type',
+    'Instrument': 'sampling_instrument',
+    'Sampling Officer': 'sampling_officer'}
