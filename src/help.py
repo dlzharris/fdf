@@ -30,9 +30,14 @@ page = r"""
 <li>If you need to start again, you can press the <em>Reset data</em> button to clear all data and go back to the first screen.</li>
 </ol>
 <h3 id="editing-data">Editing data</h3>
-<p>Three buttons are provided in the data entry screen to facilitate easy data editing: * <em>Add row</em>: Adds a row to the list of data to be edited. This can be done after importing data from a logger or after going into manual mode. In such a way, manual and logger entries can be entered at the same time. * <em>Delete row</em>: Deletes the selected row or rows in the data entry table. A single row can be selected by clicking with the mouse. Multiple rows can be selected by clicking a row with the mouse, holding down the <em>Shift</em> button on the keyboard, and then selecting the end of the data range by clicking the mouse or using the down arrow on the keyboard. * <em>Copy down</em>: Allows values from one row to be copied down to other rows. This is useful for bulk editing of measuring program numbers, dates, times, location numbers, sequence numbers, matrix type, sample type, field officer and instrument. To use this function, select the source row at the top of the range along with the rows to copy to, then click the <em>Copy down</em> button. A dialog box will appear asking you to select the columns that you wish to copy. Tick the boxes you wish to copy, then click <em>OK</em>. The selected values from the top row will be copied down to the other rows.</p>
+<p>Three buttons are provided in the data entry screen to facilitate easy data editing:</p>
+<ul>
+<li><em>Add row</em>: Adds a row to the list of data to be edited. This can be done after importing data from a logger or after going into manual mode. In such a way, manual and logger entries can be entered at the same time.</li>
+<li><em>Delete row</em>: Deletes the selected row or rows in the data entry table. A single row can be selected by clicking with the mouse. Multiple rows can be selected by clicking a row with the mouse, holding down the <em>Shift</em> button on the keyboard, and then selecting the end of the data range by clicking the mouse or using the down arrow on the keyboard.</li>
+<li><em>Copy down</em>: Allows values from one row to be copied down to other rows. This is useful for bulk editing of measuring program numbers, dates, times, location numbers, sequence numbers, matrix type, sample type, field officer and instrument. To use this function, select the source row at the top of the range along with the rows to copy to, then click the <em>Copy down</em> button. A dialog box will appear asking you to select the columns that you wish to copy. Tick the boxes you wish to copy, then click <em>OK</em>. The selected values from the top row will be copied down to the other rows.</li>
+</ul>
 <h2 id="description-of-fields">Description of fields<a name="description-of-fields"></a></h2>
-<table>
+<table border=1>
 <colgroup>
 <col width="23%" />
 <col width="58%" />
@@ -133,7 +138,7 @@ page = r"""
 </table>
 <h2 id="field-measurements">Field measurements</h2>
 <p>The following columns are available for data collected in the field.</p>
-<table>
+<table border=1>
 <thead>
 <tr class="header">
 <th align="left">Parameter</th>
@@ -177,7 +182,7 @@ page = r"""
 </table>
 <h2 id="code-definitions">Code definitions</h2>
 <h3 id="matrix-codes">Matrix codes<a name="matrix-codes"></a></h3>
-<table>
+<table border=1>
 <thead>
 <tr class="header">
 <th align="left">Code</th>
@@ -212,7 +217,7 @@ page = r"""
 </tbody>
 </table>
 <h3 id="sample-type-codes">Sample type codes<a name="sample-type-codes"></a></h3>
-<table>
+<table border=1>
 <thead>
 <tr class="header">
 <th align="left">Code</th>
