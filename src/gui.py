@@ -520,6 +520,7 @@ class EditPanel(wx.Panel):
         zero_value_fields = functions.check_data_zero_values(data_dicts)
         matrix_consistent = functions.check_matrix_consistency(data_dicts)
         sequence_nums_ok = functions.check_sequence_numbers(data_dicts)
+        dates_ok = functions.check_date_validity(data_dicts)
         if incomplete_fields:
             self.CheckCompletenessMsg(incomplete_fields)
             return None
@@ -532,6 +533,10 @@ class EditPanel(wx.Panel):
         if not sequence_nums_ok:
             self.CheckSequenceNumbersMsg()
             return None
+        if not dates_ok:
+            self.CheckDateValidityMsg()
+            return None
+
         # Display the confirmation check dialog and check if the
         # validation declaration has been confirmed.
         if self.ManualMode is False:
@@ -616,6 +621,17 @@ class EditPanel(wx.Panel):
               "on the same date."
         wx.MessageBox(message=msg,
                       caption="Sequence number error!",
+                      style=wx.OK | wx.ICON_ERROR)
+
+        # -------------------------------------------------------------------------
+    def CheckDateValidityMsg(self):
+        """
+        Display a message to the user if dates are invalid
+        """
+        msg = "Date error\n\nOne or more dates entered are in the future and therefore invalid.\n" \
+              "Please ensure that all dates are valid before exporting."
+        wx.MessageBox(message=msg,
+                      caption="Date error!",
                       style=wx.OK | wx.ICON_ERROR)
 
     # -------------------------------------------------------------------------

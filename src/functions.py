@@ -286,7 +286,7 @@ def parse_date_from_string(date_string, date_idx):
     if not str(date_string).replace("/", "").isdigit():
         raise DateError
     # Filter out the digits from the date string
-    date_digits = filter(str.isdigit, date_string)
+    date_digits = filter(str.isdigit, str(date_string))
     # Extract the date components
     try:
         day = date_digits[day_idx[0]:day_idx[1] + 1]
@@ -453,9 +453,9 @@ def get_replicate_number(rep_code):
     """
     replicate_numbers = {
         "P": 0,
-        "RE": 1,
-        "DU": 1,
-        "TR": 2,
+        "R": 1,
+        "D": 1,
+        "T": 2,
         "QR": 0,
         "QB": 0,
         "QT": 0}
@@ -533,7 +533,7 @@ def check_sequence_numbers(data_list):
     """
     Check that all samples in a single sampling use distinct sequence
     numbers and that they start at 1 and increment sequentially.
-    :param data_list:
+    :param data_list: The list of dictionaries to be checked
     :return:
     """
     try:
@@ -552,6 +552,22 @@ def check_sequence_numbers(data_list):
     except ValueError:
         sequence_correct = False
     return sequence_correct
+
+
+def check_date_validity(data_list):
+    """
+    Check that all samples use dates that are in the past.
+    :param data_list: The list of dictionaries to be checked
+    :return: Boolean indicating if the dates are valid or not.
+    """
+    try:
+        dates_valid = True
+        for sample in data_list:
+            if datetime.datetime.strptime(sample['date'], '%d/%m/%y') > datetime.datetime.now():
+                dates_valid = False
+    except ValueError:
+        dates_valid = False
+    return dates_valid
 
 
 def prepare_dictionary(data_list):
