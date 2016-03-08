@@ -35,6 +35,7 @@ write_to_csv: write the data to a dictionary for import to KiWQM
 import csv
 import copy
 import datetime
+from dateutil.parser import parse
 from itertools import islice
 import re
 import globals
@@ -160,7 +161,7 @@ def load_instrument_file(instrument_file, instrument_type):
             # Change the keys to our standard key values and remove items that are not relevant
             for line in reader:
                 try:
-                    parse_date_from_string(line['Date'], date_idx)
+                    sample_dt = parse_datetime_from_string(line['Date'], line['Time'])
                 except DateError:
                     continue
                 new_line = {}
@@ -170,8 +171,8 @@ def load_instrument_file(instrument_file, instrument_type):
                     except KeyError:
                         pass
                 # Format the date and time correctly
-                new_line['date'] = parse_date_from_string(new_line['date'], date_idx)
-                new_line['sample_time'] = parse_time_from_string(new_line['sample_time'])
+                new_line['date'] = sample_dt.strftime('%d/%m/%y')
+                new_line['sample_time'] = sample_dt.strftime('%H:%M:%S')
                 # Add the extra items we'll need access to later on
                 new_line['event_time'] = ""
                 new_line['sampling_number'] = ""
@@ -242,61 +243,20 @@ def get_empty_dict(number_lines):
     return empty_data
 
 
-def parse_time_from_string(time_string):
+def parse_datetime_from_string(date_string, time_string):
     """
-    Take a string that stores time information (in any format) and parse it
-    to the format HH:MM:SS.
-    :param time_string: The string that contains time information
-    :return: Formatted time string as HH:MM:SS
+    Take a date string and time string (in any format) and parse it into a
+    datetime object.
+    :param date_string: String containing date information
+    :param time_string: String containing time information
+    :return: Datetime object containing date and time information
     """
-    # Set the time component delimiter
-    delimiter = ':'
-    # Check for invalid characters
-    if not str(time_string).replace(":", "").isdigit():
-        raise TimeError
-    # Filter out the digits from the time string (force to str type)
-    time_digits = filter(str.isdigit, str(time_string))
-    # Ensure two-digits used for hour
-    if len(time_digits) < 6:
-        time_digits = "".join(['0', time_digits])
-    # Extract the time components
-    hours = time_digits[:2]
-    minutes = time_digits[2:4]
-    seconds = "00"  # This strips out the seconds component. To keep the seconds, use time_digits[4:6]
-    # Concatenate time components with delimiter
-    time_string = hours + delimiter + minutes + delimiter + seconds
-    return time_string
-
-
-def parse_date_from_string(date_string, date_idx):
-    """
-    Take a string that stores date information and parse it to the format DD/MM/YY
-    :param date_string: The string that contains date information
-    :param date_idx: List of tuples that provide the indices of date components
-    in the date_digits extracted from the date string
-    :return: Formatted date string as DD/MM/YY
-    """
-    # Set the date component delimiter
-    delimiter = '/'
-    # Extract the date components
-    day_idx = date_idx[0]
-    month_idx = date_idx[1]
-    year_idx = date_idx[2]
-    # Check for invalid characters
-    if not str(date_string).replace("/", "").isdigit():
-        raise DateError
-    # Filter out the digits from the date string
-    date_digits = filter(str.isdigit, str(date_string))
-    # Extract the date components
     try:
-        day = date_digits[day_idx[0]:day_idx[1] + 1]
-        month = date_digits[month_idx[0]:month_idx[1] + 1]
-        year = date_digits[year_idx[0]:year_idx[1] + 1]
-    except IndexError:
+        datetime_concat = " ".join([date_string, time_string])
+        dt = parse(datetime_concat, dayfirst=True)
+    except (ValueError, TypeError):
         raise DateError
-    # Concatenate date components with delimiter
-    date_string = day + delimiter + month + delimiter + year
-    return date_string
+    return dt
 
 
 def get_sampling_time(sample_set, station, sample_date):
@@ -313,7 +273,7 @@ def get_sampling_time(sample_set, station, sample_date):
     """
     # sample_set is a dictionary of samples extracted from the csv
     # with extra attributes
-    sample_times = [datetime.datetime.strptime(parse_time_from_string(s['sample_time']), '%H:%M:%S')
+    sample_times = [parse_datetime_from_string(s['date'], s['sample_time'])
                     for s in sample_set if s['station_number'] == station and s['date'] == sample_date]
     # Find the earliest time and convert it to a string
     sampling_time = min(sample_times).strftime('%H:%M:%S')
@@ -332,7 +292,7 @@ def get_sampling_number(field_dict):
     # Get the required parts of the sampling number from the field_dict
     station = field_dict['station_number']
     try:
-        date = datetime.datetime.strptime(field_dict['date'], '%d/%m/%y').strftime(date_format)
+        date = parse_datetime_from_string(field_dict['date'], "").strftime(date_format)
     except ValueError:
         date = datetime.datetime.strptime(field_dict['date'], '%d%m%y').strftime(date_format)
     sample_type = field_dict['sample_type']
@@ -563,7 +523,8 @@ def check_date_validity(data_list):
     try:
         dates_valid = True
         for sample in data_list:
-            if datetime.datetime.strptime(sample['date'], '%d/%m/%y') > datetime.datetime.now():
+            sample_dt = parse_datetime_from_string(sample['date'], sample['sample_time'])
+            if sample_dt > datetime.datetime.now():
                 dates_valid = False
     except ValueError:
         dates_valid = False
@@ -584,12 +545,12 @@ def prepare_dictionary(data_list):
     data_list_param_oriented = []
     # Set the datetime format for the entry datetime
     dt_format = '%Y-%m-%d %H:%M:%S'
-    # Ensure the validity of time formats before continuing
-    date_idx = [(0, 1), (2, 3), (4, 5)]
+    # Parse the sample date and time
     for sample in data_list:
         try:
-            sample['date'] = parse_date_from_string(sample['date'], date_idx)
-            sample['sample_time'] = parse_time_from_string(sample['sample_time'])
+            sample_dt = parse_datetime_from_string(sample['date'], sample['sample_time'])
+            sample['date'] = sample_dt.strftime('%d/%m/%y')
+            sample['sample_time'] = sample_dt.strftime('%H:%M:%S')
         except (TimeError, DateError):
             raise
     # Each item in the list is a single dictionary representing a single sample
