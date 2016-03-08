@@ -29,6 +29,15 @@ MATRIX_TYPES = ["ST", "SG", "GB", "GP", "PR"]
 # Boolean values
 BOOLEAN = ["Yes", "No"]
 
+# Date and time formats
+DATE_DISPLAY = '%d/%m/%Y'
+DATE_EXPORT = '%Y-%m-%d'
+DATE_SAMPLING_NUMBER = '%d%m%y'
+TIME_DISPLAY = '%H:%M:S'
+TIME_EVENT_EXPORT = '%H:%M:00'
+TIME_SAMPLE_EXPORT = '%H:%M:S'
+DT_FRACTION_ENTRY = '%Y-%m-%d %H:%M:%S'
+
 # List of available parameters
 PARAMETERS = ["conductivity_uncomp", "conductivity_comp", "do", "do_sat", "gauge_height",
               "ph", "temp_c", "turbidity", "water_depth"]

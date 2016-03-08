@@ -171,8 +171,8 @@ def load_instrument_file(instrument_file, instrument_type):
                     except KeyError:
                         pass
                 # Format the date and time correctly
-                new_line['date'] = sample_dt.strftime('%d/%m/%y')
-                new_line['sample_time'] = sample_dt.strftime('%H:%M:%S')
+                new_line['date'] = sample_dt.strftime(globals.DATE_DISPLAY)
+                new_line['sample_time'] = sample_dt.strftime(globals.TIME_DISPLAY)
                 # Add the extra items we'll need access to later on
                 new_line['event_time'] = ""
                 new_line['sampling_number'] = ""
@@ -276,7 +276,7 @@ def get_sampling_time(sample_set, station, sample_date):
     sample_times = [parse_datetime_from_string(s['date'], s['sample_time'])
                     for s in sample_set if s['station_number'] == station and s['date'] == sample_date]
     # Find the earliest time and convert it to a string
-    sampling_time = min(sample_times).strftime('%H:%M:%S')
+    sampling_time = min(sample_times).strftime(globals.TIME_EVENT_EXPORT)
     return sampling_time
 
 
@@ -287,14 +287,10 @@ def get_sampling_number(field_dict):
     :return: The sampling number used to identify the sample in KiWQM
     """
     # Set the date format and delimiter for the sampling number
-    date_format = '%d%m%y'
     sampling_delimiter = "-"
     # Get the required parts of the sampling number from the field_dict
     station = field_dict['station_number']
-    try:
-        date = parse_datetime_from_string(field_dict['date'], "").strftime(date_format)
-    except ValueError:
-        date = datetime.datetime.strptime(field_dict['date'], '%d%m%y').strftime(date_format)
+    date = parse_datetime_from_string(field_dict['date'], "").strftime(globals.DATE_SAMPLING_NUMBER)
     sample_type = field_dict['sample_type']
     # Create the sampling number in format STATION#-DDMMYY[-SAMPLE_TYPE]
     if sample_type in ["QR", "QB", "QT"]:
@@ -543,14 +539,12 @@ def prepare_dictionary(data_list):
     """
     # Create the container for the parameter-oriented data
     data_list_param_oriented = []
-    # Set the datetime format for the entry datetime
-    dt_format = '%Y-%m-%d %H:%M:%S'
     # Parse the sample date and time
     for sample in data_list:
         try:
             sample_dt = parse_datetime_from_string(sample['date'], sample['sample_time'])
-            sample['date'] = sample_dt.strftime('%d/%m/%y')
-            sample['sample_time'] = sample_dt.strftime('%H:%M:%S')
+            sample['date'] = sample_dt.strftime(globals.DATE_EXPORT)
+            sample['sample_time'] = sample_dt.strftime(globals.TIME_SAMPLE_EXPORT)
         except (TimeError, DateError):
             raise
     # Each item in the list is a single dictionary representing a single sample
@@ -562,7 +556,7 @@ def prepare_dictionary(data_list):
         sample['fraction_lab_shortname'] = "FLD"                                         # Static text
         sample['fraction_data_source'] = "Field Data"                                    # Static text
         sample['fraction_number'] = get_fraction_number(sample)                          # Calculated value
-        sample['fraction_entry_datetime'] = datetime.datetime.now().strftime(dt_format)  # Current time
+        sample['fraction_entry_datetime'] = datetime.datetime.now().strftime(globals.DT_FRACTION_ENTRY)  # Current time
         # If more than one replicate per sampling, increment replicate number on export
         rep_depth_tolerance = 0.15
         min_depth = float(sample['depth_upper']) - rep_depth_tolerance
@@ -608,7 +602,7 @@ def write_to_csv(data_list, out_filepath, fieldnames_list):
     Write a list of data dictionaries to a csv file
     :param data_list: List of dictionaries to be written. Each dictionary
         represents one line of data to be written
-    :param out_file: File object to be written to
+    :param out_filepath: Path to file object to be written to
     :param fieldnames_list: List of fieldnames to be used when writing
     :return: No return value
     """
