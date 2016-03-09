@@ -342,9 +342,10 @@ class EditPanel(wx.Panel):
                        cellEditorCreator=self.DropDownComboBox),
             ColumnDefn("Station#", "center", 90, "station_number",
                        valueSetter=self.UpdateSampleStation),
-            ColumnDefn("Date", "center", 75, "date",
+            ColumnDefn("Date", "center", 90, "date",
                        valueSetter=self.UpdateSampleDate),
-            ColumnDefn("Time", "center", 75, "sample_time"),
+            ColumnDefn("Time", "center", 75, "sample_time",
+                       valueSetter=self.UpdateSampleTime),
             ColumnDefn("Sampling ID", "center", 140, "sampling_number",
                        isEditable=False),
             ColumnDefn("Loc#", "left", 50, "location_id"),
@@ -416,7 +417,10 @@ class EditPanel(wx.Panel):
         """
         Try to generate sampling number if station number has been updated.
         """
-        SampleObject['date'] = value
+        try:
+            SampleObject['date'] = functions.parse_datetime_from_string(value, "").strftime(globals.DATE_DISPLAY)
+        except DateError:
+            self.DatetimeFormatErrorMsg('date')
         if value != "" and SampleObject['station_number'] != "":
             SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
         if value == "":
@@ -432,6 +436,17 @@ class EditPanel(wx.Panel):
             SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
         if value == "":
             SampleObject['sampling_number'] = ""
+
+    # -------------------------------------------------------------------------
+    def UpdateSampleTime(self, SampleObject, value):
+        """
+        Try to generate sampling number if station number has been updated.
+        """
+        try:
+            sample_dt = functions.parse_datetime_from_string(SampleObject['date'], value)
+            SampleObject['sample_time'] = sample_dt.strftime(globals.TIME_DISPLAY)
+        except DateError:
+            self.DatetimeFormatErrorMsg('time')
 
     # -------------------------------------------------------------------------
     def UpdateSampleType(self, SampleObject, value):
@@ -552,11 +567,8 @@ class EditPanel(wx.Panel):
         # Reformat the data in parameter-oriented format
         try:
             data_reformatted = functions.prepare_dictionary(data_dicts)
-        except DateError:
-            self.DateFormatErrorMsg()
-            return None
-        except TimeError:
-            self.TimeFormatErrorMsg()
+        except (DateError, TimeError):
+            self.DatetimeFormatErrorMsg()
             return None
         # Write the data to csv
         try:
@@ -635,28 +647,16 @@ class EditPanel(wx.Panel):
                       style=wx.OK | wx.ICON_ERROR)
 
     # -------------------------------------------------------------------------
-    def DateFormatErrorMsg(self):
+    def DatetimeFormatErrorMsg(self, dt_type):
         """
         Display a message to the user if there are required fields that
         have been left incomplete.
         """
-        msg = "Date format error\n\nOne or more of the sample dates contain non-numeric characters.\n" \
-              "Please correct these before exporting."
+        dt_capital = dt_type.capitalize()
+        msg = "%s format error\n\nYou have entered an invalid %s.\n" \
+              "Please enter a valid %s in order to continue." % (dt_capital, dt_type, dt_type)
         wx.MessageBox(message=msg,
-                      caption="Date format error!",
-                      style=wx.OK | wx.ICON_ERROR)
-
-
-    # -------------------------------------------------------------------------
-    def TimeFormatErrorMsg(self):
-        """
-        Display a message to the user if there are required fields that
-        have been left incomplete.
-        """
-        msg = "Time format error\n\nOne or more of the sample times contain non-numeric characters.\n" \
-              "Please correct these before exporting."
-        wx.MessageBox(message=msg,
-                      caption="Time format error!",
+                      caption="%s format error!" % dt_capital,
                       style=wx.OK | wx.ICON_ERROR)
 
     # -------------------------------------------------------------------------
