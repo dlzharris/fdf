@@ -31,7 +31,7 @@ from wx.lib.wordwrap import wordwrap
 from ObjectListView import ObjectListView, ColumnDefn, CellEditor
 # Local packages
 import functions
-from functions import DateError, TimeError, ValidityError
+from functions import DatetimeError, ValidityError
 import globals
 import help
 import sys
@@ -419,7 +419,7 @@ class EditPanel(wx.Panel):
         """
         try:
             SampleObject['date'] = functions.parse_datetime_from_string(value, "").strftime(globals.DATE_DISPLAY)
-        except DateError:
+        except DatetimeError:
             self.DatetimeFormatErrorMsg('date')
         if value != "" and SampleObject['station_number'] != "":
             SampleObject['sampling_number'] = functions.get_sampling_number(SampleObject)
@@ -445,7 +445,7 @@ class EditPanel(wx.Panel):
         try:
             sample_dt = functions.parse_datetime_from_string(SampleObject['date'], value)
             SampleObject['sample_time'] = sample_dt.strftime(globals.TIME_DISPLAY)
-        except DateError:
+        except DatetimeError:
             self.DatetimeFormatErrorMsg('time')
 
     # -------------------------------------------------------------------------
@@ -565,11 +565,7 @@ class EditPanel(wx.Panel):
         # Open the save as dialog
         self.OnSaveFile()
         # Reformat the data in parameter-oriented format
-        try:
-            data_reformatted = functions.prepare_dictionary(data_dicts)
-        except (DateError, TimeError):
-            self.DatetimeFormatErrorMsg()
-            return None
+        data_reformatted = functions.prepare_dictionary(data_dicts)
         # Write the data to csv
         try:
             if functions.write_to_csv(data_reformatted, self.SaveAsFilename, globals.FIELDNAMES):

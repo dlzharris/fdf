@@ -10,8 +10,7 @@ Organisation: DPI Water
 Date modified: 13/10/2015
 
 Exceptions:
-TimeError: Custom exception for time format errors
-DateError: Custom exception for date format errors
+DatetimeError: Custom exception for date and time format errors
 
 Functions:
 check_file_validity: check the validity of the instrument file
@@ -41,14 +40,7 @@ import re
 import globals
 
 
-class TimeError(Exception):
-    """
-    Custom exception for time format errors
-    """
-    pass
-
-
-class DateError(Exception):
+class DatetimeError(Exception):
     """
     Custom exception for date format errors
     """
@@ -162,7 +154,7 @@ def load_instrument_file(instrument_file, instrument_type):
             for line in reader:
                 try:
                     sample_dt = parse_datetime_from_string(line['Date'], line['Time'])
-                except DateError:
+                except DatetimeError:
                     continue
                 new_line = {}
                 for item in line:
@@ -255,7 +247,7 @@ def parse_datetime_from_string(date_string, time_string):
         datetime_concat = " ".join([date_string, time_string])
         dt = parse(datetime_concat, dayfirst=True)
     except (ValueError, TypeError):
-        raise DateError
+        raise DatetimeError
     return dt
 
 
@@ -545,7 +537,7 @@ def prepare_dictionary(data_list):
             sample_dt = parse_datetime_from_string(sample['date'], sample['sample_time'])
             sample['date'] = sample_dt.strftime(globals.DATE_EXPORT)
             sample['sample_time'] = sample_dt.strftime(globals.TIME_SAMPLE_EXPORT)
-        except (TimeError, DateError):
+        except DatetimeError:
             raise
     # Each item in the list is a single dictionary representing a single sample
     for sample in data_list:
