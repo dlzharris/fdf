@@ -33,9 +33,9 @@ BOOLEAN = ["Yes", "No"]
 DATE_DISPLAY = '%d/%m/%Y'
 DATE_EXPORT = '%Y-%m-%d'
 DATE_SAMPLING_NUMBER = '%d%m%y'
-TIME_DISPLAY = '%H:%M:S'
+TIME_DISPLAY = '%H:%M:%S'
 TIME_EVENT_EXPORT = '%H:%M:00'
-TIME_SAMPLE_EXPORT = '%H:%M:S'
+TIME_SAMPLE_EXPORT = '%H:%M:%S'
 DT_FRACTION_ENTRY = '%Y-%m-%d %H:%M:%S'
 
 # List of available parameters
