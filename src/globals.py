@@ -166,3 +166,16 @@ COPY_DOWN_CODES = {
     'Sample Type': 'sample_type',
     'Instrument': 'sampling_instrument',
     'Sampling Officer': 'sampling_officer'}
+
+LIMITS = {
+    'depth_upper': (0, 0),
+    'depth_lower': (50, 50),
+    'do': (0, 50),
+    'do_sat': (0, 200),
+    'ph': (0, 14),
+    'temp_c': (0, 50),
+    'conductivity_uncomp': (0, 5000000),
+    'conductivity_comp': (0, 5000000),
+    'turbidity': (0, 5000),
+    'water_depth': (0, 200),
+    'gauge_height': (0, 100)}
