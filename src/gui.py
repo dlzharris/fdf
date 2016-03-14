@@ -472,48 +472,70 @@ class EditPanel(wx.Panel):
 
     # -------------------------------------------------------------------------
     def CheckDepthUpper(self, SampleObject, value):
-        SampleObject['depth_upper'] = functions.check_value_validity(value, 'depth_upper')
-        return None
+        try:
+            SampleObject['depth_upper'] = functions.check_value_validity(value, 'depth_upper')
+        except ValueError:
+            return None
 
     def CheckDepthLower(self, SampleObject, value):
-        SampleObject['depth_lower'] = functions.check_value_validity(value, 'depth_lower')
-        return None
+        try:
+            SampleObject['depth_lower'] = functions.check_value_validity(value, 'depth_lower')
+        except ValueError:
+            return None
 
     def CheckDO(self, SampleObject, value):
-        SampleObject['do'] = functions.check_value_validity(value, 'do')
-        return None
+        try:
+            SampleObject['do'] = functions.check_value_validity(value, 'do')
+        except ValueError:
+            return None
 
     def CheckDOSat(self, SampleObject, value):
-        SampleObject['do_sat'] = functions.check_value_validity(value, 'do_sat')
-        return None
+        try:
+            SampleObject['do_sat'] = functions.check_value_validity(value, 'do_sat')
+        except ValueError:
+            return None
 
     def CheckpH(self, SampleObject, value):
-        SampleObject['ph'] = functions.check_value_validity(value, 'ph')
-        return None
-    
+        try:
+            SampleObject['ph'] = functions.check_value_validity(value, 'ph')
+        except ValueError:
+            return None
+
     def CheckTemp(self, SampleObject, value):
-        SampleObject['temp_c'] = functions.check_value_validity(value, 'temp_c')
-        return None
+        try:
+            SampleObject['temp_c'] = functions.check_value_validity(value, 'temp_c')
+        except ValueError:
+            return None
 
     def CheckEC(self, SampleObject, value):
-        SampleObject['conductivity_uncomp'] = functions.check_value_validity(value, 'conductivity_uncomp')
-        return None
+        try:
+            SampleObject['conductivity_uncomp'] = functions.check_value_validity(value, 'conductivity_uncomp')
+        except ValueError:
+            return None
 
     def CheckEC25(self, SampleObject, value):
-        SampleObject['conductivity_comp'] = functions.check_value_validity(value, 'conductivity_comp')
-        return None
+        try:
+            SampleObject['conductivity_comp'] = functions.check_value_validity(value, 'conductivity_comp')
+        except ValueError:
+            return None
 
     def CheckTurbidity(self, SampleObject, value):
-        SampleObject['turbidity'] = functions.check_value_validity(value, 'turbidity')
-        return None
-    
+        try:
+            SampleObject['turbidity'] = functions.check_value_validity(value, 'turbidity')
+        except ValueError:
+            return None
+
     def CheckDepth(self, SampleObject, value):
-        SampleObject['water_depth'] = functions.check_value_validity(value, 'water_depth')
-        return None
+        try:
+            SampleObject['water_depth'] = functions.check_value_validity(value, 'water_depth')
+        except ValueError:
+            return None
 
     def CheckGaugeHeight(self, SampleObject, value):
-        SampleObject['gauge_height'] = functions.check_value_validity(value, 'gauge_height')
-        return None
+        try:
+            SampleObject['gauge_height'] = functions.check_value_validity(value, 'gauge_height')
+        except ValueError:
+            return None
 
     # -------------------------------------------------------------------------
     def CopyDown(self, event):

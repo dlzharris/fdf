@@ -671,16 +671,16 @@ def to_precision(x, p):
 
 
 def check_value_validity(value, value_type):
-    val = float(value)
-    # Check the value is in acceptable limits
     lower_limit = globals.LIMITS[value_type][0]
     upper_limit = globals.LIMITS[value_type][1]
-    if lower_limit <= val <= upper_limit:
-        pass
-    else:
-        e = "%s value not between %s and %s." % (value_type, lower_limit, upper_limit)
+    try:
+        val = float(value)
+        if lower_limit <= val <= upper_limit:
+            pass
+        else:
+            raise ValueError
+        return to_precision(value, globals.PRECISION[value_type])
+    except ValueError:
+        e = "%s value must be between %s and %s." % (value_type, lower_limit, upper_limit)
         wx.MessageBox(message=e, caption="%s value error!" % value_type, style=wx.OK | wx.ICON_ERROR)
         raise ValueError(e)
-    # Update the value with the required precision
-    # TODO: Reevaluate the precision thing
-    return to_precision(value, globals.PRECISION[value_type])
