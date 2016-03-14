@@ -40,7 +40,7 @@ from itertools import islice
 import re
 import wx
 import globals
-
+import types,string
 
 class DatetimeError(Exception):
     """
@@ -608,69 +608,13 @@ def write_to_csv(data_list, out_filepath, fieldnames_list):
     return True
 
 
-def to_precision(x, p):
-    """
-    returns a string representation of x formatted with a precision of p
-
-    This code was taken from Randle Taylor's work, available at https://github.com/randlet/to-precision
-    Based on the webkit javascript implementation taken from here:
-    https://code.google.com/p/webkit-mirror/source/browse/JavaScriptCore/kjs/number_object.cpp
-    :param x: String representation of the number to be formatted.
-    :param p:
-    """
-    x = float(x)
-    if x == 0.:
-        return "0." + "0"*(p-1)
-
-    out = []
-
-    if x < 0:
-        out.append("-")
-        x = -x
-
-    e = int(math.log10(x))
-    tens = math.pow(10, e - p + 1)
-    n = math.floor(x/tens)
-
-    if n < math.pow(10, p - 1):
-        e -= 1
-        tens = math.pow(10, e - p+1)
-        n = math.floor(x / tens)
-
-    if abs((n + 1.) * tens - x) <= abs(n * tens -x):
-        n += 1
-
-    if n >= math.pow(10,p):
-        n /= 10.
-        e += 1
-
-    m = "%.*g" % (p, n)
-
-    if e < -2 or e >= p:
-        out.append(m[0])
-        if p > 1:
-            out.append(".")
-            out.extend(m[1:p])
-        out.append('e')
-        if e > 0:
-            out.append("+")
-        out.append(str(e))
-    elif e == (p - 1):
-        out.append(m)
-    elif e >= 0:
-        out.append(m[:e+1])
-        if e+1 < len(m):
-            out.append(".")
-            out.extend(m[e+1:])
-    else:
-        out.append("0.")
-        out.extend(["0"]*-(e+1))
-        out.append(m)
-
-    return "".join(out)
-
-
 def check_value_validity(value, value_type):
+    """
+    Check if the entered or modified value is within valid limits and round the value to the required precision.
+    :param value: string representation of number to be validated
+    :param value_type: string representing the parameter that the value belongs to
+    :return: formatted string representation of the entered/modified value
+    """
     lower_limit = globals.LIMITS[value_type][0]
     upper_limit = globals.LIMITS[value_type][1]
     try:
@@ -679,7 +623,7 @@ def check_value_validity(value, value_type):
             pass
         else:
             raise ValueError
-        return to_precision(value, globals.PRECISION[value_type])
+        return str(round(val, globals.PRECISION[value_type]))
     except ValueError:
         e = "%s value must be between %s and %s." % (value_type, lower_limit, upper_limit)
         wx.MessageBox(message=e, caption="%s value error!" % value_type, style=wx.OK | wx.ICON_ERROR)
