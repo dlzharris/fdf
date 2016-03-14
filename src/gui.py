@@ -562,7 +562,9 @@ class EditPanel(wx.Panel):
                 if obj['station_number'] != "" and obj['date'] != "":
                     obj['sampling_number'] = functions.get_sampling_number(obj)
             # Refresh the data objects for display
-            self.DataContainer.RefreshObjects(self.DataContainer.GetObjects())
+            for obj in objs:
+                self.DataContainer.RefreshObject(obj)
+            #self.DataContainer.RefreshObjects(self.DataContainer.GetObjects())
         # Close the dialog
         dlg.Destroy()
 
