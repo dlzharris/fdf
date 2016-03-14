@@ -179,3 +179,16 @@ LIMITS = {
     'turbidity': (0, 5000),
     'water_depth': (0, 200),
     'gauge_height': (0, 100)}
+
+PRECISION = {
+    'depth_upper': 2,
+    'depth_lower': 2,
+    'do': 3,
+    'do_sat': 4,
+    'ph': 4,
+    'temp_c': 3,
+    'conductivity_uncomp': 3,
+    'conductivity_comp': 3,
+    'turbidity': 3,
+    'water_depth': 2,
+    'gauge_height': 2}

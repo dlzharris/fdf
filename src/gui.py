@@ -363,17 +363,28 @@ class EditPanel(wx.Panel):
                        cellEditorCreator=self.DropDownComboBox),
             ColumnDefn("Sample Collected", "left", 130, "sample_collected",
                        cellEditorCreator=self.DropDownComboBox),
-            ColumnDefn("Depth Upper (m)", "left", 125, "depth_upper"),
-            ColumnDefn("Depth Lower (m)", "left", 125, "depth_lower"),
-            ColumnDefn("DO (mg/L)", "left", 85, "do"),
-            ColumnDefn("DO (% sat)", "left", 85, "do_sat"),
-            ColumnDefn("pH", "left", 50, "ph"),
-            ColumnDefn("Temp (deg C)", "left", 110, "temp_c"),
-            ColumnDefn("EC (uS/cm)", "left", 90, "conductivity_uncomp"),
-            ColumnDefn("EC@25 (uS/cm)", "left", 115, "conductivity_comp"),
-            ColumnDefn("Turbidity (NTU)", "left", 120, "turbidity"),
-            ColumnDefn("Water Depth (m)", "left", 130, "water_depth"),
-            ColumnDefn("Gauge Height (m)", "left", 135, "gauge_height"),
+            ColumnDefn("Depth Upper (m)", "left", 125, "depth_upper",
+                       valueSetter=self.CheckDepthUpper),
+            ColumnDefn("Depth Lower (m)", "left", 125, "depth_lower",
+                       valueSetter=self.CheckDepthLower),
+            ColumnDefn("DO (mg/L)", "left", 85, "do",
+                       valueSetter=self.CheckDO),
+            ColumnDefn("DO (% sat)", "left", 85, "do_sat",
+                       valueSetter=self.CheckDOSat),
+            ColumnDefn("pH", "left", 50, "ph",
+                       valueSetter=self.CheckpH),
+            ColumnDefn("Temp (deg C)", "left", 110, "temp_c",
+                       valueSetter=self.CheckTemp),
+            ColumnDefn("EC (uS/cm)", "left", 90, "conductivity_uncomp",
+                       valueSetter=self.CheckEC),
+            ColumnDefn("EC@25 (uS/cm)", "left", 115, "conductivity_comp",
+                       valueSetter=self.CheckEC25),
+            ColumnDefn("Turbidity (NTU)", "left", 120, "turbidity",
+                       valueSetter=self.CheckTurbidity),
+            ColumnDefn("Water Depth (m)", "left", 130, "water_depth",
+                       valueSetter=self.CheckDepth),
+            ColumnDefn("Gauge Height (m)", "left", 135, "gauge_height",
+                       valueSetter=self.CheckGaugeHeight),
             ColumnDefn("Comments", "left", 200, "sampling_comment")
         ])
 
@@ -460,19 +471,49 @@ class EditPanel(wx.Panel):
             pass
 
     # -------------------------------------------------------------------------
-    def CheckValueValidity(self, SampleObject, value):
-        val = float(value)
-        # Check the value is in acceptable limits
-        lower_limit = globals.LIMITS[value_type][0]
-        upper_limit = globals.LIMITS[value_type][1]
-        if lower_limit <= val <= upper_limit:
-            pass
-        else:
-            e = "%s value not between %s and %s." % (value_type, lower_limit, upper_limit)
-            wx.MessageBox(message=e, caption="%s value error!" % value_type, style=wx.OK | wx.ICON_ERROR)
-            raise ValueError(e)
-        # Update the value with the required precision
-        SampleObject[value_type] = functions.to_precision(value, precision[value_type])
+    def CheckDepthUpper(self, SampleObject, value):
+        SampleObject['depth_upper'] = functions.check_value_validity(value, 'depth_upper')
+        return None
+
+    def CheckDepthLower(self, SampleObject, value):
+        SampleObject['depth_lower'] = functions.check_value_validity(value, 'depth_lower')
+        return None
+
+    def CheckDO(self, SampleObject, value):
+        SampleObject['do'] = functions.check_value_validity(value, 'do')
+        return None
+
+    def CheckDOSat(self, SampleObject, value):
+        SampleObject['do_sat'] = functions.check_value_validity(value, 'do_sat')
+        return None
+
+    def CheckpH(self, SampleObject, value):
+        SampleObject['ph'] = functions.check_value_validity(value, 'ph')
+        return None
+    
+    def CheckTemp(self, SampleObject, value):
+        SampleObject['temp_c'] = functions.check_value_validity(value, 'temp_c')
+        return None
+
+    def CheckEC(self, SampleObject, value):
+        SampleObject['conductivity_uncomp'] = functions.check_value_validity(value, 'conductivity_uncomp')
+        return None
+
+    def CheckEC25(self, SampleObject, value):
+        SampleObject['conductivity_comp'] = functions.check_value_validity(value, 'conductivity_comp')
+        return None
+
+    def CheckTurbidity(self, SampleObject, value):
+        SampleObject['turbidity'] = functions.check_value_validity(value, 'turbidity')
+        return None
+    
+    def CheckDepth(self, SampleObject, value):
+        SampleObject['water_depth'] = functions.check_value_validity(value, 'water_depth')
+        return None
+
+    def CheckGaugeHeight(self, SampleObject, value):
+        SampleObject['gauge_height'] = functions.check_value_validity(value, 'gauge_height')
+        return None
 
     # -------------------------------------------------------------------------
     def CopyDown(self, event):
@@ -924,3 +965,5 @@ def NumberSamplesDlg(defaultValue, frame):
         else:
             # User has clicked cancel - exit the while loop
             TextValid = True
+
+
