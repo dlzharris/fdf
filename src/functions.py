@@ -34,13 +34,12 @@ write_to_csv: write the data to a dictionary for import to KiWQM
 import csv
 import copy
 import datetime
-import math
 from dateutil.parser import parse
 from itertools import islice
 import re
 import wx
 import globals
-import types,string
+
 
 class DatetimeError(Exception):
     """

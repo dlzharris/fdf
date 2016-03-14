@@ -564,7 +564,8 @@ class EditPanel(wx.Panel):
             # Refresh the data objects for display
             for obj in objs:
                 self.DataContainer.RefreshObject(obj)
-            #self.DataContainer.RefreshObjects(self.DataContainer.GetObjects())
+            # TODO: Check the best refresh objects method
+            # self.DataContainer.RefreshObjects(self.DataContainer.GetObjects())
         # Close the dialog
         dlg.Destroy()
 
