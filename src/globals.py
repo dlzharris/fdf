@@ -168,8 +168,8 @@ COPY_DOWN_CODES = {
     'Sampling Officer': 'sampling_officer'}
 
 LIMITS = {
-    'depth_upper': (0, 0),
-    'depth_lower': (50, 50),
+    'depth_upper': (0, 50),
+    'depth_lower': (0, 50),
     'do': (0, 50),
     'do_sat': (0, 200),
     'ph': (0, 14),
