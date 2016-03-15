@@ -1,0 +1,218 @@
+KiWQM Field Data Importer Help
+==============================
+##Introduction
+Welcome to the *KiWQM Field Data Importer Help* file. This document briefly describes how to use the *Field Data Importer*, provides explanations of the various fields requiring user input, and defines the codes used.
+
+##How to use this application
+KiWQM requires that any imported data is loaded in a specific format. The *KiWQM Field Data Importer* helps get your field data into that format easily. The application can be used to load data from a data logger file (such as that created by the Hydrolab instruments when measurements are saved in the field) or to input data collected manually on a *Water Sample Log*.
+
+After starting the application, you will see the *Load screen* and should do the following:
+
+1. Select the water quality instrument and turbiditimeter used for data collection from the drop-down lists of available instruments.
+2. Select the sampler that collected the data.
+3. Select the data entry mode:
+    a. If you are importing data from a data logger file, select *Load logger file*, and then click the *Browse* button to choose the file you wish to import.
+	b. If you are entering data manually, select *Manual data entry*.
+4. Press the *Continue* button. You will be taken to the data entry screen. If you have selected *Manual data entry* you will first be asked how many samples you are entering data for.
+5. Enter the measurement details (e.g. measuring program, station number etc.) as described in the [Description of fields](#description-of-fields) table below. Some of the fields require text, some fields are drop-down selections. The Sampling ID field is automatically generated once the *Station number* and *Date* have been entered. If you have imported data from a logger file, ensure that the dates, times and depths are consistent with the physical *Water Sample Log* sheet.
+6. Once you have entered all the required data, press the *Export data* button at the bottom of the screen. If you have left any required fields empty, you will be prompted to complete those fields. Note that not *all* the fields are mandatory--see [Description of fields](#description-of-fields) for details on mandatory and optional fields.
+7. If you have imported data from a logger file, you will be asked to confirm that you have validated the dates, times and depths as recorded by the logger against the physical *Water Sample Log* sheet to ensure they are consistent. If you have not yet done this, go back and validate these parameters before exporting. 
+8. After the data has been exported, it is ready for importing to KiWQM. See the procedure [*Bulk Data Import into KiWQM Database* (STOP 32055)][kiwqm-import-procedure].
+9. If you need to start again, you can press the *Reset data* button to clear all data and go back to the first screen.
+
+###Editing data
+Three buttons are provided in the data entry screen to facilitate easy data editing:
+
+* *Add row*: Adds a row to the list of data to be edited. This can be done after importing data from a logger or after going into manual mode. In such a way, manual and logger entries can be entered at the same time.
+* *Delete row*: Deletes the selected row or rows in the data entry table. A single row can be selected by clicking with the mouse. Multiple rows can be selected by clicking a row with the mouse, holding down the *Shift* button on the keyboard, and then selecting the end of the data range by clicking the mouse or using the down arrow on the keyboard.
+* *Copy down*: Allows values from one row to be copied down to other rows. This is useful for bulk editing of measuring program numbers, dates, times, location numbers, sequence numbers, matrix type, sample type, field officer and instrument. To use this function, select the source row at the top of the range along with the rows to copy to, then click the *Copy down* button. A dialog box will appear asking you to select the columns that you wish to copy. Tick the boxes you wish to copy, then click *OK*. The selected values from the top row will be copied down to the other rows.
+
+## Description of fields<a name="description-of-fields"></a>
++------------------------+--------------------------------------------------------------+------------------+
+| Field                  | Definition                                                   | Mandatory        |
++========================+==============================================================+==================+
+| MP# (Measuring program | The measuring program number assigned to the project in      | Y                |
+| number)                | *KiWQM*. This is in the form *MP###*.                        |
++------------------------+--------------------------------------------------------------+------------------+ 
+| Station#               | A 6-8 digit identifier that specifies the monitoring         | Y                |
+|                        | station at which the sample was collected. See procedure     |                  |
+|                        | [*Water quality project, sample, fraction and station        |                  |
+|                        | numbers (product identification and traceability)*           |                  |
+|                        | (STOP 32005)][numbering-procedure] for further information.  |                  |
++------------------------+--------------------------------------------------------------+------------------+
+| Sampling ID            | The *sampling ID* is a unique identifier that is used to     | Y (automatically |
+|                        | group samples collected together as part of a single         | generated)       |
+|                        | sampling event. To ensure uniqueness, it is generated        |                  |
+|                        | from the *station number* and the *date* in the format       |                  |
+|                        | *STATION_NUMBER-YYMMDD*. These fields are described in more  |                  |
+|						 | detail in [*STOP 32005: Water quality project, sample,       |                  |
+|                        | fraction and station numbers (product identification and     |                  |
+|                        | traceability)*][numbering-procedure].                        |                  |
+|                        |                                                              |                  |
+|                        | Individual samples within the sampling are identified in     |                  |
+|                        | conjunction with the *location number* and *sample sequence  |                  |
+|                        | number* as described below. In most situations, a single     |                  |
+|                        | sample will have a single *Sampling ID*.                     |                  |
++------------------------+--------------------------------------------------------------+------------------+
+| Date                   | The date the sampling event took place. The date can be      | Y                |
+|                        | input in any format as long as it contains two digits for    |                  |
+|                        | day, two digits for month and two or four digits for year    |                  |
+|                        | *in that order*. The date will be automatically reformatted  |                  |
+|                        | to the format *DD/MM/YYYY* if it was not entered as such.    |                  |
++------------------------+--------------------------------------------------------------+------------------+
+| Time                   | The time at which the field measurements were taken or       | Y                |
+|                        | the sample was collected. The time can be entered in any     |                  |
+|                        | format as long as it is entered in 24-hour time and contains |                  |
+|                        | at least two digits for hour and two digits for minute. The  |                  | 
+|                        | time can include seconds (two digits). The time will be      |                  |
+|                        | automatically reformatted to the format *HH:MM:SS* (24-hour  |                  |
+|                        | time). In general, the seconds should be zero so as to match |                  |
+|                        | the data exported by the laboratory. Where field measurements|                  |
+|                        | are taken using a data logger, the time recorded on the WSL  |                  |
+|                        | should match the time recorded on the data logger. Since     |                  |
+|                        | samples are often collected and bottled just after the       |                  |
+|                        | field measurements are taken, the time recorded here         |                  |
+|                        | may be slightly earlier than the exact time the sample       |                  |
+|                        | was removed from the media or bottled.                       |                  |
+|                        |                                                              |                  |
+|                        | The time recorded here *must match* the time recorded on the |                  |
+|                        | *Water Sample Log* filled at time of sample collection.      |                  |
++------------------------+--------------------------------------------------------------+------------------+
+| Loc# (Location number) | A single-digit number used to separate samples from the      | Y                |
+|                        | same station and sampling event, but collected from          |                  |
+|                        | different spatial locations. This is mostly relevant for     |                  |
+|                        | groundwater samples where there could be multiple pipes      |                  |
+|                        | at a single site, but is also relevant for surface water     |                  |
+|                        | samples where spatial analysis of water quality at a         |                  |
+|                        | particular station is important.                             |                  |
+|                        |                                                              |                  |
+|                        | The *location number* starts at *1* and increments by one    |                  |
+|                        | for each new location sampled. For groundwater samples,      |                  |
+|                        | this column is used to indicate the *pipe number*. If        |                  |
+|                        | only a single location or pipe exists at a station, this     |                  |
+|                        | should be filled with a *1*.                                 |                  |
++------------------------+--------------------------------------------------------------+------------------+
+| Seq# (Sample sequence  | A single-digit number used to specify individual samples     | Y                |
+| number)                | within a sampling event at a given location. Every sample    |                  |
+|                        | collected *must* have a *sequence number* associated         |                  |
+|                        | with it. The *sequence number* starts at *1* and             |                  |
+|                        | increments by one for each sample collected. For example,    |                  |
+|                        | if three samples are collected at a station at different     |                  |
+|                        | depths to form a depth profile, the first sample will        |                  |
+|                        | have a *sequence number* of 1, the second sample will        |                  |
+|                        | have a *sequence number* of 2, and the third sample will     |                  |
+|                        | have a *sequence number* of 3. This also applies to          |                  |
+|                        | replicate samples collected at a site. For example, a        |                  |
+|                        | primary sample may have a *sequence number* of 1, while      |                  |
+|                        | the replicate sample will have a *sequence number* of 2.     |                  |
+|                        | If only one sample is collected at a station, it should      |                  |
+|                        | be assigned a *sequence number* of *1*.                      |                  |
++------------------------+--------------------------------------------------------------+------------------+
+| Matrix                 | A two-letter code that describes the medium from which       | Y                |
+|                        | the sample was collected. This field must be populated       |                  |
+|                        | with one of the acceptable values from the controlled        |                  |
+|                        | list. Code definitions are provided in                       |                  |
+|                        | [Code definitions](#matrix-codes) below.                     |                  |
++------------------------+--------------------------------------------------------------+------------------+
+| Sample type            | Indicates whether the sample is a primary sample or some     | Y                |
+|                        | kind of quality control sample. This field must be populated |                  |
+|                        | with one of the acceptable values from the controlled        |                  |
+|                        | list. Code definitions are provided in                       |                  |
+|                        | [Code definitions](#sample-type-codes) below.                |                  |
++------------------------+--------------------------------------------------------------+------------------+
+| Calibration record     | Instrument calibrations should be recorded using the         | N                |
+|                        | appropriate [*Form 39004: Instrument calibration log and     |                  |
+|                        | maintenance schedule*][calibration-log], according to the    |                  |
+|                        | [*Instrument calibration log user guide*                     |                  |
+|                        | (STOP 32057)][calibration-log-guide]. The number to be       |                  |
+|                        | recorded here is the *Instrument book number* and *Sheet     |                  |
+|                        | number* combined, but separated by a forward slash. For      |                  |
+|                        | example, if the calibration log for an instrument had an     |                  |
+|                        | *Instrument book number* of *BA-0123*, and a *Sheet number*  |                  |
+|                        | of *02*, then the calibration record to be noted is          |                  |
+|                        | *BA-0123/02*. This provides the opportunity to trace back    |                  |
+|                        | from the collected field data to the original calibration    |                  |
+|                        | record if required. If more than one calibration record is   |                  |
+|                        | relevant, note all the relevant record numbers.              |                  |
++------------------------+--------------------------------------------------------------+------------------+
+| Instrument             | The model of water quality instrument used to collect the    | Y                |
+|                        | field measurements. This must be selected from the list of   |                  |
+|                        | available instruments.                                       |                  |
++------------------------+--------------------------------------------------------------+------------------+
+| Sampling Officer       | Name of the staff member who collected the field             | Y                |
+|                        | measurements.                                                |                  |
++------------------------+--------------------------------------------------------------+------------------+
+| Sample collected       | Indicates whether a sample has been collected for            | N                |
+|                        | laboratory analysis, or whether only field measurements      |                  |
+|                        | have been collected. This is indicated by selecting either   |                  |
+|                        | *Yes* or *No*.                                               |                  |
++------------------------+--------------------------------------------------------------+------------------+
+| Depth Upper (m)        | If a sample is collected at a specific depth, write the      | Y                |
+|                        | depth in metres.                                             |                  |
++------------------------+--------------------------------------------------------------+------------------+
+| Depth Lower (m)        | If the sample is collected over a depth range, record the    | N                |
+|                        | upper depth limit in *Depth Upper* and lower depth limit in  |                  |
+|                        | *Depth Lower*.                                               |                  |
++------------------------+--------------------------------------------------------------+------------------+
+| Comments               | Any relevant text comments that should accompany the data.   | N                |
++------------------------+--------------------------------------------------------------+------------------+
+
+## Field measurements
+The following columns are available for data collected in the field.
+
+| Parameter                         | Unit                    |
+|:----------------------------------|:-----------------------:|
+| Dissolved oxygen (DO)             | mg/L *or* % saturation  |
+| pH                                | pH units                |
+| Temperature                       | deg C                   |
+| Electrical conductivity (EC)      | uS/cm, uncompensated    |
+| Electrical conductivity (EC) @25C | uS/cm, compensated @25C |
+| Turbidity                         | NTU                     |
+| Water depth (water column height) | m                       |
+| Gauge height                      | m                       |
+
+
+##Code definitions
+###Matrix codes<a name="matrix-codes"></a>
+
+| Code | Definition            |
+|:-----|:----------------------|
+| ST   | Stream                |
+| SG   | Storage               |
+| GB   | Groundwater bore      |
+| GP   | Piezometer            |
+| PR   | Precipitation -- rain |
+| PS   | Precipitation -- snow |
+
+
+###Sample type codes<a name="sample-type-codes"></a>
+
+| Code | Definition    |
+|:-----|:--------------|
+| P    | Primary       |
+| R    | Replicate     |
+| D    | Duplicate     |
+| T    | Triplicate    |
+| QR   | Rinsate blank |
+| QB   | Field blank   |
+| QT   | Trip blank    |
+
+
+References
+==========
+[*Bulk Data Import into KiWQM Database* (STOP 32055)][kiwqm-import-procedure]
+
+[*Instrument Calibration Log and Maintenance Schedule* (STOP 39004)][calibration-log]
+
+[*Instrument calibration log user guide* (STOP 32057)][calibration-log-guide]
+
+[*Water quality project, sample, fraction and station numbers (product identification and traceability)* (STOP 32005)][numbering-procedure]
+
+[*Water Sample Log* (STOP 39057)][wsl-form]
+
+[wsl-form]: http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/39057.doc
+[coc-form]: http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/39161.doc
+[calibration-log]: http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/39004.doc
+[calibration-log-guide]: http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/32057.pdf
+[kiwqm-import-procedure]: http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/32055.pdf
+[numbering-procedure]: http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/32005.pdf
