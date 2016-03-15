@@ -69,12 +69,12 @@ page = r"""
 </tr>
 <tr class="even">
 <td align="left"><p>Date</p></td>
-<td align="left"><p>The date the sampling event took place. The date must be in the format <em>DD/MM/YYYY</em>, that is: two digits for day, two digits for month and four digits for year in that order separated by forward slashes.</p></td>
+<td align="left"><p>The date the sampling event took place. The date can be input in any format as long as it contains two digits for day, two digits for month and two or four digits for year <em>in that order</em>. The date will be automatically reformatted to the format <em>DD/MM/YYYY</em> if it was not entered as such.</p></td>
 <td align="left"><p>Y</p></td>
 </tr>
 <tr class="odd">
 <td align="left"><p>Time</p></td>
-<td align="left"><p>The time at which the field measurements were taken or the sample was collected, in the format <em>HH:MM:SS</em> (24-hour time). In general, the seconds should be zero so as to match the data exported by the laboratory. Where field measurements are taken using a data logger, the time recorded on the WS should match the time recorded on the data logger. Since samples are often collected and bottled just after the field measurements are taken, the time recorded here may be slightly earlier than the exact time the sample was removed from the media or bottled.</p>
+<td align="left"><p>The time at which the field measurements were taken or the sample was collected. The time can be entered in any format as long as it is entered in 24-hour time and contains at least two digits for hour and two digits for minute. The time can include seconds (two digits). The time will be automatically reformatted to the format <em>HH:MM:SS</em> (24-hour time). In general, the seconds should be zero so as to match the data exported by the laboratory. Where field measurements are taken using a data logger, the time recorded on the WSL should match the time recorded on the data logger. Since samples are often collected and bottled just after the field measurements are taken, the time recorded here may be slightly earlier than the exact time the sample was removed from the media or bottled.</p>
 <p>The time recorded here <em>must match</em> the time recorded on the <em>Water Sample Log</em> filled at time of sample collection.</p></td>
 <td align="left"><p>Y</p></td>
 </tr>
