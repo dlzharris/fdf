@@ -8,7 +8,7 @@ Organisation: DPI Water
 Date modified: 13/10/2015
 """
 # Splash screen image
-SPLASH_FN = "../img/splash_screen_scribus_02.jpg"
+SPLASH_FN = "img/splash_screen_scribus_02.jpg"
 
 # Global constants
 LABORATORY = "Field Measurement"
@@ -161,11 +161,13 @@ COPY_DOWN_CODES = {
     'Station': 'station_number',
     'Date': 'date',
     'Location #': 'location_id',
-    'Sample #': 'sample_cid',
+    'Sequence #': 'sample_cid',
     'Matrix': 'sample_matrix',
     'Sample Type': 'sample_type',
+    'Calibration record': 'calibration_record',
     'Instrument': 'sampling_instrument',
-    'Sampling Officer': 'sampling_officer'}
+    'Sampling Officer': 'sampling_officer',
+    'Sample collected': 'sample_collected'}
 
 LIMITS = {
     'depth_upper': (0, 50),
