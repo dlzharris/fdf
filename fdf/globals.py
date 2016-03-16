@@ -150,11 +150,13 @@ COPY_DOWN_FIELDS = [
     'Station',
     'Date',
     'Location #',
-    'Sample #',
+    'Sequence #',
     'Matrix',
     'Sample Type',
+    'Calibration record',
     'Instrument',
-    'Sampling Officer']
+    'Sampling Officer',
+    'Sample Collected']
 
 COPY_DOWN_CODES = {
     'Measuring Program': 'mp_number',
@@ -167,7 +169,7 @@ COPY_DOWN_CODES = {
     'Calibration record': 'calibration_record',
     'Instrument': 'sampling_instrument',
     'Sampling Officer': 'sampling_officer',
-    'Sample collected': 'sample_collected'}
+    'Sample Collected': 'sample_collected'}
 
 LIMITS = {
     'depth_upper': (0, 50),
