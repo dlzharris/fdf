@@ -161,8 +161,8 @@ def load_instrument_file(instrument_file, instrument_type):
                 new_line = {}
                 for item in line:
                     try:
-                        new_line[get_new_dict_key(item)] = line[item]
-                    except KeyError:
+                        new_line[get_new_dict_key(item)] = float(line[item])
+                    except (KeyError, ValueError):
                         pass
                 # Format the date and time correctly
                 new_line['date'] = sample_dt.strftime(globals.DATE_DISPLAY)
@@ -637,5 +637,4 @@ def resource_path(relative_path):
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
-
     return os.path.join(base_path, relative_path)
