@@ -39,6 +39,7 @@ from itertools import islice
 import re
 import wx
 import globals
+import sys, os
 
 
 class DatetimeError(Exception):
@@ -627,3 +628,14 @@ def check_value_validity(value, value_type):
         e = "%s value must be between %s and %s." % (value_type, lower_limit, upper_limit)
         wx.MessageBox(message=e, caption="%s value error!" % value_type, style=wx.OK | wx.ICON_ERROR)
         raise ValueError(e)
+
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
