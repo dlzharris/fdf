@@ -63,7 +63,7 @@ page = r"""
 </tr>
 <tr class="odd">
 <td align="left"><p>Sampling ID</p></td>
-<td align="left"><p>The <em>sampling ID</em> is a unique identifier that is used to group samples collected together as part of a single sampling event. To ensure uniqueness, it is generated from the <em>station number</em> and the <em>date</em> in the format <em>STATION_NUMBER-YYMMDD</em>. These fields are described in more detail in <a href="http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/32005.pdf"><em>STOP 32005: Water quality project, sample, fraction and station numbers (product identification and traceability)</em></a>.</p>
+<td align="left"><p>The <em>sampling ID</em> is a unique identifier that is used to group samples collected together as part of a single sampling event. To ensure uniqueness, it is generated from the <em>station number</em> and the <em>date</em> in the format <em>STATION_NUMBER-DDMMYY</em>. These fields are described in more detail in <a href="http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/32005.pdf"><em>STOP 32005: Water quality project, sample, fraction and station numbers (product identification and traceability)</em></a>.</p>
 <p>Individual samples within the sampling are identified in conjunction with the <em>location number</em> and <em>sample sequence number</em> as described below. In most situations, a single sample will have a single <em>Sampling ID</em>.</p></td>
 <td align="left"><p>Y (automatically generated)</p></td>
 </tr>
