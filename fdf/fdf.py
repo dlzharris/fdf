@@ -15,29 +15,32 @@ Functions:
 Main: Runs the Field Data Formatter app.
 """
 
-import wx
-import gui
+import sys
+from PyQt4 import QtGui, QtCore
+import fdfGui
 
 
 ###############################################################################
 # Main app constructor and initialisation
 ###############################################################################
-class MainApp(wx.App):
+class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
     """
     Constructor for the main application
     """
-    def OnInit(self):
-        # Show the splash screen on app startup
-        splash = gui.SplashScreen()
-        splash.Show()
-        # Get the app instance
-        app = wx.GetApp()
-        # Set the frame to be displayed
-        frame = gui.LoadFrame()
-        # Place the frame at the top and show it
-        app.SetTopWindow(frame)
-        frame.Show(True)
-        return True
+    def __init__(self):
+        QtGui.QMainWindow.__init__(self)
+        self.setupUi(self)
+        self.filePickerBtn.clicked.connect(self._filePicker)
+
+    def _filePicker(self):
+        # Show file picker dialog
+        # Update text box with file locationa and name
+        self.fileLineEdit.setText(QtGui.QFileDialog.getOpenFileName())
+
+    #def _addFile(self):
+        # Validate file type
+        # Add data to table
+        # Add file name to listbox
 
 
 # -----------------------------------------------------------------------------
@@ -45,8 +48,10 @@ def main():
     """
     Run the Field Data Formatter app
     """
-    app = MainApp()
-    app.MainLoop()
+    app = QtGui.QApplication(sys.argv)
+    window = MainApp()
+    window.show()
+    sys.exit(app.exec_())
 
 
 # -----------------------------------------------------------------------------
