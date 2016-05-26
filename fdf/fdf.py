@@ -18,6 +18,8 @@ Main: Runs the Field Data Formatter app.
 import sys
 from PyQt4 import QtGui, QtCore
 import fdfGui
+import functions
+import globals
 
 
 ###############################################################################
@@ -31,17 +33,32 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self)
         self.setupUi(self)
         self.filePickerBtn.clicked.connect(self._filePicker)
+        self.addFileBtn.clicked.connect(self._addFile)
+        self.pushButtonDeleteLines.clicked.connect(self._delRows)
 
     def _filePicker(self):
-        # Show file picker dialog
-        # Update text box with file locationa and name
+        # Show file picker dialog and show name in text box
         self.fileLineEdit.setText(QtGui.QFileDialog.getOpenFileName())
 
-    #def _addFile(self):
+    def _addFile(self):
         # Validate file type
-        # Add data to table
+        _dicts = functions.load_instrument_file(self.fileLineEdit.text(), "Hydrolab DS5")
+        self._addRows(functions.lord2lorl(_dicts, globals.COL_ORDER))
+        self.listWidgetCurrentFiles.addItem(QtGui.QListWidgetItem(self.fileLineEdit.text()))
         # Add file name to listbox
 
+    def _addRows(self, lists):
+        for i in range(0, len(lists)):
+            rowPosition = self.tableWidgetData.rowCount()
+            self.tableWidgetData.insertRow(rowPosition)
+            for j in range(0, len(lists[i])):
+                self.tableWidgetData.setItem(rowPosition, j, QtGui.QTableWidgetItem(str(lists[i][j])))
+
+    def _delRows(self):
+        rows = self.tableWidgetData.selectionModel().selectedRows()
+        rows.reverse()
+        for r in rows:
+            self.tableWidgetData.removeRow(r.row())
 
 # -----------------------------------------------------------------------------
 def main():
