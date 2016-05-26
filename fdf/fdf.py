@@ -35,6 +35,8 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         self.filePickerBtn.clicked.connect(self._filePicker)
         self.addFileBtn.clicked.connect(self._addFile)
         self.pushButtonDeleteLines.clicked.connect(self._delRows)
+        self.pushButtonAddLines.clicked.connect(self._insertRows)
+        self.pushButtonResetData.clicked.connect(self._resetData)
 
     def _filePicker(self):
         # Show file picker dialog and show name in text box
@@ -43,22 +45,37 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
     def _addFile(self):
         # Validate file type
         _dicts = functions.load_instrument_file(self.fileLineEdit.text(), "Hydrolab DS5")
-        self._addRows(functions.lord2lorl(_dicts, globals.COL_ORDER))
+        self._addData(functions.lord2lorl(_dicts, globals.COL_ORDER))
         self.listWidgetCurrentFiles.addItem(QtGui.QListWidgetItem(self.fileLineEdit.text()))
         # Add file name to listbox
 
-    def _addRows(self, lists):
+    def _addData(self, lists):
         for i in range(0, len(lists)):
             rowPosition = self.tableWidgetData.rowCount()
             self.tableWidgetData.insertRow(rowPosition)
             for j in range(0, len(lists[i])):
                 self.tableWidgetData.setItem(rowPosition, j, QtGui.QTableWidgetItem(str(lists[i][j])))
 
+    def _insertRows(self):
+        rows = self.tableWidgetData.selectionModel().selectedRows()
+        rowCount = len(rows)
+        try:
+            rowPosition = rows[0].row()
+        except IndexError:
+            rowPosition = self.tableWidgetData.rowCount()
+            rowCount = 1
+        for i in range(0, rowCount):
+            self.tableWidgetData.insertRow(rowPosition)
+
     def _delRows(self):
         rows = self.tableWidgetData.selectionModel().selectedRows()
         rows.reverse()
         for r in rows:
             self.tableWidgetData.removeRow(r.row())
+
+    def _resetData(self):
+        self.tableWidgetData.setRowCount(0)
+
 
 # -----------------------------------------------------------------------------
 def main():
