@@ -37,7 +37,7 @@ import datetime
 from dateutil.parser import parse
 from itertools import islice
 import re
-import wx
+#import wx
 import globals
 import sys, os
 
@@ -628,6 +628,31 @@ def check_value_validity(value, value_type):
         e = "%s value must be between %s and %s." % (value_type, lower_limit, upper_limit)
         wx.MessageBox(message=e, caption="%s value error!" % value_type, style=wx.OK | wx.ICON_ERROR)
         raise ValueError(e)
+
+
+def lord2lorl(lord, colkeys):
+    """
+    Converts a list of dicts where each dict is a row (lord) to
+    a list of lists where each inner list is a row (lorl).
+    Adapted from tabular.py package, available from
+    http://www.saltycrane.com/blog/2007/12/tabular-data-structure-conversion-in-python/
+    :param lord: list of dictionaries to be parsed
+    :param colkeys: list of column keys
+    """
+    return [[row[key] for key in colkeys if key in row]
+            for row in lord]
+
+
+def lorl2lord(lorl, colkeys):
+    """
+    Converts a list of lists where each inner list is a row (lorl) to
+    a list of dicts where each dict is a row (lord).
+    Adapted from tabular.py package, available from
+    http://www.saltycrane.com/blog/2007/12/tabular-data-structure-conversion-in-python/
+    :param lorl: list of lists to be parsed
+    :param colkeys: list of column keys
+    """
+    return [dict(zip(colkeys, row)) for row in lorl]
 
 
 def resource_path(relative_path):

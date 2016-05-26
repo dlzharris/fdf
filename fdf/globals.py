@@ -90,6 +90,35 @@ MP_NUMBERS = ["MP406",
 # Instrument names as variables
 HYDROLAB_INSTRUMENTS = ["Hydrolab DS5", "Hydrolab MS4", "Hydrolab MS5"]
 
+# Display column order
+COL_ORDER = [
+    "mp_number",
+    "station_number",
+    "date",
+    "sample_time",
+    "sampling_number",
+    "location_id",
+    "sample_cid",
+    "sample_matrix",
+    "sample_type",
+    "collection_method",
+    "calibration_record",
+    "sampling_instrument",
+    "sampling_officer",
+    "sample_collected",
+    "depth_upper",
+    "depth_lower",
+    "do",
+    "do_sat",
+    "ph",
+    "temp_c",
+    "conductivity_uncomp",
+    "conductivity_comp",
+    "turbidity",
+    "water_depth",
+    "gauge_height",
+    "sampling_comment"]
+
 # Required fields for export
 REQUIRED_FIELDS = [
     'mp_number',
