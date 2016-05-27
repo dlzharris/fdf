@@ -37,6 +37,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         self.pushButtonDeleteLines.clicked.connect(self._delRows)
         self.pushButtonAddLines.clicked.connect(self._insertRows)
         self.pushButtonResetData.clicked.connect(self._resetData)
+        self.pushButtonExportData.clicked.connect(self._exportData)
 
     def _filePicker(self):
         # Show file picker dialog and show name in text box
@@ -76,6 +77,33 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
     def _resetData(self):
         self.tableWidgetData.setRowCount(0)
 
+    def _exportData(self):
+        fileName = QtGui.QFileDialog.getSaveFileName(caption='Save file', selectedFilter='*.csv')
+        # take a row and append each item to a list
+        tableData = []
+        for i in range(0, self.tableWidgetData.rowCount()):
+            rowData = []
+            for j in range(0, self.tableWidgetData.columnCount()):
+                value = self.tableWidgetData.item(i, j).text()
+                rowData.append(str(value))
+            tableData.append(rowData)
+        tableData = functions.lorl2lord(tableData, globals.COL_ORDER)
+        # Reformat the data in parameter-oriented format
+        data_reformatted = functions.prepare_dictionary(tableData)
+        # Write the data to csv
+        msg = QtGui.QMessageBox()
+        try:
+            if functions.write_to_csv(data_reformatted, fileName, globals.FIELDNAMES):
+                msg.setIcon(QtGui.QMessageBox.Information)
+                msg.setText("Data exported successfully!")
+                msg.setWindowTitle("Export successful!")
+                msg.exec_()
+                return None
+        except IOError:
+            msg.setIcon(QtGui.QMessageBox.Warning)
+            msg.setText("There was an error exporting your file.")
+            msg.setWindowTitle("Export error!")
+            msg.exec_()
 
 # -----------------------------------------------------------------------------
 def main():
