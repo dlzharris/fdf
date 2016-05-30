@@ -39,6 +39,14 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         self.pushButtonResetData.clicked.connect(self._resetData)
         self.pushButtonExportData.clicked.connect(self._exportData)
 
+    def keyPressEvent(self, event):
+        if event.matches(QtGui.QKeySequence.Copy):
+            self._copy()
+        elif event.matches(QtGui.QKeySequence.Paste):
+            self._paste()
+        else:
+            QtGui.QMainWindow.keyPressEvent(self, event)
+
     def _filePicker(self):
         # Show file picker dialog and show name in text box
         self.fileLineEdit.setText(QtGui.QFileDialog.getOpenFileName())
@@ -104,6 +112,47 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             msg.setText("There was an error exporting your file.")
             msg.setWindowTitle("Export error!")
             msg.exec_()
+
+    def _copy(self):
+        selection = self.tableWidgetData.selectionModel()
+        indexes = selection.selectedIndexes()
+        if len(indexes) < 1:
+            # Nothing selected
+            return
+        text = ''
+        rows = [r.row() for r in indexes]
+        cols = [c.column() for c in indexes]
+        for r in range(min(rows), max(rows) + 1):
+            for c in range(min(cols), max(cols) + 1):
+                item = self.tableWidgetData.item(r, c)
+                if item:
+                    text += item.text()
+                if c != max(cols):
+                    text += '\t'
+            if r != max(rows):
+                text += '\n'
+        QtGui.QApplication.clipboard().setText(text)
+
+    def _paste(self):
+        selection = self.tableWidgetData.selectionModel()
+        indexes = selection.selectedIndexes()
+        # Get the location of the top left cell in selection
+        pasteStartRow = min(r.row() for r in indexes)
+        pasteStartCol = min(c.column() for c in indexes)
+        if len(indexes) < 1:
+            # Nothing selected
+            return
+        # Parse the clipboard
+        copyDataRows = QtGui.QApplication.clipboard().text().split('\n')
+        # Paste data in rows, starting from top and moving left to right
+        for i in range(0, len(copyDataRows)):
+            copyDataCols = copyDataRows[i].split('\t')
+            for j in range(0, len(copyDataCols)):
+                self.tableWidgetData.setItem(pasteStartRow + i,
+                                             pasteStartCol + j,
+                                             QtGui.QTableWidgetItem(copyDataCols[j]))
+
+
 
 # -----------------------------------------------------------------------------
 def main():
