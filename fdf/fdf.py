@@ -16,7 +16,7 @@ Main: Runs the Field Data Formatter app.
 """
 
 import sys
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui
 import fdfGui
 import functions
 import globals
@@ -38,6 +38,11 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         self.pushButtonAddLines.clicked.connect(self._insertRows)
         self.pushButtonResetData.clicked.connect(self._resetData)
         self.pushButtonExportData.clicked.connect(self._exportData)
+        # Set up the table
+        table = self.tableWidgetData
+        table.setItemDelegate(validatedItemDelegate())
+        table.setEditTriggers(QtGui.QAbstractItemView.CurrentChanged)
+        table.itemChanged.connect(self._autoUpdateCols)
 
     def keyPressEvent(self, event):
         if event.matches(QtGui.QKeySequence.Copy):
@@ -59,11 +64,14 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         # Add file name to listbox
 
     def _addData(self, lists):
+        self.tableWidgetData.blockSignals(True)
         for i in range(0, len(lists)):
             rowPosition = self.tableWidgetData.rowCount()
             self.tableWidgetData.insertRow(rowPosition)
             for j in range(0, len(lists[i])):
                 self.tableWidgetData.setItem(rowPosition, j, QtGui.QTableWidgetItem(str(lists[i][j])))
+        self._setTableDropDowns()
+        self.tableWidgetData.blockSignals(False)
 
     def _insertRows(self):
         rows = self.tableWidgetData.selectionModel().selectedRows()
@@ -75,6 +83,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             rowCount = 1
         for i in range(0, rowCount):
             self.tableWidgetData.insertRow(rowPosition)
+        self._setTableDropDowns()
 
     def _delRows(self):
         rows = self.tableWidgetData.selectionModel().selectedRows()
@@ -152,7 +161,67 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                                              pasteStartCol + j,
                                              QtGui.QTableWidgetItem(copyDataCols[j]))
 
+    def _setTableDropDowns(self):
+        table = self.tableWidgetData
+        for row in range(0, table.rowCount()):
+            for col in globals.DROP_DOWN_COLS.itervalues():
+                table.openPersistentEditor(table.item(row, col))
 
+    def _autoUpdateCols(self, item):
+        table = self.tableWidgetData
+        if item.column() in [1, 2]:  # Sampling number
+            stationNumber = str(table.item(item.row(), 1).text())
+            date = str(table.item(item.row(), 2).text())
+            sampleType = str(table.item(item.row(), 8).text())
+            samplingNumber = functions.get_sampling_number(
+                station_number=stationNumber,
+                date=date,
+                sample_type=sampleType)
+            table.setItem(item.row(), 4, QtGui.QTableWidgetItem(samplingNumber))
+
+
+class validatedItemDelegate(QtGui.QStyledItemDelegate):
+    def __init__(self):
+        super(validatedItemDelegate, self).__init__()
+
+    def createEditor(self, parent, option, index):
+        combo = QtGui.QComboBox(parent)
+        if index.column() == globals.DROP_DOWN_COLS['SAMPLE_TYPE']:
+            items = globals.SAMPLE_TYPES
+        elif index.column() == globals.DROP_DOWN_COLS['SAMPLE_MATRIX']:
+            items = globals.MATRIX_TYPES
+        elif index.column() == globals.DROP_DOWN_COLS['SAMPLING_OFFICER']:
+            items = globals.FIELD_STAFF
+        elif index.column() == globals.DROP_DOWN_COLS['SAMPLE_COLLECTED']:
+            items = globals.BOOLEAN
+        elif index.column() == globals.DROP_DOWN_COLS['SAMPLING_INSTRUMENT']:
+            items = globals.INSTRUMENTS
+        else:
+            return super(validatedItemDelegate, self).createEditor(parent, option, index)
+        combo.addItems(items)
+        return combo
+
+
+
+    # def createEditor(self, parent, option, index):
+    #     self.editor = QtGui.QComboBox(parent)
+    #     self.editor.addItems(globals.SAMPLE_TYPES)
+    #     return self.editor
+        # if not index.isValid():
+        #     return
+        # row = index.row()
+        # col = index.column()
+        # if col == 8:
+        #     cb = QtGui.QComboBox()
+        #     cb.addItems(globals.SAMPLE_TYPES)
+        #     return cb
+        # if col == any([1, 2]):
+        #     widget.setItem(row, 4, QtGui.QTableWidgetItem(functions.get_sampling_number(
+        #         station_number=str(widget.item(row, 1).text()),
+        #         date=str(widget.item(row, 2).text()),
+        #         sample_type=str(widget.item(row, 8).text())
+        #     )))
+        #return super(validatedItemDelegate, self).createEditor(parent, option, index)
 
 # -----------------------------------------------------------------------------
 def main():

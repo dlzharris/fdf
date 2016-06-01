@@ -274,7 +274,7 @@ def get_sampling_time(sample_set, station, sample_date):
     return sampling_time
 
 
-def get_sampling_number(field_dict):
+def get_sampling_number(station_number, date, sample_type):
     """
     Return a new sampling number
     :param field_dict: Dictionary created from data imported from the instrument file
@@ -283,14 +283,17 @@ def get_sampling_number(field_dict):
     # Set the date format and delimiter for the sampling number
     sampling_delimiter = "-"
     # Get the required parts of the sampling number from the field_dict
-    station = field_dict['station_number']
-    date = parse_datetime_from_string(field_dict['date'], "").strftime(globals.DATE_SAMPLING_NUMBER)
-    sample_type = field_dict['sample_type']
+    try:
+        date = parse_datetime_from_string(date, "").strftime(globals.DATE_SAMPLING_NUMBER)
+    except DatetimeError:
+        date = ""
     # Create the sampling number in format STATION#-DDMMYY[-SAMPLE_TYPE]
-    if sample_type in ["QR", "QB", "QT"]:
-        sampling_number = sampling_delimiter.join([station, date, sample_type])
+    if (not station_number) or (not date):
+        sampling_number = ""
+    elif sample_type in ["QR", "QB", "QT"]:
+        sampling_number = sampling_delimiter.join([station_number, date, sample_type])
     else:
-        sampling_number = sampling_delimiter.join([station, date])
+        sampling_number = sampling_delimiter.join([station_number, date])
     return sampling_number
 
 

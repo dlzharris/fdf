@@ -225,3 +225,10 @@ PRECISION = {
     'turbidity': 2,
     'water_depth': 2,
     'gauge_height': 2}
+
+DROP_DOWN_COLS = {
+    'SAMPLE_MATRIX': 7,
+    'SAMPLE_TYPE': 8,
+    'SAMPLING_INSTRUMENT': 10,
+    'SAMPLING_OFFICER': 11,
+    'SAMPLE_COLLECTED': 12}
