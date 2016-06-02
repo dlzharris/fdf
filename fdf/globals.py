@@ -227,6 +227,7 @@ PRECISION = {
     'gauge_height': 2}
 
 DROP_DOWN_COLS = {
+    'MP_NUMBERS': 0,
     'SAMPLE_MATRIX': 7,
     'SAMPLE_TYPE': 8,
     'SAMPLING_INSTRUMENT': 10,

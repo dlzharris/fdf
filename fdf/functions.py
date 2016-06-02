@@ -247,7 +247,7 @@ def parse_datetime_from_string(date_string, time_string):
     """
     try:
         datetime_concat = " ".join([date_string, time_string])
-        dt = parse(datetime_concat, dayfirst=True, yearfirst=False)
+        dt = parse(datetime_concat, dayfirst=True, yearfirst=False, default=None)
     except (ValueError, TypeError):
         raise DatetimeError
     return dt

@@ -16,7 +16,7 @@ Main: Runs the Field Data Formatter app.
 """
 
 import sys
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 import fdfGui
 import functions
 import globals
@@ -41,7 +41,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         # Set up the table
         table = self.tableWidgetData
         table.setItemDelegate(validatedItemDelegate())
-        table.setEditTriggers(QtGui.QAbstractItemView.CurrentChanged)
+        table.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed | QtGui.QAbstractItemView.DoubleClicked)
         table.itemChanged.connect(self._autoUpdateCols)
 
     def keyPressEvent(self, event):
@@ -70,7 +70,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             self.tableWidgetData.insertRow(rowPosition)
             for j in range(0, len(lists[i])):
                 self.tableWidgetData.setItem(rowPosition, j, QtGui.QTableWidgetItem(str(lists[i][j])))
-        self._setTableDropDowns()
+        #self._setTableDropDowns()
         self.tableWidgetData.blockSignals(False)
 
     def _insertRows(self):
@@ -169,16 +169,25 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
 
     def _autoUpdateCols(self, item):
         table = self.tableWidgetData
-        if item.column() in [1, 2]:  # Sampling number
-            stationNumber = str(table.item(item.row(), 1).text())
-            date = str(table.item(item.row(), 2).text())
-            sampleType = str(table.item(item.row(), 8).text())
+        table.blockSignals(True)
+        row = item.row()
+        col = item.column()
+        if col in [2, 3]:  # Sampling datetime
+            date = str(table.item(row, 2).text())
+            time = str(table.item(row, 3).text())
+            sampleDateTime = functions.parse_datetime_from_string(date, time)
+            table.setItem(row, 2, QtGui.QTableWidgetItem(sampleDateTime.strftime(globals.DATE_DISPLAY)))
+            table.setItem(row, 3, QtGui.QTableWidgetItem(sampleDateTime.strftime(globals.TIME_DISPLAY)))
+        if col in [1, 2]:  # Sampling number
+            stationNumber = str(table.item(row, 1).text())
+            date = str(table.item(row, 2).text())
+            sampleType = str(table.item(row, 8).text())
             samplingNumber = functions.get_sampling_number(
                 station_number=stationNumber,
                 date=date,
                 sample_type=sampleType)
-            table.setItem(item.row(), 4, QtGui.QTableWidgetItem(samplingNumber))
-
+            table.setItem(row, 4, QtGui.QTableWidgetItem(samplingNumber))
+        table.blockSignals(False)
 
 class validatedItemDelegate(QtGui.QStyledItemDelegate):
     def __init__(self):
@@ -186,7 +195,9 @@ class validatedItemDelegate(QtGui.QStyledItemDelegate):
 
     def createEditor(self, parent, option, index):
         combo = QtGui.QComboBox(parent)
-        if index.column() == globals.DROP_DOWN_COLS['SAMPLE_TYPE']:
+        if index.column() == globals.DROP_DOWN_COLS['MP_NUMBERS']:
+            items = globals.MP_NUMBERS
+        elif index.column() == globals.DROP_DOWN_COLS['SAMPLE_TYPE']:
             items = globals.SAMPLE_TYPES
         elif index.column() == globals.DROP_DOWN_COLS['SAMPLE_MATRIX']:
             items = globals.MATRIX_TYPES
