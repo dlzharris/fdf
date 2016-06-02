@@ -226,10 +226,29 @@ PRECISION = {
     'water_depth': 2,
     'gauge_height': 2}
 
-DROP_DOWN_COLS = {
-    'MP_NUMBERS': 0,
+COL_NUM = {
+    'MP_NUMBER': 0,
+    'STATION_NUMBER': 1,
+    'DATE': 2,
+    'SAMPLE_TIME': 3,
+    'SAMPLING_NUMBER': 4,
+    'LOCATION_ID': 5,
+    'SAMPLE_CID': 6,
     'SAMPLE_MATRIX': 7,
     'SAMPLE_TYPE': 8,
+    'CALIBRATION_RECORD': 9,
     'SAMPLING_INSTRUMENT': 10,
     'SAMPLING_OFFICER': 11,
-    'SAMPLE_COLLECTED': 12}
+    'SAMPLE_COLLECTED': 12,
+    'DEPTH_UPPER': 13,
+    'DEPTH_LOWER': 14,
+    'DO': 15,
+    'DO_SAT': 16,
+    'PH': 17,
+    'TEMP_C': 18,
+    'CONDUCTIVITY_UNCOMP': 19,
+    'CONDUCTIVITY_COMP': 20,
+    'TURBIDITY': 21,
+    'WATER_DEPTH': 22,
+    'GAUGE_HEIGHT': 23,
+    'SAMPLING_COMMENT': 24}

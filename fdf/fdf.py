@@ -43,6 +43,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         table.setItemDelegate(validatedItemDelegate())
         table.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed | QtGui.QAbstractItemView.DoubleClicked)
         table.itemChanged.connect(self._autoUpdateCols)
+        table.itemChanged.connect(self._validateInput)
 
     def keyPressEvent(self, event):
         if event.matches(QtGui.QKeySequence.Copy):
@@ -95,6 +96,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         self.tableWidgetData.setRowCount(0)
 
     def _exportData(self):
+        #self._validateBeforeExport()
         fileName = QtGui.QFileDialog.getSaveFileName(caption='Save file', selectedFilter='*.csv')
         # take a row and append each item to a list
         tableData = []
@@ -164,7 +166,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
     def _setTableDropDowns(self):
         table = self.tableWidgetData
         for row in range(0, table.rowCount()):
-            for col in globals.DROP_DOWN_COLS.itervalues():
+            for col in globals.COL_NUM.itervalues():
                 table.openPersistentEditor(table.item(row, col))
 
     def _autoUpdateCols(self, item):
@@ -189,23 +191,79 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             table.setItem(row, 4, QtGui.QTableWidgetItem(samplingNumber))
         table.blockSignals(False)
 
+    def _validateInput(self, item):
+        self.tableWidgetData.blockSignals(True)
+        col = item.column()
+        paramName = ""
+        for parameter, column in globals.COL_NUM.iteritems():
+            if column == col:
+                try:
+                    lowerLimit = globals.LIMITS[parameter.lower()][0]
+                    upperLimit = globals.LIMITS[parameter.lower()][1]
+                    paramName = parameter
+                except KeyError:
+                    return None
+        validator = QtGui.QDoubleValidator(lowerLimit, upperLimit, 2)
+
+        # if item.column() == globals.COL_NUM['PH']:
+        #     validator = QtGui.QDoubleValidator(0, 14, 2)
+        # if item.column() ==
+
+        state = validator.validate(item.text(), 0)[0]
+        print state
+        if state != QtGui.QValidator.Acceptable:
+            item.setBackgroundColor(QtCore.Qt.red)
+            txt = "%s value out of range.\n Acceptable range is between %s and %s" % (paramName, lowerLimit, upperLimit)
+            msg = QtGui.QMessageBox()
+            msg.setIcon(QtGui.QMessageBox.Warning)
+            msg.setText(txt)
+            msg.setWindowTitle("Error!")
+            msg.exec_()
+        else:
+            item.setBackgroundColor(QtCore.Qt.white)
+        self.tableWidgetData.blockSignals(False)
+
+    # def _validateBeforeExport(self):
+    #     rows = self.tableWidgetData.rowCount()
+    #     cols = self.tableWidgetData.columnCount()
+    #     for i in range(0, rows):
+    #         for j in range(0, cols):
+    #             item = self.tableWidgetData.item(i, j)
+    #             for parameter, column in globals.COL_NUM.iteritems():
+    #                 if column == j:
+    #                     try:
+    #                         lowerLimit = globals.LIMITS[parameter.lower()][0]
+    #                         upperLimit = globals.LIMITS[parameter.lower()][1]
+    #                     except KeyError:
+    #                         return None
+    #             validator = QtGui.QDoubleValidator(lowerLimit, upperLimit, 2)
+    #             state = validator.validate(item.text(), 0)[0]
+    #             if state != QtGui.QValidator.Acceptable:
+    #                 msg = QtGui.QMessageBox()
+    #                 msg.setIcon(QtGui.QMessageBox.Warning)
+    #                 msg.setText("Errors detected. Please correct cells in red before proceeding.")
+    #                 msg.setWindowTitle("Error!")
+    #                 msg.exec_()
+    #                 return None
+
+
 class validatedItemDelegate(QtGui.QStyledItemDelegate):
     def __init__(self):
         super(validatedItemDelegate, self).__init__()
 
     def createEditor(self, parent, option, index):
         combo = QtGui.QComboBox(parent)
-        if index.column() == globals.DROP_DOWN_COLS['MP_NUMBERS']:
+        if index.column() == globals.COL_NUM['MP_NUMBER']:
             items = globals.MP_NUMBERS
-        elif index.column() == globals.DROP_DOWN_COLS['SAMPLE_TYPE']:
+        elif index.column() == globals.COL_NUM['SAMPLE_TYPE']:
             items = globals.SAMPLE_TYPES
-        elif index.column() == globals.DROP_DOWN_COLS['SAMPLE_MATRIX']:
+        elif index.column() == globals.COL_NUM['SAMPLE_MATRIX']:
             items = globals.MATRIX_TYPES
-        elif index.column() == globals.DROP_DOWN_COLS['SAMPLING_OFFICER']:
+        elif index.column() == globals.COL_NUM['SAMPLING_OFFICER']:
             items = globals.FIELD_STAFF
-        elif index.column() == globals.DROP_DOWN_COLS['SAMPLE_COLLECTED']:
+        elif index.column() == globals.COL_NUM['SAMPLE_COLLECTED']:
             items = globals.BOOLEAN
-        elif index.column() == globals.DROP_DOWN_COLS['SAMPLING_INSTRUMENT']:
+        elif index.column() == globals.COL_NUM['SAMPLING_INSTRUMENT']:
             items = globals.INSTRUMENTS
         else:
             return super(validatedItemDelegate, self).createEditor(parent, option, index)
