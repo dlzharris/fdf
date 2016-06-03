@@ -457,31 +457,6 @@ def check_matrix_consistency(data_list):
     return matrix_consistent
 
 
-def check_data_zero_values(data_list):
-    """
-    Check the data entered by the user for any variable with a value
-    of zero. This is used to alert the user to the presence of these
-    values prior to exporting.
-    :param data_list: The list of dictionaries to be checked.
-    :return: A list of column titles with zero values.
-    """
-    # Create container for list of incomplete required fields
-    zero_value_fields = []
-    # Loop through required fields and check each item in the field for completeness
-    for field in globals.NON_ZERO_FIELDS:
-        # Extract the values with the given key
-        column = (i[field] for i in data_list)
-        for item in column:
-            # If we have an incomplete item in a required field
-            # add the item to our incomplete list.
-            if item == "0":
-                zero_value_fields.append(get_parameter_name(field))
-                break
-            else:
-                pass
-    return zero_value_fields
-
-
 def check_sequence_numbers(data_list):
     """
     Check that all samples in a single sampling use distinct sequence
