@@ -1,44 +1,56 @@
  # Column configuration
 0: 
   name: mp_number
-  non_zero:
+  allow_zero:
+  required: yes
   list_items: [MP406, MP409, MP418, MP420, MP424, MP430, MP433, MP479, MP514, MP516, MP639, MP676, MP699, MP709, MP720, MP721]
 1:
   name: station_number
-  non_zero:
+  allow_zero:
+  required: yes
 2:
   name: date
-  non_zero:
+  allow_zero:
+  required: yes
 3:
   name: sample_time
-  non_zero:
+  allow_zero:
+  required: yes
 4:
   name: sampling_number
-  non_zero:
+  allow_zero:
+  required: no
 5:
   name: location_id
-  non_zero:
+  allow_zero:
+  required: yes
 6:
   name: sample_cid
-  non_zero:
+  allow_zero:
+  required: yes
 7:
   name: sample_matrix
-  non_zero:
+  allow_zero:
+  required: yes
   list_items: [ST, SG, GB, GP, PR]
 8:
   name: sample_type
-  non_zero:
+  allow_zero:
+  required: yes
   list_items: [P, R, D, T, QR, QB, QT]
 9:
   name: calibration_record
-  non_zero:
+  allow_zero:
+  required: no
 10:
   name: sampling_instrument
-  non_zero:
+  allow_zero:
+  required: yes
   list_items: [Hydrolab DS5, Hydrolab MS4, Hydrolab MS5]
 11:
   name: sampling_officer
-  non_zero:
+  allow_zero:
+  required: yes
   list_items:
     - Alison Lewis
     - Andy Wise
@@ -67,76 +79,87 @@
     - Warwick Mawhinney
 12:
   name: sample_collected
-  non_zero:
-  list_items:
-    - 'Yes'
-    - 'No'
+  allow_zero:
+  required: no
+  list_items: ['Yes', 'No']
 13:
   name: depth_upper
-  non_zero:
+  allow_zero:
+  required: yes
   lower_limit: 0
   upper_limit: 50
   precision: 2
 14:
   name: depth_lower
-  non_zero:
+  allow_zero:
+  required: no
   lower_limit: 0
   upper_limit: 50
   precision: 2
 15:
   name: do
-  non_zero: y
+  allow_zero: no
+  required: no
   lower_limit: 0
   upper_limit: 50
   precision: 2
 16:
   name: do_sat
-  non_zero: y
+  allow_zero: no
+  required: no
   lower_limit: 0
   upper_limit: 200
   precision: 2
 17:
   name: ph
-  non_zero: y
+  allow_zero: no
+  required: no
   lower_limit: 0
   upper_limit: 14
   precision: 2
 18:
   name: temp_c
-  non_zero: y
+  allow_zero: no
+  required: no
   lower_limit: 0
   upper_limit: 50
   precision: 2
 19:
   name: conductivity_uncomp
-  non_zero: y
+  allow_zero: no
+  required: no
   lower_limit: 0
   upper_limit: 5000000
   precision: 1
 20:
   name: conductivity_comp
-  non_zero: y
+  allow_zero: no
+  required: no
   lower_limit: 0
   upper_limit: 5000000
   precision: 1
 21:
   name: turbidity
-  non_zero: y
+  allow_zero: no
+  required: no
   lower_limit: 0
   upper_limit: 5000
   precision: 2
 22:
   name: water_depth
-  non_zero:
+  allow_zero:
+  required: no
   lower_limit: 0
   upper_limit: 200
   precision: 2
 23:
   name: gauge_height
-  non_zero:
+  allow_zero:
+  required: no
   lower_limit: -300
   upper_limit: 1000
   precision: 2
 24:
   name: sampling_comment
-  non_zero:
+  allow_zero:
+  required: no
