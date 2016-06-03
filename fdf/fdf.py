@@ -14,6 +14,12 @@ MainApp: Constructor for the main application.
 Functions:
 Main: Runs the Field Data Formatter app.
 """
+# TODO: Manager-cofigs to separate yaml file;
+# TODO: other configs to yaml;
+# TODO: validate before export;
+# TODO: cell styles;
+# TODO: export to sample oriented as well
+# TODO: Help documentation
 
 import sys
 from PyQt4 import QtGui, QtCore
@@ -195,22 +201,60 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 if i == col:
                     lowerLimit = column_config[i]['lower_limit']
                     upperLimit = column_config[i]['upper_limit']
+                    precision = column_config[i]['precision']
                     paramName = column_config[i]['name']
-                    validator = QtGui.QDoubleValidator(lowerLimit, upperLimit, 2)
-                    state = validator.validate(item.text(), 0)[0]
+                    validator = DoubleFixupValidator(lowerLimit, upperLimit, precision)
+                    state, displayValue, returnInt = validator.validate(item.text(), 0)
                     if state != QtGui.QValidator.Acceptable:
                         item.setBackgroundColor(QtCore.Qt.red)
                         txt = "%s value out of range.\n Acceptable range is between %s and %s" % (paramName, lowerLimit, upperLimit)
                         msg = QtGui.QMessageBox()
                         msg.setIcon(QtGui.QMessageBox.Warning)
                         msg.setText(txt)
-                        msg.setWindowTitle("Error!")
+                        msg.setWindowTitle("Value range error!")
+                        msg.exec_()
+                    elif all([column_config[i]['allow_zero'] is False, item.text() == '0']):
+                        item.setBackgroundColor(QtCore.Qt.red)
+                        txt = "%s value has a value of zero (0).\n" \
+                              "A value of zero generally indicates a sensor failure, or a non-measured parameter.\n" \
+                              "Please review and adjust before continuing." % paramName
+                        msg = QtGui.QMessageBox()
+                        msg.setIcon(QtGui.QMessageBox.Warning)
+                        msg.setText(txt)
+                        msg.setWindowTitle("Data quality error!")
                         msg.exec_()
                     else:
+                        item.setText(displayValue)
                         item.setBackgroundColor(QtCore.Qt.white)
         except KeyError:
             return None
         self.tableWidgetData.blockSignals(False)
+
+class DoubleFixupValidator(QtGui.QDoubleValidator):
+    def __init__(self, bottom, top, decimals):
+        super(DoubleFixupValidator, self).__init__(bottom, top, decimals)
+        self.bottom = bottom
+        self.top = top
+        self.decimals = decimals
+
+    def validate(self, QString, p_int):
+        (state, returnInt) = super(DoubleFixupValidator, self).validate(QString, p_int)
+        if state != QtGui.QValidator.Acceptable:
+            # Try to fix the value if possible
+            try:
+                value = self.fixup(QString)
+                if self.bottom <= value <= self.top:
+                    state = QtGui.QValidator.Acceptable
+                else:
+                    pass
+            except ValueError:
+                value = QString
+        else:
+            value = QString
+        return state, str(value), returnInt
+
+    def fixup(self, input):
+        return round(float(input), self.decimals)
 
 
 class validatedItemDelegate(QtGui.QStyledItemDelegate):
