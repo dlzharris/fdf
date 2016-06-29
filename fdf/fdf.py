@@ -25,6 +25,7 @@ import sys
 from PyQt4 import QtGui, QtCore
 import fdfGui
 import functions
+from functions import DatetimeError, ValidityError
 import globals
 import yaml
 
@@ -79,7 +80,16 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             rowPosition = self.tableWidgetData.rowCount()
             self.tableWidgetData.insertRow(rowPosition)
             for j in range(0, len(lists[i])):
-                self.tableWidgetData.setItem(rowPosition, j, QtGui.QTableWidgetItem(str(lists[i][j])))
+                value = str(lists[i][j])
+                self.tableWidgetData.setItem(rowPosition, j, QtGui.QTableWidgetItem(value))
+                item = self.tableWidgetData.item(i, j)
+                try:
+                    validator = DoubleFixupValidator(item)
+                    state, displayValue, returnInt = validator.validate(item.text(), 0)
+                    if state == QtGui.QValidator.Invalid:
+                        item.setBackgroundColor(QtCore.Qt.red)
+                except KeyError:
+                    pass
         self.tableWidgetData.blockSignals(False)
 
     def _insertRows(self):
@@ -105,6 +115,15 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
 
     def _exportData(self):
         # TODO: Validate before export
+        dataValid, txt = exportValidator(self.tableWidgetData)
+        if not dataValid:
+            msg = QtGui.QMessageBox()
+            msg.setIcon(QtGui.QMessageBox.Warning)
+            msg.setText(txt)
+            msg.setWindowTitle("Data validation - errors detected!")
+            msg.exec_()
+            return None
+        # If the data is valid, keep going with the export
         fileName = QtGui.QFileDialog.getSaveFileName(caption='Save file', selectedFilter='*.csv')
         # take a row and append each item to a list
         tableData = []
@@ -179,9 +198,27 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         if col in [2, 3]:  # Sampling datetime
             date = str(table.item(row, 2).text())
             time = str(table.item(row, 3).text())
-            sampleDateTime = functions.parse_datetime_from_string(date, time)
-            table.setItem(row, 2, QtGui.QTableWidgetItem(sampleDateTime.strftime(globals.DATE_DISPLAY)))
-            table.setItem(row, 3, QtGui.QTableWidgetItem(sampleDateTime.strftime(globals.TIME_DISPLAY)))
+            try:
+                sampleDateTime = functions.parse_datetime_from_string(date, time)
+                table.setItem(row, 2, QtGui.QTableWidgetItem(sampleDateTime.strftime(globals.DATE_DISPLAY)))
+                table.setItem(row, 3, QtGui.QTableWidgetItem(sampleDateTime.strftime(globals.TIME_DISPLAY)))
+            except DatetimeError:
+                table.setItem(row, col, QtGui.QTableWidgetItem(""))
+                table.item(row, col).setBackgroundColor(QtCore.Qt.red)
+                if col == 2:
+                    param = "date"
+                else:
+                    param = "time"
+                txt = "%s value not valid.\n Please enter a valid %s" % (param.title(), param)
+                windowTitleTxt = "Datetime error!"
+                msg = QtGui.QMessageBox()
+                msg.setIcon(QtGui.QMessageBox.Warning)
+                msg.setText(txt)
+                msg.setWindowTitle(windowTitleTxt)
+                msg.exec_()
+                table.blockSignals(False)
+                return
+
         if col in [1, 2]:  # Sampling number
             stationNumber = str(table.item(row, 1).text())
             date = str(table.item(row, 2).text())
@@ -197,64 +234,146 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         self.tableWidgetData.blockSignals(True)
         col = item.column()
         try:
-            for i in column_config:
-                if i == col:
-                    lowerLimit = column_config[i]['lower_limit']
-                    upperLimit = column_config[i]['upper_limit']
-                    precision = column_config[i]['precision']
-                    paramName = column_config[i]['name']
-                    validator = DoubleFixupValidator(lowerLimit, upperLimit, precision)
-                    state, displayValue, returnInt = validator.validate(item.text(), 0)
-                    if state != QtGui.QValidator.Acceptable:
-                        item.setBackgroundColor(QtCore.Qt.red)
-                        txt = "%s value out of range.\n Acceptable range is between %s and %s" % (paramName, lowerLimit, upperLimit)
-                        msg = QtGui.QMessageBox()
-                        msg.setIcon(QtGui.QMessageBox.Warning)
-                        msg.setText(txt)
-                        msg.setWindowTitle("Value range error!")
-                        msg.exec_()
-                    elif all([column_config[i]['allow_zero'] is False, item.text() == '0']):
-                        item.setBackgroundColor(QtCore.Qt.red)
-                        txt = "%s value has a value of zero (0).\n" \
-                              "A value of zero generally indicates a sensor failure, or a non-measured parameter.\n" \
-                              "Please review and adjust before continuing." % paramName
-                        msg = QtGui.QMessageBox()
-                        msg.setIcon(QtGui.QMessageBox.Warning)
-                        msg.setText(txt)
-                        msg.setWindowTitle("Data quality error!")
-                        msg.exec_()
-                    else:
-                        item.setText(displayValue)
-                        item.setBackgroundColor(QtCore.Qt.white)
+            validator = DoubleFixupValidator(col)
+            state, displayValue, returnInt = validator.validate(item.text(), 0)
+            if state != QtGui.QValidator.Acceptable:
+                paramName = column_config[col]['name']
+                item.setBackgroundColor(QtCore.Qt.red)
+                if returnInt == 0:  # Zero-error
+                    txt = "%s value has a value of zero (0).\n" \
+                          "A value of zero generally indicates a sensor failure, or a non-measured parameter.\n" \
+                          "Please review and adjust before continuing." % paramName
+                    windowTitleTxt = "Data quality error!"
+                else:  # returnInt == 1 Data range error
+                    lowerLimit = column_config[col]['lower_limit']
+                    upperLimit = column_config[col]['upper_limit']
+                    txt = "%s value out of range.\n Acceptable range is between %s and %s" % (paramName, lowerLimit, upperLimit)
+                    windowTitleTxt = "Value range error!"
+                msg = QtGui.QMessageBox()
+                msg.setIcon(QtGui.QMessageBox.Warning)
+                msg.setText(txt)
+                msg.setWindowTitle(windowTitleTxt)
+                msg.exec_()
+            else:
+                item.setText(displayValue)
+                item.setBackgroundColor(QtCore.Qt.white)
         except KeyError:
-            return None
+            self.tableWidgetData.blockSignals(False)
+            return
         self.tableWidgetData.blockSignals(False)
 
-class DoubleFixupValidator(QtGui.QDoubleValidator):
-    def __init__(self, bottom, top, decimals):
-        super(DoubleFixupValidator, self).__init__(bottom, top, decimals)
-        self.bottom = bottom
-        self.top = top
-        self.decimals = decimals
 
-    def validate(self, QString, p_int):
-        (state, returnInt) = super(DoubleFixupValidator, self).validate(QString, p_int)
+class DoubleFixupValidator(QtGui.QDoubleValidator):
+    def __init__(self, column):
+        self.column = column
+        self.bottom = column_config[self.column]['lower_limit']
+        self.top = column_config[self.column]['upper_limit']
+        self.decimals = column_config[self.column]['precision']
+        super(DoubleFixupValidator, self).__init__(self.bottom, self.top, self.decimals)
+
+    def validate(self, testValue, p_int):
+        (state, returnInt) = super(DoubleFixupValidator, self).validate(testValue, p_int)
         if state != QtGui.QValidator.Acceptable:
             # Try to fix the value if possible
             try:
-                value = self.fixup(QString)
+                value = self.fixup(testValue)
+                returnInt = 1
                 if self.bottom <= value <= self.top:
                     state = QtGui.QValidator.Acceptable
                 else:
-                    pass
+                    state = QtGui.QValidator.Invalid
             except ValueError:
-                value = QString
+                value = testValue
+                returnInt = 1
+        # Test if column can accept zeroes
+        elif all([column_config[self.column]['allow_zero'] is False, float(testValue) == 0]):
+            state = QtGui.QValidator.Invalid
+            value = testValue
+            returnInt = 0
         else:
-            value = QString
+            value = testValue
+            returnInt = 1
         return state, str(value), returnInt
 
     def fixup(self, input):
         return round(float(input), self.decimals)
+
+
+def exportValidator(table):
+    table = table
+    rows = table.rowCount() - 1
+    columns = table.columnCount() - 1
+    dataValid = True
+    sampleMatrixColumn = [k for k, v in column_config.iteritems() if v['name'] == 'sample_matrix'][0]
+    samplingNumberColumn = [k for k, v in column_config.iteritems() if v['name'] == 'sampling_number'][0]
+    sampleCIDColumn = [k for k, v in column_config.iteritems() if v['name'] == 'sample_cid'][0]
+    locationNumberColumn = [k for k, v in column_config.iteritems() if v['name'] == 'location_id'][0]
+    print table.item(0, 2).text()
+    print table.item(0, 3).text()
+    # Test for presence of data
+    if rows <= 0:
+        dataValid = False
+        msg = "There is no data to export! Please add data and try again."
+        return dataValid, msg
+    # Test for red cells (previously validated)
+    invalidColumns = []
+    try:
+        for i in range(0, columns):
+            for j in range(0, rows):
+                if table.item(j, i).backgroundColor() == QtCore.Qt.red:
+                    invalidColumns.append(i)
+                    break
+        # Test incomplete_fields:
+        incompleteColumns = []
+        for i in range(0, columns):
+            if column_config[i]['required'] is True:
+                for j in range(0, rows):
+                    if table.item(j, i).text() == "":
+                        incompleteColumns.append(i)
+                    break
+    except AttributeError:
+        print "i (column): %s" % i
+        print "j (row): %s" % j
+    # Test matrix consistency
+    matrixConsistent = functions.check_matrix_consistency(table, sampleMatrixColumn, samplingNumberColumn)
+    # Test sequence number validity
+    sequenceCorrect = functions.check_sequence_numbers(table, sampleCIDColumn, samplingNumberColumn, locationNumberColumn)
+    # Prepare message for user
+    msg = ""
+    if invalidColumns:
+        listOfColumnNames = '\n'.join(column_config[k]['name']for k in invalidColumns)
+        msg += "The following columns have invalid values:\n" + listOfColumnNames
+        dataValid = False
+
+    if incompleteColumns:
+        listOfColumnNames = '\n'.join(column_config[k]['name']for k in incompleteColumns)
+        if msg != "":
+            msg += "\n\n"
+        msg += "The following required columns have one or more empty values:\n" + listOfColumnNames
+        dataValid = False
+
+    if matrixConsistent is False:
+        if msg != "":
+            msg += "\n\n"
+        msg += "Matrix errors detected:\n" \
+               "More than one matrix has been defined for a single sampling event.\n" \
+               "Please ensure that only a single matrix is used for all samples in a " \
+               "sampling event (for primary and replicates) before exporting."
+        dataValid = False
+
+    if sequenceCorrect is False:
+        if msg != "":
+            msg += "\n\n"
+        msg += "Sequence number errors detected:\nOne or more problems have been " \
+               "detected with the provided sequence numbers. Please ensure that:\n" \
+               "- All samples in a single sampling event use distinct sequence numbers;\n" \
+               "- The first sample in all sampling events is 1;\n" \
+               "- All sequence numbers in a single sampling event increment sequentially." \
+               "\nA sampling event consists of all samples collected at the same station " \
+               "on the same date."
+        dataValid = False
+
+    return dataValid, msg
 
 
 class validatedItemDelegate(QtGui.QStyledItemDelegate):
@@ -266,6 +385,10 @@ class validatedItemDelegate(QtGui.QStyledItemDelegate):
         try:
             items = column_config[index.column()]['list_items']
             combo.addItems(items)
+            cp = QtGui.QCompleter()
+            cp.setCompletionMode(QtGui.QCompleter.PopupCompletion)
+            combo.setCompleter(cp)
+            #combo.completer().setCompletionMode(QtGui.QCompleter.PopupCompletion)
             return combo
         except KeyError:
             return super(validatedItemDelegate, self).createEditor(parent, option, index)
