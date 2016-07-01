@@ -96,6 +96,9 @@ def load_instrument_file(instrument_file, instrument_type):
     :return: List of dictionaries, with each dictionary representing a
     different measurement point
     """
+    if instrument_type == '':
+        raise ValidityError
+
     # File readings procedure for Hydrolab instruments:
     if instrument_type in globals.HYDROLAB_INSTRUMENTS:
         # Set the header and data start rows

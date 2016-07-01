@@ -44,7 +44,7 @@ Three buttons are provided in the data entry screen to facilitate easy data edit
 |                        | group samples collected together as part of a single         | generated)       |
 |                        | sampling event. To ensure uniqueness, it is generated        |                  |
 |                        | from the *station number* and the *date* in the format       |                  |
-|                        | *STATION_NUMBER-YYMMDD*. These fields are described in more  |                  |
+|                        | *STATION_NUMBER-DDMMYY*. These fields are described in more  |                  |
 |						 | detail in [*STOP 32005: Water quality project, sample,       |                  |
 |                        | fraction and station numbers (product identification and     |                  |
 |                        | traceability)*][numbering-procedure].                        |                  |
