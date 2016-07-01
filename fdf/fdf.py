@@ -18,10 +18,12 @@ Main: Runs the Field Data Formatter app.
 # TODO: other configs to yaml;
 # TODO: Dropdown only one return push to select and exit
 # TODO: Update help documentation html
+# TODO: Tidy GUI elements
+# TODO: Code clean and document
 
 import sys
 import os
-from PyQt4 import QtGui, QtCore, QtWebKit
+from PyQt4 import QtGui, QtCore
 import fdfGui
 import functions
 from functions import DatetimeError, ValidityError
