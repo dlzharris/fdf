@@ -33,6 +33,7 @@ import yaml
 # Load config files
 column_config = yaml.load(open('column_config.yaml').read())
 
+
 ###############################################################################
 # Main app constructor and initialisation
 ###############################################################################
