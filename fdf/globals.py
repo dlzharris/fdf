@@ -89,6 +89,7 @@ MP_NUMBERS = ["MP406",
 
 # Instrument names as variables
 HYDROLAB_INSTRUMENTS = ["Hydrolab DS5", "Hydrolab MS4", "Hydrolab MS5"]
+YSI_INSTRUMENTS = ["EXO"]
 
 # Display column order
 COL_ORDER = [

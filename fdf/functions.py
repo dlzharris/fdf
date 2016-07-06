@@ -77,6 +77,10 @@ def check_file_validity(instrument_file, instrument_type):
             file_valid = True
         else:
             file_valid = False
+    elif instrument_type in globals.YSI_INSTRUMENTS:
+        in_file = list(instrument_file.readlines())
+        # Perform the validity tests
+        file_valid = True if "KOR Export File" in in_file[0] else False
     # If the instrument type is not found in the available instruments, then
     # the file is invalid.
     else:
@@ -104,8 +108,6 @@ def load_instrument_file(instrument_file, instrument_type):
         # Set the header and data start rows
         header_start_row = 5
         data_start_row = 8
-        # Initialise the date format container
-        date_idx = []
         # Open the file
         with open(instrument_file, "rb") as f:
             # Check the validity of the file
@@ -128,16 +130,121 @@ def load_instrument_file(instrument_file, instrument_type):
                 if j == "Temp":
                     temp_match = re.search('[CF]', units[i])
                     parameters[i] = "Temp" + temp_match.group()
-                # Find the order of date components
-                if j == "Date":
-                    date_day = re.search('D', units[i]).span()
-                    date_month = re.search('M', units[i]).span()
-                    date_year = re.search('Y', units[i]).span()
-                    date_idx = [date_day, date_month, date_year]
             # Double check the beginning of the data set: it will be row 8, or row 9 if a
             # power loss description is in row 8.
             if "Power" in in_list[data_start_row]:
                 data_start_row += 1
+            # Find the end of the data set in the file. First, initialise the counter to
+            # beginning of data set.
+            n = data_start_row
+            for line in in_list[data_start_row:]:
+                # Find if we have reached the end of the data
+                if '\x00' in line:
+                    break
+                else:
+                    n += 1
+            # Return to beginning of file
+            f.seek(0)
+            # Generate a new iterator from the instrument file that contains only the headers
+            # and data
+            d = islice(f, data_start_row, n)
+            # Create the reader object to parse data into dictionaries and the data container list
+            reader = csv.DictReader(d, delimiter=',', skipinitialspace=True, quotechar='"', fieldnames=parameters)
+            data = []
+            # Change the keys to our standard key values and remove items that are not relevant
+            for line in reader:
+                try:
+                    sample_dt = parse_datetime_from_string(line['Date'], line['Time'])
+                except DatetimeError:
+                    continue
+                new_line = {}
+                for item in line:
+                    try:
+                        new_line[get_new_dict_key(item)] = float(line[item])
+                    except (KeyError, ValueError):
+                        pass
+                # Format the date and time correctly
+                new_line['date'] = sample_dt.strftime(globals.DATE_DISPLAY)
+                new_line['sample_time'] = sample_dt.strftime(globals.TIME_DISPLAY)
+                # Add the extra items we'll need access to later on
+                new_line['event_time'] = ""
+                new_line['sampling_number'] = ""
+                new_line['replicate_number'] = ""
+                new_line['sample_cid'] = ""
+                new_line['sample_matrix'] = ""
+                new_line['sample_type'] = ""
+                new_line['mp_number'] = ""
+                new_line['location_id'] = ""
+                new_line['station_number'] = ""
+                new_line['calibration_record'] = ""
+                new_line['sampling_officer'] = ""
+                new_line['sample_collected'] = ""
+                new_line['depth_lower'] = ""
+                new_line['sampling_comment'] = ""
+                new_line['sampling_instrument'] = ""
+                new_line['gauge_height'] = ""
+                new_line['turbidity'] = ""
+                new_line['conductivity_comp'] = ""
+                new_line['water_depth'] = ""
+                # Add the new updated dictionary to our list
+                data.append(new_line)
+    # File readings procedure for YSI EXO instruments:
+    elif instrument_type in globals.YSI_INSTRUMENTS:
+        # Set the header and data start rows
+        header_start_row = 22
+        data_start_row = 23
+        # Open the file
+        with open(instrument_file, "rb") as f:
+            # Check the validity of the file
+            try:
+                check_file_validity(f, instrument_type)
+            except ValidityError:
+                raise ValidityError
+            # Rewind the file head
+            f.seek(0)
+            # Read the file into a list for initial interrogation and processing. We will
+            # read the data portion into a dictionary further below.
+            in_list = list(f.readlines())
+            # The hydrolab data headers are made up of two rows: one for the parameter and one
+            # for the unit. Because temperature is reported more than once in different units,
+            # we need to parse temperature with the respective unit (deg celsius or fahrenheit)
+            # to make it unique.
+            parameters = in_list[header_start_row].replace('"', '').split(',')
+            for i, j in enumerate(parameters):
+                p = j.split(' ', 1)
+                if p[0] == "Time":
+                    if p[1] == "(HH:MM:SS)":
+                        parameters[i] = "Time"
+                    else:
+                        parameters[i] = "TimeFraction"
+                    continue
+                elif p[0] == "Temp":
+                    temp_match = re.search('[CF]', j)
+                    parameters[i] = "Temp" + temp_match.group()
+                    continue
+                elif p[0] == "ODO":
+                    if p[1] == "% sat":
+                        parameters[i] = "ODO%"
+                    elif p[1] == "mg/L":
+                        parameters[i] = p[0]
+                    else:
+                        parameters[i] = "ODO_EU"
+                    continue
+                elif p[0] == "pH":
+                    try:
+                        if p[1] == "mV":
+                            parameters[i] = "pHmV"
+                    except IndexError:
+                        parameters[i] = p[0]
+                    continue
+                elif p[0] == "ORP":
+                    if p[1] == "mV":
+                        parameters[i] = p[0]
+                    else:
+                        parameters[i] = "ORPRaw"
+                    continue
+                else:
+                    parameters[i] = p[0]
             # Find the end of the data set in the file. First, initialise the counter to
             # beginning of data set.
             n = data_start_row
@@ -329,21 +436,28 @@ def get_new_dict_key(key):
     :return: The new dictioanry key
     """
     new_keys = {
-        "Date": "date",
-        "Time": "sample_time",
-        "TempC": "temp_c",
-        "TempF": "temp_f",
-        "Dep25": "depth_upper",
-        "LDO%": "do_sat",
-        "LDO": "do",
-        "pH": "ph",
-        "SpCond": "conductivity_uncomp",
-        "IBVSvr4": "internal_voltage",
-        "BPSvr4": "barometric_pressure",
-        "PYC": "pyc",
-        "PYCV": "pyc_v",
-        "CHL": "chlorophyll_a",
-        "CHLV": "chlorophyll_a_v"}
+        "Date": "date",  # hydrolab & YSI
+        "Time": "sample_time",  # hydrolab & YSI
+        "TempC": "temp_c",  # hydrolab & YSI
+        "TempF": "temp_f",  # hydrolab & YSI
+        "Dep25": "depth_upper",  # hydrolab
+        "LDO%": "do_sat",  # hydrolab
+        "LDO": "do",  # hydrolab
+        "pH": "ph",  # hydrolab & YSI
+        "SpCond": "conductivity_uncomp",  # hydrolab & YSI
+        "IBVSvr4": "internal_voltage",  # hydrolab
+        "BPSvr4": "barometric_pressure",  # hydrolab
+        "PYC": "pyc",  # hydrolab
+        "PYCV": "pyc_v",  # hydrolab
+        "CHL": "chlorophyll_a",  # hydrolab
+        "CHLV": "chlorophyll_a_v",  # hydrolab
+        "TDS": "tds",  # YSI
+        "ODO%": "do_sat",  # YSI
+        "ODO": "do",  # YSI
+        "ORP": "orp",  # YSI
+        "Depth": "depth_upper",  # YSI
+        "Baro": "barometric_pressure"  # YSI
+    }
     return new_keys[key]
 
 

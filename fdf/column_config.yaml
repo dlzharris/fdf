@@ -46,7 +46,7 @@
   name: sampling_instrument
   allow_zero:
   required: yes
-  list_items: [Hydrolab DS5, Hydrolab MS4, Hydrolab MS5]
+  list_items: [Hydrolab DS5, Hydrolab MS4, Hydrolab MS5, EXO]
 11:
   name: sampling_officer
   allow_zero:
