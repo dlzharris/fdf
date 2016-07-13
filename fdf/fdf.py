@@ -17,9 +17,8 @@ Main: Runs the Field Data Formatter app.
 # TODO: Manager-cofigs to separate yaml file;
 # TODO: other configs to yaml;
 # TODO: Dropdown only one return push to select and exit
-# TODO: Update help documentation html
-# TODO: Tidy GUI elements
 # TODO: Code clean and document
+# TODO: Implement turbidity instrument selection
 
 import sys
 import os
@@ -32,6 +31,7 @@ import yaml
 
 # Load config files
 column_config = yaml.load(open('column_config.yaml').read())
+app_config = yaml.load(open('app_config.yaml').read())
 
 
 ###############################################################################
@@ -65,7 +65,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         self.helpBrowser.setSource(QtCore.QUrl('help.html'))
         self.helpBrowser.setWindowTitle("FDF Utility Help Documentation")
         self.helpBrowser.setMinimumSize(500, 500)
-        self.pushButtonHelp.clicked.connect(self._showHelp)
+        self.actionHelp.triggered.connect(self._showHelp)
 
     def keyPressEvent(self, event):
         if event.matches(QtGui.QKeySequence.Copy):
@@ -86,7 +86,8 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         try:
             # Validate file type
             _dicts = functions.load_instrument_file(self.fileLineEdit.text(), str(self.instrumentComboBox.currentText()))
-            self._addData(functions.lord2lorl(_dicts, globals.COL_ORDER))
+            self._addData(functions.lord2lorl(_dicts, app_config['column_order']
+))
             # Add file name to listbox
             self.listWidgetCurrentFiles.addItem(QtGui.QListWidgetItem(self.fileLineEdit.text()))
         except ValidityError:
@@ -167,7 +168,8 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 value = self.tableWidgetData.item(i, j).text()
                 rowData.append(str(value))
             tableData.append(rowData)
-        tableData = functions.lorl2lord(tableData, globals.COL_ORDER)
+        tableData = functions.lorl2lord(tableData, app_config['column_order']
+)
         # Reformat the data in parameter-oriented format
         data_reformatted = functions.prepare_dictionary(tableData)
         # Write the data to csv
@@ -176,9 +178,11 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             # Write to sample oriented file for QA
             if self.chkBoxSampleOriented.isChecked():
                 fn = os.path.splitext(str(fileName))[0] + '_sampleOriented' + '.csv'
-                functions.write_to_csv(tableData, fn, globals.COL_ORDER)
+                functions.write_to_csv(tableData, fn, app_config['column_order']
+)
             # Write to parameter oriented file for import to KiWQM
-            if functions.write_to_csv(data_reformatted, fileName, globals.FIELDNAMES):
+            if functions.write_to_csv(data_reformatted, fileName, app_config['csv_fieldnames']
+):
                 msg.setIcon(QtGui.QMessageBox.Information)
                 msg.setText("Data exported successfully!")
                 msg.setWindowTitle("Export successful!")
@@ -239,8 +243,10 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             time = str(table.item(row, 3).text())
             try:
                 sampleDateTime = functions.parse_datetime_from_string(date, time)
-                table.setItem(row, 2, QtGui.QTableWidgetItem(sampleDateTime.strftime(globals.DATE_DISPLAY)))
-                table.setItem(row, 3, QtGui.QTableWidgetItem(sampleDateTime.strftime(globals.TIME_DISPLAY)))
+                table.setItem(row, 2, QtGui.QTableWidgetItem(sampleDateTime.strftime(app_config['datetime_formats']['date']['display']
+)))
+                table.setItem(row, 3, QtGui.QTableWidgetItem(sampleDateTime.strftime(app_config['datetime_formats']['time']['display']
+)))
             except DatetimeError:
                 table.setItem(row, col, QtGui.QTableWidgetItem(""))
                 table.item(row, col).setBackgroundColor(QtCore.Qt.red)

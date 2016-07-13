@@ -37,10 +37,10 @@ import datetime
 from dateutil.parser import parse
 from itertools import islice
 import re
-#import wx
-import globals
+import yaml
 import sys, os
 
+app_config = yaml.load(open('app_config.yaml').read())
 
 class DatetimeError(Exception):
     """
@@ -64,7 +64,7 @@ def check_file_validity(instrument_file, instrument_type):
     :return: Boolean indicating the validity of the file (True for valid, False for invalid)
     """
     # File validity check for Hydrolab instruments:
-    if instrument_type in globals.HYDROLAB_INSTRUMENTS:
+    if instrument_type in app_config['instruments']['hydrolab']:
         # Read the file into a list for interrogation
         in_file = list(instrument_file.readlines())
         # Perform the validity tests
@@ -77,7 +77,7 @@ def check_file_validity(instrument_file, instrument_type):
             file_valid = True
         else:
             file_valid = False
-    elif instrument_type in globals.YSI_INSTRUMENTS:
+    elif instrument_type in app_config['instruments']['ysi']:
         in_file = list(instrument_file.readlines())
         # Perform the validity tests
         file_valid = True if "KOR Export File" in in_file[0] else False
@@ -104,7 +104,7 @@ def load_instrument_file(instrument_file, instrument_type):
         raise ValidityError
 
     # File readings procedure for Hydrolab instruments:
-    if instrument_type in globals.HYDROLAB_INSTRUMENTS:
+    if instrument_type in app_config['instruments']['hydrolab']:
         # Set the header and data start rows
         header_start_row = 5
         data_start_row = 8
@@ -164,8 +164,10 @@ def load_instrument_file(instrument_file, instrument_type):
                     except (KeyError, ValueError):
                         pass
                 # Format the date and time correctly
-                new_line['date'] = sample_dt.strftime(globals.DATE_DISPLAY)
-                new_line['sample_time'] = sample_dt.strftime(globals.TIME_DISPLAY)
+                new_line['date'] = sample_dt.strftime(app_config['datetime_formats']['date']['display']
+)
+                new_line['sample_time'] = sample_dt.strftime(app_config['datetime_formats']['time']['display']
+)
                 # Add the extra items we'll need access to later on
                 new_line['event_time'] = ""
                 new_line['sampling_number'] = ""
@@ -189,7 +191,7 @@ def load_instrument_file(instrument_file, instrument_type):
                 # Add the new updated dictionary to our list
                 data.append(new_line)
     # File readings procedure for YSI EXO instruments:
-    elif instrument_type in globals.YSI_INSTRUMENTS:
+    elif instrument_type in app_config['instruments']['ysi']:
         # Set the header and data start rows
         header_start_row = 22
         data_start_row = 23
@@ -275,8 +277,10 @@ def load_instrument_file(instrument_file, instrument_type):
                     except (KeyError, ValueError):
                         pass
                 # Format the date and time correctly
-                new_line['date'] = sample_dt.strftime(globals.DATE_DISPLAY)
-                new_line['sample_time'] = sample_dt.strftime(globals.TIME_DISPLAY)
+                new_line['date'] = sample_dt.strftime(app_config['datetime_formats']['date']['display']
+)
+                new_line['sample_time'] = sample_dt.strftime(app_config['datetime_formats']['time']['display']
+)
                 # Add the extra items we'll need access to later on
                 new_line['event_time'] = ""
                 new_line['sampling_number'] = ""
@@ -380,7 +384,7 @@ def get_sampling_time(sample_set, station, sample_date):
     sample_times = [parse_datetime_from_string(s['date'], s['sample_time'])
                     for s in sample_set if s['station_number'] == station and s['date'] == sample_date]
     # Find the earliest time and convert it to a string
-    sampling_time = min(sample_times).strftime(globals.TIME_EVENT_EXPORT)
+    sampling_time = min(sample_times).strftime(app_config['datetime_formats']['time']['export_event'])
     return sampling_time
 
 
@@ -394,7 +398,7 @@ def get_sampling_number(station_number, date, sample_type):
     sampling_delimiter = "-"
     # Get the required parts of the sampling number from the field_dict
     try:
-        date = parse_datetime_from_string(date, "").strftime(globals.DATE_SAMPLING_NUMBER)
+        date = parse_datetime_from_string(date, "").strftime(app_config['datetime_formats']['date']['sampling_number'])
     except DatetimeError:
         date = ""
     # Create the sampling number in format STATION#-DDMMYY[-SAMPLE_TYPE]
@@ -543,7 +547,7 @@ def check_data_completeness(column_values):
     # Create container for list of incomplete required fields
     incomplete_fields = []
     # Loop through required fields and check each item in the field for completeness
-    for field in globals.REQUIRED_FIELDS:
+    for field in app_config['required_fields']:
         # Extract the values with the given key
         column = (i[field] for i in data_list)
         for item in column:
@@ -639,8 +643,8 @@ def prepare_dictionary(data_list):
     for sample in data_list:
         try:
             sample_dt = parse_datetime_from_string(sample['date'], sample['sample_time'])
-            sample['date'] = sample_dt.strftime(globals.DATE_EXPORT)
-            sample['sample_time'] = sample_dt.strftime(globals.TIME_SAMPLE_EXPORT)
+            sample['date'] = sample_dt.strftime(app_config['datetime_formats']['date']['export'])
+            sample['sample_time'] = sample_dt.strftime(app_config['datetime_formats']['time']['export_sample'])
         except DatetimeError:
             raise
     # Each item in the list is a single dictionary representing a single sample
@@ -652,7 +656,7 @@ def prepare_dictionary(data_list):
         sample['fraction_lab_shortname'] = "FLD"                                         # Static text
         sample['fraction_data_source'] = "Field Data"                                    # Static text
         sample['fraction_number'] = get_fraction_number(sample)                          # Calculated value
-        sample['fraction_entry_datetime'] = datetime.datetime.now().strftime(globals.DT_FRACTION_ENTRY)  # Current time
+        sample['fraction_entry_datetime'] = datetime.datetime.now().strftime(app_config['datetime_formats']['datetime']['fraction'])  # Current time
         # If more than one replicate per sampling, increment replicate number on export
         rep_depth_tolerance = 0.15
         min_depth = float(sample['depth_upper']) - rep_depth_tolerance
@@ -666,7 +670,7 @@ def prepare_dictionary(data_list):
             sample_idx = reps_in_sampling.index(sample['sample_time'])
             sample['replicate_number'] += sample_idx
         # Transform the data to parameter-oriented
-        for param in globals.PARAMETERS:
+        for param in app_config['parameters']:
             # Store sample metadata for reuse. We use deepcopy here so we create
             # a new object from the sample data.
             sample_param_oriented = copy.deepcopy(sample)
@@ -708,28 +712,6 @@ def write_to_csv(data_list, out_filepath, fieldnames_list):
         writer.writeheader()
         writer.writerows(data_list)
     return True
-
-
-def check_value_validity(value, value_type):
-    """
-    Check if the entered or modified value is within valid limits and round the value to the required precision.
-    :param value: string representation of number to be validated
-    :param value_type: string representing the parameter that the value belongs to
-    :return: formatted string representation of the entered/modified value
-    """
-    lower_limit = globals.LIMITS[value_type][0]
-    upper_limit = globals.LIMITS[value_type][1]
-    try:
-        val = float(value)
-        if lower_limit <= val <= upper_limit:
-            pass
-        else:
-            raise ValueError
-        return str(round(val, globals.PRECISION[value_type]))
-    except ValueError:
-        e = "%s value must be between %s and %s." % (value_type, lower_limit, upper_limit)
-        wx.MessageBox(message=e, caption="%s value error!" % value_type, style=wx.OK | wx.ICON_ERROR)
-        raise ValueError(e)
 
 
 def lord2lorl(lord, colkeys):
