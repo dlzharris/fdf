@@ -17,9 +17,6 @@ Main: Runs the Field Data Formatter app.
 # TODO: Dropdown only one return push to select and exit
 # TODO: Code clean and document
 # TODO: Prevent editing of non-editable columns
-# TODO: see _autoUpdateCols for todo to fix datetime issues
-# TODO: Fix date validity (future dates): see check_date_validity
-# TODO: Fix text alignment on item change (in styleditemdelegate)
 # TODO: Implement turbidity instrument selection
 
 import sys
@@ -60,8 +57,8 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         table = self.tableWidgetData
         table.setItemDelegate(validatedItemDelegate())
         table.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed | QtGui.QAbstractItemView.DoubleClicked)
-        table.itemChanged.connect(self._validateInput)
         table.itemChanged.connect(self._autoUpdateCols)
+        table.itemChanged.connect(self._validateInput)
         # Set up the help documentation
         self.helpBrowser = QtGui.QTextBrowser()
         self.helpBrowser.setSource(QtCore.QUrl('help.html'))
@@ -116,9 +113,14 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                     if state == QtGui.QValidator.Invalid:
                         item.setBackgroundColor(QtCore.Qt.red)
                         errorsFound = True
-                    item.setTextAlignment(QtCore.Qt.AlignCenter)
                 except KeyError:
-                    item.setTextAlignment(QtCore.Qt.AlignCenter)
+                    pass
+
+        # Update alignment for all cells
+        for i in range(0, self.tableWidgetData.rowCount()):
+            for j in range(0, self.tableWidgetData.columnCount()):
+                self.tableWidgetData.item(i, j).setTextAlignment(QtCore.Qt.AlignCenter)
+
 
         self.tableWidgetData.blockSignals(False)
         if errorsFound is True:
@@ -238,39 +240,17 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         table.blockSignals(True)
         row = item.row()
         col = item.column()
-        if col in [2, 3]:  # Sampling datetime
-            date = str(table.item(row, 2).text())
-            time = str(table.item(row, 3).text())
-            try:
-                sampleDateTime = functions.parse_datetime_from_string(date, time)
-                table.setItem(row, 2, QtGui.QTableWidgetItem(sampleDateTime.strftime(app_config['datetime_formats']['date']['display'])))
-                table.setItem(row, 3, QtGui.QTableWidgetItem(sampleDateTime.strftime(app_config['datetime_formats']['time']['display'])))
-            except (DatetimeError, ValueError):
-                table.setItem(row, col, item)
-                table.item(row, col).setBackgroundColor(QtCore.Qt.red)
-                table.item(row, col).setTextAlignment(QtCore.Qt.AlignCenter)
-                if col == 2:
-                    param = "date"
-                else:
-                    param = "time"
-                txt = "%s value not valid.\n Please enter a valid %s" % (param.title(), param)
-                windowTitleTxt = "Datetime error!"
-                msg = QtGui.QMessageBox()
-                msg.setIcon(QtGui.QMessageBox.Warning)
-                msg.setText(txt)
-                msg.setWindowTitle(windowTitleTxt)
-                msg.exec_()
-                table.blockSignals(False)
-                return
-
         if col in [1, 2]:  # Sampling number
             stationNumber = str(table.item(row, 1).text())
             date = str(table.item(row, 2).text())
             sampleType = str(table.item(row, 8).text())
-            samplingNumber = functions.get_sampling_number(
-                station_number=stationNumber,
-                date=date,
-                sample_type=sampleType)
+            try:
+                samplingNumber = functions.get_sampling_number(
+                    station_number=stationNumber,
+                    date=date,
+                    sample_type=sampleType)
+            except ValueError:
+                samplingNumber = ""
             table.setItem(row, 4, QtGui.QTableWidgetItem(samplingNumber))
 
         for i in range(1, 5):
@@ -281,20 +261,23 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
     def _validateInput(self, item):
         self.tableWidgetData.blockSignals(True)
         col = item.column()
+        # Select correct validator
         if column_config[col]['name'] == 'date':
             validator = DateValidator()
+        elif column_config[col]['name'] == 'time':
+            validator = TimeValidator()
+        elif 'list_items' in column_config[col]:
+            validator = ListValidator(col)
+        elif 'lower_limit' in column_config[col]:
+            validator = DoubleFixupValidator(col)
         else:
-            try:
-                validator = ListValidator(col)
-            except KeyError:
-                try:
-                    validator = DoubleFixupValidator(col)
-                except KeyError:
-                    self.tableWidgetData.blockSignals(False)
-                    return
-        state, displayValue, returnInt = validator.validate(item.text(), 0)
+            self.tableWidgetData.blockSignals(False)
+            return
+        # Validate item
+        state, displayValue, returnInt = validator.validate(item.text(), col)
         if state != QtGui.QValidator.Acceptable:
             paramName = column_config[col]['name']
+            item.setText(displayValue)
             item.setBackgroundColor(QtCore.Qt.red)
             if returnInt == 0:  # Zero-error
                 txt = "%s value has a value of zero (0).\n" \
@@ -310,10 +293,14 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 txt = "%s value is not a valid value from the drop down list." \
                       "Please select a valid value from the list." % paramName
                 windowTitleTxt = "Invalid selection error!"
-            else:  # returnInt == 3  Date error
+            elif returnInt == 3:  # Future Date error
                 txt = "The entered date is in the future. Sampling dates must be in the past." \
                       "Please enter a different date."
                 windowTitleTxt = "Invalid date error!"
+            else:  # returnInt == 4  # Date/time format error
+                txt = "The entered time or date is invalid. Please enter a valid date/time."
+                windowTitleTxt = "Invalid date/time error!"
+
             msg = QtGui.QMessageBox()
             msg.setIcon(QtGui.QMessageBox.Warning)
             msg.setText(txt)
@@ -330,15 +317,51 @@ class DateValidator(QtGui.QValidator):
     def __init__(self):
         super(DateValidator, self).__init__()
 
-    def validate(self, testValue, p_int):
-        date = functions.parse_datetime_from_string(str(testValue), '00:00:00')
-        if date > datetime.datetime.now():
+    def validate(self, testValue, col):
+        try:
+            date = functions.parse_datetime_from_string(str(testValue), '00:00:00')
+            try:
+                displayValue = date.strftime(app_config['datetime_formats']['date']['display'])
+            except ValueError:
+                displayValue = ""
+                state = QtGui.QValidator.Invalid
+                returnInt = 4
+                return state, displayValue, returnInt
+            if date > datetime.datetime.now():
+                state = QtGui.QValidator.Invalid
+                returnInt = 3
+            else:
+                state = QtGui.QValidator.Acceptable
+                returnInt = 0
+        except DatetimeError:
+            displayValue = ""
             state = QtGui.QValidator.Invalid
-            returnInt = 3
-        else:
-            state = QtGui.QValidator.Acceptable
-            returnInt = 0
-        return state, testValue, returnInt
+            returnInt = 4
+
+        return state, displayValue, returnInt
+
+
+class TimeValidator(QtGui.QValidator):
+    def __init__(self):
+        super(TimeValidator, self).__init__()
+
+    def validate(self, testValue, col):
+        try:
+            time = functions.parse_datetime_from_string(01/01/1900, testValue)
+            try:
+                displayValue = time.strftime(app_config['datetime_formats']['time']['display'])
+                state = QtGui.QValidator.Acceptable
+                returnInt = 0
+            except ValueError:
+                displayValue = testValue
+                state = QtGui.QValidator.Invalid
+                returnInt = 4
+        except DatetimeError:
+            displayValue = testValue
+            state = QtGui.QValidator.Invalid
+            returnInt = 4
+
+        return state, displayValue, returnInt
 
 
 class ListValidator(QtGui.QValidator):
