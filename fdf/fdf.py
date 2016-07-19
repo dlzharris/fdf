@@ -16,8 +16,8 @@ Main: Runs the Field Data Formatter app.
 """
 # TODO: Dropdown only one return push to select and exit
 # TODO: Code clean and document
-# TODO: Prevent editing of non-editable columns
 # TODO: Implement turbidity instrument selection
+# TODO: Populate instrument column with instrument name
 
 import sys
 import os
@@ -54,8 +54,11 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         _instruments.extend(column_config[10]['list_items'])
         self.instrumentComboBox.addItems(_instruments)
         # Set up the table
+        self.headerLabels = [column_config[i]['display_name'] for i in range(0, len(column_config))]
         table = self.tableWidgetData
-        table.setItemDelegate(validatedItemDelegate())
+        table.setColumnCount(len(self.headerLabels))
+        self.setHeaderData(table)
+        table.setItemDelegate(listColumnItemDelegate())
         table.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed | QtGui.QAbstractItemView.DoubleClicked)
         table.itemChanged.connect(self._autoUpdateCols)
         table.itemChanged.connect(self._validateInput)
@@ -73,6 +76,21 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             self._paste()
         else:
             QtGui.QMainWindow.keyPressEvent(self, event)
+
+    def setHeaderData(self, table):
+        for i in range(0, len(self.headerLabels)):
+            item = QtGui.QTableWidgetItem()
+            table.setHorizontalHeaderItem(i, item)
+            item = table.horizontalHeaderItem(i)
+            item.setText(self.headerLabels[i])
+
+    def setFlags(self, item):
+        for i in range(0, len(self.headerLabels)):
+            samplingNumberCol = [k for k, v in column_config.iteritems() if v['name'] == "sampling_number"][0]
+            if item.column() == samplingNumberCol:
+                item.setFlags(QtCore.Qt.ItemIsSelectable)
+            else:
+                item.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable)
 
     def _showHelp(self):
         self.helpBrowser.show()
@@ -99,6 +117,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
 
     def _addData(self, lists):
         self.tableWidgetData.blockSignals(True)
+        samplingNumberCol = [k for k, v in column_config.iteritems() if v['name'] == "sampling_number"][0]
         errorsFound = False
         for i in range(0, len(lists)):
             rowPosition = self.tableWidgetData.rowCount()
@@ -107,6 +126,10 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 value = str(lists[i][j])
                 self.tableWidgetData.setItem(rowPosition, j, QtGui.QTableWidgetItem(value))
                 item = self.tableWidgetData.item(i, j)
+                if j == samplingNumberCol:
+                    item.setFlags(QtCore.Qt.ItemIsSelectable)
+                else:
+                    item.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable)
                 try:
                     validator = DoubleFixupValidator(item.column())
                     state, displayValue, returnInt = validator.validate(item.text(), 0)
@@ -252,6 +275,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             except ValueError:
                 samplingNumber = ""
             table.setItem(row, 4, QtGui.QTableWidgetItem(samplingNumber))
+            table.item(row, 4).setFlags(QtCore.Qt.ItemIsSelectable)
 
         for i in range(1, 5):
             table.item(row, i).setTextAlignment(QtCore.Qt.AlignCenter)
@@ -526,9 +550,9 @@ class filteredComboBox(QtGui.QComboBox):
             self.setCurrentIndex(index)
 
 
-class validatedItemDelegate(QtGui.QStyledItemDelegate):
+class listColumnItemDelegate(QtGui.QStyledItemDelegate):
     def __init__(self):
-        super(validatedItemDelegate, self).__init__()
+        super(listColumnItemDelegate, self).__init__()
 
     def createEditor(self, parent, option, index):
         combo = filteredComboBox(parent)
@@ -538,7 +562,7 @@ class validatedItemDelegate(QtGui.QStyledItemDelegate):
             combo.addItems(items)
             return combo
         except KeyError:
-            return super(validatedItemDelegate, self).createEditor(parent, option, index)
+            return super(listColumnItemDelegate, self).createEditor(parent, option, index)
 
 
 # -----------------------------------------------------------------------------
