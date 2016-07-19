@@ -38,9 +38,12 @@ from dateutil.parser import parse
 from itertools import islice
 import re
 import yaml
-import sys, os
+import sys
+import os
 
+# Set up global configurations
 app_config = yaml.load(open('app_config.yaml').read())
+
 
 class DatetimeError(Exception):
     """
@@ -164,10 +167,8 @@ def load_instrument_file(instrument_file, instrument_type):
                     except (KeyError, ValueError):
                         pass
                 # Format the date and time correctly
-                new_line['date'] = sample_dt.strftime(app_config['datetime_formats']['date']['display']
-)
-                new_line['sample_time'] = sample_dt.strftime(app_config['datetime_formats']['time']['display']
-)
+                new_line['date'] = sample_dt.strftime(app_config['datetime_formats']['date']['display'])
+                new_line['sample_time'] = sample_dt.strftime(app_config['datetime_formats']['time']['display'])
                 # Add the extra items we'll need access to later on
                 new_line['event_time'] = ""
                 new_line['sampling_number'] = ""
@@ -277,10 +278,8 @@ def load_instrument_file(instrument_file, instrument_type):
                     except (KeyError, ValueError):
                         pass
                 # Format the date and time correctly
-                new_line['date'] = sample_dt.strftime(app_config['datetime_formats']['date']['display']
-)
-                new_line['sample_time'] = sample_dt.strftime(app_config['datetime_formats']['time']['display']
-)
+                new_line['date'] = sample_dt.strftime(app_config['datetime_formats']['date']['display'])
+                new_line['sample_time'] = sample_dt.strftime(app_config['datetime_formats']['time']['display'])
                 # Add the extra items we'll need access to later on
                 new_line['event_time'] = ""
                 new_line['sampling_number'] = ""
@@ -308,47 +307,6 @@ def load_instrument_file(instrument_file, instrument_type):
         data = None
     # Return the list
     return data
-
-
-def get_empty_dict(number_lines):
-    """
-    Create a dictionary with empty items for use in the manual entry screen.
-    :param number_lines:
-    :return:
-    """
-    empty_data = []
-    for i in range(0, number_lines):
-        new_line = {
-            'checked': "",
-            'mp_number': "",
-            'station_number': "",
-            'sampling_number': "",
-            'date': "",
-            'sample_time': "",
-            'location_id': "",
-            'sample_cid': "",
-            'replicate_number': "",
-            'sample_matrix': "",
-            'sample_type': "",
-            'collection_method': "",
-            'calibration_record': "",
-            'sampling_instrument': "",
-            'sampling_officer': "",
-            'event_time': "",
-            'sample_collected': "",
-            'depth_upper': "",
-            'depth_lower': "",
-            'do': "",
-            'do_sat': "",
-            'ph': "",
-            'temp_c': "",
-            'conductivity_uncomp': "",
-            'turbidity': "",
-            'water_depth': "",
-            'gauge_height': "",
-            'sampling_comment': ""}
-        empty_data.append(new_line)
-    return empty_data
 
 
 def parse_datetime_from_string(date_string, time_string):
@@ -504,23 +462,6 @@ def get_column_title(key):
     return titles[key]
 
 
-def get_parameter_name(key):
-    """
-    Get the display name of the dictionary key. Used in
-    check_data_zero_values to tell the user which parameters have
-    values of zero.
-    """
-    param_names = {
-        "do": "DO (mg/L)",
-        "do_sat": "DO (% sat)",
-        "ph": "pH",
-        "temp_c": "Temp (deg C)",
-        "conductivity_uncomp": "EC (uS/cm)",
-        "conductivity_comp": "EC@25 (uS/cm)",
-        "turbidity": "Turbidity (NTU)"}
-    return param_names[key]
-
-
 def get_replicate_number(rep_code):
     """
     Get the replicate number used in KiWQM based on the sample type code.
@@ -534,31 +475,6 @@ def get_replicate_number(rep_code):
         "QB": 0,
         "QT": 0}
     return replicate_numbers[rep_code]
-
-
-def check_data_completeness(column_values):
-    """
-    Check the data entered by the user for completeness. This is used
-    to alert the user to the presence of any required fields that have
-    empty values prior to exporting.
-    :param data_list: The list of dictionaries to be checked.
-    :return: A list of column titles of incomplete fields.
-    """
-    # Create container for list of incomplete required fields
-    incomplete_fields = []
-    # Loop through required fields and check each item in the field for completeness
-    for field in app_config['required_fields']:
-        # Extract the values with the given key
-        column = (i[field] for i in data_list)
-        for item in column:
-            # If we have an incomplete item in a required field
-            # add the item to our incomplete list and
-            if item == "":
-                incomplete_fields.append(get_column_title(field))
-                break
-            else:
-                pass
-    return incomplete_fields
 
 
 def check_matrix_consistency(table, col_sample_matrix, col_sampling_number):
