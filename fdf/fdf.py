@@ -14,10 +14,12 @@ MainApp: Constructor for the main application.
 Functions:
 Main: Runs the Field Data Formatter app.
 """
-# TODO: Manager-cofigs to separate yaml file;
-# TODO: other configs to yaml;
 # TODO: Dropdown only one return push to select and exit
 # TODO: Code clean and document
+# TODO: Prevent editing of non-editable columns
+# TODO: see _autoUpdateCols for todo to fix datetime issues
+# TODO: Fix date validity (future dates): see check_date_validity
+# TODO: Fix text alignment on item change (in styleditemdelegate)
 # TODO: Implement turbidity instrument selection
 
 import sys
@@ -26,8 +28,8 @@ from PyQt4 import QtGui, QtCore
 import fdfGui
 import functions
 from functions import DatetimeError, ValidityError
-import globals
 import yaml
+import datetime
 
 # Load config files
 column_config = yaml.load(open('column_config.yaml').read())
@@ -58,8 +60,8 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         table = self.tableWidgetData
         table.setItemDelegate(validatedItemDelegate())
         table.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed | QtGui.QAbstractItemView.DoubleClicked)
-        table.itemChanged.connect(self._autoUpdateCols)
         table.itemChanged.connect(self._validateInput)
+        table.itemChanged.connect(self._autoUpdateCols)
         # Set up the help documentation
         self.helpBrowser = QtGui.QTextBrowser()
         self.helpBrowser.setSource(QtCore.QUrl('help.html'))
@@ -86,8 +88,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         try:
             # Validate file type
             _dicts = functions.load_instrument_file(self.fileLineEdit.text(), str(self.instrumentComboBox.currentText()))
-            self._addData(functions.lord2lorl(_dicts, app_config['column_order']
-))
+            self._addData(functions.lord2lorl(_dicts, app_config['column_order']))
             # Add file name to listbox
             self.listWidgetCurrentFiles.addItem(QtGui.QListWidgetItem(self.fileLineEdit.text()))
         except ValidityError:
@@ -109,15 +110,16 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 value = str(lists[i][j])
                 self.tableWidgetData.setItem(rowPosition, j, QtGui.QTableWidgetItem(value))
                 item = self.tableWidgetData.item(i, j)
-                item.setTextAlignment(QtCore.Qt.AlignCenter)
                 try:
                     validator = DoubleFixupValidator(item.column())
                     state, displayValue, returnInt = validator.validate(item.text(), 0)
                     if state == QtGui.QValidator.Invalid:
                         item.setBackgroundColor(QtCore.Qt.red)
                         errorsFound = True
+                    item.setTextAlignment(QtCore.Qt.AlignCenter)
                 except KeyError:
-                    pass
+                    item.setTextAlignment(QtCore.Qt.AlignCenter)
+
         self.tableWidgetData.blockSignals(False)
         if errorsFound is True:
             txt = "Errors have been found in the imported data set. " \
@@ -148,6 +150,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
 
     def _resetData(self):
         self.tableWidgetData.setRowCount(0)
+        self.listWidgetCurrentFiles.clear()
 
     def _exportData(self):
         dataValid, txt = exportValidator(self.tableWidgetData)
@@ -168,8 +171,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 value = self.tableWidgetData.item(i, j).text()
                 rowData.append(str(value))
             tableData.append(rowData)
-        tableData = functions.lorl2lord(tableData, app_config['column_order']
-)
+        tableData = functions.lorl2lord(tableData, app_config['column_order'])
         # Reformat the data in parameter-oriented format
         data_reformatted = functions.prepare_dictionary(tableData)
         # Write the data to csv
@@ -178,11 +180,9 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             # Write to sample oriented file for QA
             if self.chkBoxSampleOriented.isChecked():
                 fn = os.path.splitext(str(fileName))[0] + '_sampleOriented' + '.csv'
-                functions.write_to_csv(tableData, fn, app_config['column_order']
-)
+                functions.write_to_csv(tableData, fn, app_config['column_order'])
             # Write to parameter oriented file for import to KiWQM
-            if functions.write_to_csv(data_reformatted, fileName, app_config['csv_fieldnames']
-):
+            if functions.write_to_csv(data_reformatted, fileName, app_config['csv_fieldnames']):
                 msg.setIcon(QtGui.QMessageBox.Information)
                 msg.setText("Data exported successfully!")
                 msg.setWindowTitle("Export successful!")
@@ -243,13 +243,12 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             time = str(table.item(row, 3).text())
             try:
                 sampleDateTime = functions.parse_datetime_from_string(date, time)
-                table.setItem(row, 2, QtGui.QTableWidgetItem(sampleDateTime.strftime(app_config['datetime_formats']['date']['display']
-)))
-                table.setItem(row, 3, QtGui.QTableWidgetItem(sampleDateTime.strftime(app_config['datetime_formats']['time']['display']
-)))
-            except DatetimeError:
-                table.setItem(row, col, QtGui.QTableWidgetItem(""))
+                table.setItem(row, 2, QtGui.QTableWidgetItem(sampleDateTime.strftime(app_config['datetime_formats']['date']['display'])))
+                table.setItem(row, 3, QtGui.QTableWidgetItem(sampleDateTime.strftime(app_config['datetime_formats']['time']['display'])))
+            except (DatetimeError, ValueError):
+                table.setItem(row, col, item)
                 table.item(row, col).setBackgroundColor(QtCore.Qt.red)
+                table.item(row, col).setTextAlignment(QtCore.Qt.AlignCenter)
                 if col == 2:
                     param = "date"
                 else:
@@ -273,20 +272,26 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 date=date,
                 sample_type=sampleType)
             table.setItem(row, 4, QtGui.QTableWidgetItem(samplingNumber))
-            table.item(row, 4).setTextAlignment(QtCore.Qt.AlignCenter)
+
+        for i in range(1, 5):
+            table.item(row, i).setTextAlignment(QtCore.Qt.AlignCenter)
+
         table.blockSignals(False)
 
     def _validateInput(self, item):
         self.tableWidgetData.blockSignals(True)
         col = item.column()
-        try:
-            validator = ListValidator(col)
-        except KeyError:
+        if column_config[col]['name'] == 'date':
+            validator = DateValidator()
+        else:
             try:
-                validator = DoubleFixupValidator(col)
+                validator = ListValidator(col)
             except KeyError:
-                self.tableWidgetData.blockSignals(False)
-                return
+                try:
+                    validator = DoubleFixupValidator(col)
+                except KeyError:
+                    self.tableWidgetData.blockSignals(False)
+                    return
         state, displayValue, returnInt = validator.validate(item.text(), 0)
         if state != QtGui.QValidator.Acceptable:
             paramName = column_config[col]['name']
@@ -301,10 +306,14 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 upperLimit = column_config[col]['upper_limit']
                 txt = "%s value out of range.\n Acceptable range is between %s and %s" % (paramName, lowerLimit, upperLimit)
                 windowTitleTxt = "Value range error!"
-            else:  # returnInt == 2 List error
+            elif returnInt == 2:  # List error
                 txt = "%s value is not a valid value from the drop down list." \
-                      "Please select a valid valud from the list." % paramName
+                      "Please select a valid value from the list." % paramName
                 windowTitleTxt = "Invalid selection error!"
+            else:  # returnInt == 3  Date error
+                txt = "The entered date is in the future. Sampling dates must be in the past." \
+                      "Please enter a different date."
+                windowTitleTxt = "Invalid date error!"
             msg = QtGui.QMessageBox()
             msg.setIcon(QtGui.QMessageBox.Warning)
             msg.setText(txt)
@@ -315,6 +324,21 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             item.setBackgroundColor(QtCore.Qt.white)
 
         self.tableWidgetData.blockSignals(False)
+
+
+class DateValidator(QtGui.QValidator):
+    def __init__(self):
+        super(DateValidator, self).__init__()
+
+    def validate(self, testValue, p_int):
+        date = functions.parse_datetime_from_string(str(testValue), '00:00:00')
+        if date > datetime.datetime.now():
+            state = QtGui.QValidator.Invalid
+            returnInt = 3
+        else:
+            state = QtGui.QValidator.Acceptable
+            returnInt = 0
+        return state, testValue, returnInt
 
 
 class ListValidator(QtGui.QValidator):
