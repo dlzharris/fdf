@@ -1,0 +1,91 @@
+# Application configuration
+instruments:
+  hydrolab:
+    - Hydrolab DS5
+    - Hydrolab MS4
+    - Hydrolab MS5
+  ysi:
+    - EXO
+  turbidity:
+    - HACH Tubiditimeter 2100P
+    - HACH Tubiditimeter 2100Q
+
+datetime_formats:
+  date:
+    display: '%d/%m/%Y'
+    export: '%Y-%m-%d'
+    sampling_number: '%d%m%y'
+  time:
+    display: '%H:%M:%S'
+    export_event: '%H:%M:00'
+    export_sample: '%H:%M:%S'
+  datetime:
+    fraction: '%Y-%m-%d %H:%M:%S'
+
+parameters:
+  - conductivity_uncomp
+  - conductivity_comp
+  - do
+  - do_sat
+  - gauge_height
+  - ph
+  - temp_c
+  - turbidity
+  - water_depth
+
+column_order:
+  - mp_number
+  - station_number
+  - date
+  - sample_time
+  - sampling_number
+  - location_id
+  - sample_cid
+  - sample_matrix
+  - sample_type
+  - calibration_record
+  - sampling_instrument
+  - turbidity_instrument
+  - sampling_officer
+  - sample_collected
+  - depth_upper
+  - depth_lower
+  - do
+  - do_sat
+  - ph
+  - temp_c
+  - conductivity_uncomp
+  - conductivity_comp
+  - turbidity
+  - water_depth
+  - gauge_height
+  - sampling_comment
+
+csv_fieldnames:
+  - mp_number
+  - station_number
+  - sampling_number
+  - date
+  - event_time
+  - sample_matrix
+  - sample_type
+  - calibration_record
+  - sampling_reason
+  - sampling_officer
+  - sampling_comment
+  - location_id
+  - sample_cid
+  - replicate_number
+  - sample_time
+  - depth_upper
+  - depth_lower
+  - sample_collected
+  - fraction_lab_shortname  # Static text
+  - fraction_data_source  # Static text
+  - fraction_number  # Calculated value
+  - fraction_entry_datetime  # Current time (datetime.now)
+  - method
+  - parameter
+  - value
+  - units
+  - device

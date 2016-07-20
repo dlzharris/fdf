@@ -1,55 +1,73 @@
  # Column configuration
 0: 
   name: mp_number
-  allow_zero:
+  display_name: MP#
+  allow_zero: yes
   required: yes
   list_items: [MP406, MP409, MP418, MP420, MP424, MP430, MP433, MP479, MP514, MP516, MP639, MP676, MP699, MP709, MP720, MP721]
 1:
   name: station_number
-  allow_zero:
+  display_name: Station#
+  allow_zero: yes
   required: yes
 2:
   name: date
-  allow_zero:
+  display_name: Date
+  allow_zero: yes
   required: yes
 3:
   name: sample_time
-  allow_zero:
+  display_name: Time
+  allow_zero: yes
   required: yes
 4:
   name: sampling_number
-  allow_zero:
+  display_name: Sampling ID
+  allow_zero: yes
   required: no
 5:
   name: location_id
-  allow_zero:
+  display_name: Location#
+  allow_zero: yes
   required: yes
 6:
   name: sample_cid
-  allow_zero:
+  display_name: Sequence#
+  allow_zero: yes
   required: yes
 7:
   name: sample_matrix
-  allow_zero:
+  display_name: Matrix
+  allow_zero: yes
   required: yes
   list_items: [ST, SG, GB, GP, PR]
 8:
   name: sample_type
-  allow_zero:
+  display_name: Sample type
+  allow_zero: yes
   required: yes
   list_items: [P, R, D, T, QR, QB, QT]
 9:
   name: calibration_record
-  allow_zero:
+  display_name: Calibration record
+  allow_zero: yes
   required: no
 10:
   name: sampling_instrument
-  allow_zero:
+  display_name: Instrument
+  allow_zero: yes
   required: yes
   list_items: [Hydrolab DS5, Hydrolab MS4, Hydrolab MS5, EXO]
 11:
+  name: turbidity_instrument
+  display_name: Turbidimeter
+  allow_zero: yes
+  required: no
+  list_items: [HACH Tubiditimeter 2100P, HACH Tubiditimeter 2100Q]
+12:
   name: sampling_officer
-  allow_zero:
+  display_name: Sampling officer
+  allow_zero: yes
   required: yes
   list_items:
     - Alison Lewis
@@ -77,89 +95,102 @@
     - Sue Botting
     - Tracy Fulford
     - Warwick Mawhinney
-12:
+13:
   name: sample_collected
-  allow_zero:
+  display_name: Sample collected
+  allow_zero: yes
   required: no
   list_items: ['Yes', 'No']
-13:
+14:
   name: depth_upper
-  allow_zero:
+  display_name: Depth upper (m)
+  allow_zero: yes
   required: yes
   lower_limit: 0
   upper_limit: 50
   precision: 2
-14:
-  name: depth_lower
-  allow_zero:
-  required: no
-  lower_limit: 0
-  upper_limit: 50
-  precision: 2
 15:
-  name: do
-  allow_zero: no
+  name: depth_lower
+  display_name: Depth lower (m)
+  allow_zero: yes
   required: no
   lower_limit: 0
   upper_limit: 50
   precision: 2
 16:
-  name: do_sat
-  allow_zero: no
-  required: no
-  lower_limit: 0
-  upper_limit: 200
-  precision: 2
-17:
-  name: ph
-  allow_zero: no
-  required: no
-  lower_limit: 0
-  upper_limit: 14
-  precision: 2
-18:
-  name: temp_c
+  name: do
+  display_name: DO (mg/L)
   allow_zero: no
   required: no
   lower_limit: 0
   upper_limit: 50
   precision: 2
-19:
-  name: conductivity_uncomp
+17:
+  name: do_sat
+  display_name: DO (% sat)
   allow_zero: no
   required: no
   lower_limit: 0
-  upper_limit: 5000000
-  precision: 1
+  upper_limit: 200
+  precision: 2
+18:
+  name: ph
+  display_name: pH
+  allow_zero: no
+  required: no
+  lower_limit: 0
+  upper_limit: 14
+  precision: 2
+19:
+  name: temp_c
+  display_name: Temp (deg C)
+  allow_zero: no
+  required: no
+  lower_limit: 0
+  upper_limit: 50
+  precision: 2
 20:
-  name: conductivity_comp
+  name: conductivity_uncomp
+  display_name: EC (uS/cm)
   allow_zero: no
   required: no
   lower_limit: 0
   upper_limit: 5000000
   precision: 1
 21:
+  name: conductivity_comp
+  display_name: EC@25 (uS/cm)
+  allow_zero: no
+  required: no
+  lower_limit: 0
+  upper_limit: 5000000
+  precision: 1
+22:
   name: turbidity
+  display_name: Turbidity (NTU)
   allow_zero: no
   required: no
   lower_limit: 0
   upper_limit: 5000
   precision: 2
-22:
+23:
   name: water_depth
-  allow_zero:
+  display_name: Water depth (m)
+  allow_zero: yes
   required: no
   lower_limit: 0
   upper_limit: 200
   precision: 2
-23:
+24:
   name: gauge_height
-  allow_zero:
+  display_name: Gauge height (m)
+  allow_zero: yes
   required: no
   lower_limit: -300
   upper_limit: 1000
   precision: 2
-24:
+25:
   name: sampling_comment
-  allow_zero:
+  display_name: Comments
+  allow_zero: yes
   required: no
