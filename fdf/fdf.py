@@ -17,7 +17,6 @@ Main: Runs the Field Data Formatter app.
 # TODO: Dropdown only one return push to select and exit
 # TODO: Code clean and document
 # TODO: Implement move to next on enter
-# TODO: Alignment on copy/paste
 
 import sys
 import os
@@ -267,7 +266,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                     table.setItem(pasteStartRow + i,
                                   pasteStartCol + j,
                                   QtGui.QTableWidgetItem(copyData))
-                    table.item(i, j).setTextAlignment(QtCore.Qt.AlignCenter)
+                    table.item(pasteStartRow + i, pasteStartCol + j).setTextAlignment(QtCore.Qt.AlignCenter)
         else:
             # Paste data in rows, starting from top and moving left to right
             for i in range(0, len(copyDataRows)):
@@ -276,8 +275,11 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                     table.setItem(pasteStartRow + i,
                                   pasteStartCol + j,
                                   QtGui.QTableWidgetItem(copyDataCols[j]))
-                    table.item(i, j).setTextAlignment(QtCore.Qt.AlignCenter)
+                    try:
+                        table.item(pasteStartRow + i, pasteStartCol + j).setTextAlignment(QtCore.Qt.AlignCenter)
                     #self._autoUpdateCols(table.item(pasteStartRow + i, pasteStartCol + j))
+                    except AttributeError:
+                        pass
 
         table.blockSignals(False)
 
@@ -322,7 +324,10 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             return
         # Validate item
         state, displayValue, returnInt = validator.validate(item.text(), col)
-        if state != QtGui.QValidator.Acceptable:
+        if state == QtGui.QValidator.Intermediate:
+            self.tableWidgetData.blockSignals(False)
+            return
+        elif state != QtGui.QValidator.Acceptable:
             paramName = column_config[col]['name']
             item.setText(displayValue)
             item.setBackgroundColor(QtCore.Qt.red)
@@ -423,6 +428,10 @@ class ListValidator(QtGui.QValidator):
                 state = QtGui.QValidator.Acceptable
                 value = self.fixup(testValue)
                 returnInt = 0
+            elif testValue == "":
+                state = QtGui.QValidator.Intermediate
+                value = testValue
+                returnInt = 0
             else:
                 state = QtGui.QValidator.Invalid
                 value = testValue
@@ -454,6 +463,10 @@ class DoubleFixupValidator(QtGui.QDoubleValidator):
                 returnInt = 1
                 if self.bottom <= value <= self.top:
                     state = QtGui.QValidator.Acceptable
+                elif testValue == "":
+                    state = QtGui.QValidator.Intermediate
+                    value = testValue
+                    returnInt = 0
                 else:
                     state = QtGui.QValidator.Invalid
             except ValueError:
