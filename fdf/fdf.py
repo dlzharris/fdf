@@ -16,7 +16,9 @@ Main: Runs the Field Data Formatter app.
 """
 # TODO: Dropdown only one return push to select and exit
 # TODO: Code clean and document
-# TODO: Implement turbidity instrument selection
+# TODO: Implement move to next on enter
+# TODO: Alignment on copy/paste
+# TODO: Sequence number/matrix number check to include mp# in key
 # TODO: Populate instrument column with instrument name
 
 import sys
@@ -129,7 +131,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 if j == samplingNumberCol:
                     item.setFlags(QtCore.Qt.ItemIsSelectable)
                 else:
-                    item.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable)
+                    item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable)
                 try:
                     validator = DoubleFixupValidator(item.column())
                     state, displayValue, returnInt = validator.validate(item.text(), 0)
@@ -165,7 +167,6 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             rowCount = 1
         for i in range(0, rowCount):
             self.tableWidgetData.insertRow(rowPosition)
-        self._setTableDropDowns()
 
     def _delRows(self):
         rows = self.tableWidgetData.selectionModel().selectedRows()
@@ -240,23 +241,47 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         QtGui.QApplication.clipboard().setText(text)
 
     def _paste(self):
+        table = self.tableWidgetData
+        table.blockSignals(True)
         selection = self.tableWidgetData.selectionModel()
         indexes = selection.selectedIndexes()
         # Get the location of the top left cell in selection
         pasteStartRow = min(r.row() for r in indexes)
         pasteStartCol = min(c.column() for c in indexes)
+        pasteEndRow = max(r.row() for r in indexes)
+        pasteEndCol = max(c.column() for c in indexes)
+
         if len(indexes) < 1:
             # Nothing selected
             return
         # Parse the clipboard
         copyDataRows = QtGui.QApplication.clipboard().text().split('\n')
-        # Paste data in rows, starting from top and moving left to right
-        for i in range(0, len(copyDataRows)):
-            copyDataCols = copyDataRows[i].split('\t')
-            for j in range(0, len(copyDataCols)):
-                self.tableWidgetData.setItem(pasteStartRow + i,
-                                             pasteStartCol + j,
-                                             QtGui.QTableWidgetItem(copyDataCols[j]))
+        if copyDataRows is None:
+            # Nothing in the clipboard
+            return
+
+        # Paste data
+        # Special case - only one value selected
+        if len(copyDataRows) == 1 and len(copyDataRows[0]) == 1:
+            copyData = copyDataRows[0][0]
+            for i in range(0, pasteEndRow - pasteStartRow + 1):
+                for j in range(0, pasteEndCol - pasteStartCol + 1):
+                    table.setItem(pasteStartRow + i,
+                                  pasteStartCol + j,
+                                  QtGui.QTableWidgetItem(copyData))
+                    table.item(i, j).setTextAlignment(QtCore.Qt.AlignCenter)
+        else:
+            # Paste data in rows, starting from top and moving left to right
+            for i in range(0, len(copyDataRows)):
+                copyDataCols = copyDataRows[i].split('\t')
+                for j in range(0, len(copyDataCols)):
+                    table.setItem(pasteStartRow + i,
+                                  pasteStartCol + j,
+                                  QtGui.QTableWidgetItem(copyDataCols[j]))
+                    table.item(i, j).setTextAlignment(QtCore.Qt.AlignCenter)
+                    #self._autoUpdateCols(table.item(pasteStartRow + i, pasteStartCol + j))
+
+        table.blockSignals(False)
 
     def _autoUpdateCols(self, item):
         table = self.tableWidgetData
