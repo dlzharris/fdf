@@ -169,6 +169,8 @@ def load_instrument_file(instrument_file, instrument_type):
                 # Format the date and time correctly
                 new_line['date'] = sample_dt.strftime(app_config['datetime_formats']['date']['display'])
                 new_line['sample_time'] = sample_dt.strftime(app_config['datetime_formats']['time']['display'])
+                # Set the instrument
+                new_line['sampling_instrument'] = instrument_type
                 # Add the extra items we'll need access to later on
                 new_line['event_time'] = ""
                 new_line['sampling_number'] = ""
@@ -184,7 +186,7 @@ def load_instrument_file(instrument_file, instrument_type):
                 new_line['sample_collected'] = ""
                 new_line['depth_lower'] = ""
                 new_line['sampling_comment'] = ""
-                new_line['sampling_instrument'] = ""
+                new_line['turbidity_instrument'] = ""
                 new_line['gauge_height'] = ""
                 new_line['turbidity'] = ""
                 new_line['conductivity_comp'] = ""
@@ -280,6 +282,8 @@ def load_instrument_file(instrument_file, instrument_type):
                 # Format the date and time correctly
                 new_line['date'] = sample_dt.strftime(app_config['datetime_formats']['date']['display'])
                 new_line['sample_time'] = sample_dt.strftime(app_config['datetime_formats']['time']['display'])
+                # Set the instrument
+                new_line['sampling_instrument'] = instrument_type
                 # Add the extra items we'll need access to later on
                 new_line['event_time'] = ""
                 new_line['sampling_number'] = ""
@@ -296,6 +300,7 @@ def load_instrument_file(instrument_file, instrument_type):
                 new_line['depth_lower'] = ""
                 new_line['sampling_comment'] = ""
                 new_line['sampling_instrument'] = ""
+                new_line['turbidity_instrument'] = ""
                 new_line['gauge_height'] = ""
                 new_line['turbidity'] = ""
                 new_line['conductivity_comp'] = ""
@@ -596,7 +601,7 @@ def prepare_dictionary(data_list):
                 sample_param_oriented["value"] = sample_param_oriented.pop(param)
                 sample_param_oriented["units"] = get_parameter_unit(param)
                 if param == 'turbidity':
-                    sample_param_oriented["device"] = sample['sampling_turb_instrument']
+                    sample_param_oriented["device"] = sample['turbidity_instrument']
                     sample_param_oriented["method"] = "FLD_TURB"
                 else:
                     sample_param_oriented["device"] = sample['sampling_instrument']
