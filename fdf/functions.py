@@ -482,7 +482,7 @@ def get_replicate_number(rep_code):
     return replicate_numbers[rep_code]
 
 
-def check_matrix_consistency(table, col_sample_matrix, col_sampling_number):
+def check_matrix_consistency(table, col_mp_number, col_sample_matrix, col_sampling_number):
     """
     Check that all samples in a single sampling use the same matrix.
     This is a requirement for KiWQM.
@@ -493,18 +493,18 @@ def check_matrix_consistency(table, col_sample_matrix, col_sampling_number):
     matrix_consistent = True
     matrix_list = []
     for row in range(0, table.rowCount()):
-        print str(table.item(row, col_sample_matrix).text())
-        print str(table.item(row, col_sampling_number).text())
-        matrix_list.append((table.item(row, col_sample_matrix).text(), table.item(row, col_sampling_number).text()))
+        matrix_list.append((table.item(row, col_mp_number).text(),
+                            table.item(row, col_sample_matrix).text(),
+                            table.item(row, col_sampling_number).text()))
     for sample in matrix_list:
-        sampling_matrix = [m for (m, s) in matrix_list if s == sample[1]]
+        sampling_matrix = [x for (m, x, s) in matrix_list if m == sample[0] and s == sample[2]]
         if len(set(sampling_matrix)) > 1:
             matrix_consistent = False
             break
     return matrix_consistent
 
 
-def check_sequence_numbers(table, col_sample_cid, col_sampling_number, col_location_number):
+def check_sequence_numbers(table, col_mp_number, col_sample_cid, col_sampling_number, col_location_number):
     """
     Check that all samples in a single sampling use distinct sequence
     numbers and that they start at 1 and increment sequentially.
@@ -515,12 +515,15 @@ def check_sequence_numbers(table, col_sample_cid, col_sampling_number, col_locat
         sequence_list = []
         sequence_correct = True
         for row in range(0, table.rowCount()):
-            sequence_list.append((table.item(row, col_sample_cid).text(), table.item(row, col_sampling_number).text(),
+            sequence_list.append((table.item(row, col_mp_number).text(),
+                                  table.item(row, col_sample_cid).text(),
+                                  table.item(row, col_sampling_number).text(),
                                   table.item(row, col_location_number).text()))
         for sample in sequence_list:
             # Get a list of all sequence numbers at a single location in a
             # single sampling.
-            sequence_numbers = [int(s) for (s, n, l) in sequence_list if n == sample[1] and l == sample[2]]
+            sequence_numbers = [int(s) for (m, s, n, l) in sequence_list
+                                if m == sample[0] and n == sample[2] and l == sample[3]]
             # Check that sequence numbers in a single sampling are distinct,
             # start at 1, and increment sequentially
             if not all(a == b for a, b in list(enumerate(sorted(sequence_numbers), start=1))):

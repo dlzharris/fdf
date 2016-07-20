@@ -18,8 +18,6 @@ Main: Runs the Field Data Formatter app.
 # TODO: Code clean and document
 # TODO: Implement move to next on enter
 # TODO: Alignment on copy/paste
-# TODO: Sequence number/matrix number check to include mp# in key
-# TODO: Populate instrument column with instrument name
 
 import sys
 import os
@@ -480,6 +478,7 @@ def exportValidator(table):
     rows = table.rowCount() - 1
     columns = table.columnCount() - 1
     dataValid = True
+    sampleMeasProgColumn = [k for k, v in column_config.iteritems() if v['name'] == 'mp_number'][0]
     sampleMatrixColumn = [k for k, v in column_config.iteritems() if v['name'] == 'sample_matrix'][0]
     samplingNumberColumn = [k for k, v in column_config.iteritems() if v['name'] == 'sampling_number'][0]
     sampleCIDColumn = [k for k, v in column_config.iteritems() if v['name'] == 'sample_cid'][0]
@@ -505,9 +504,11 @@ def exportValidator(table):
                     incompleteColumns.append(i)
                 break
     # Test matrix consistency
-    matrixConsistent = functions.check_matrix_consistency(table, sampleMatrixColumn, samplingNumberColumn)
+    matrixConsistent = functions.check_matrix_consistency(table, sampleMeasProgColumn,
+                                                          sampleMatrixColumn, samplingNumberColumn)
     # Test sequence number validity
-    sequenceCorrect = functions.check_sequence_numbers(table, sampleCIDColumn, samplingNumberColumn, locationNumberColumn)
+    sequenceCorrect = functions.check_sequence_numbers(table, sampleMeasProgColumn,
+                                                       sampleCIDColumn, samplingNumberColumn, locationNumberColumn)
     # Prepare message for user
     msg = ""
     if invalidColumns:
