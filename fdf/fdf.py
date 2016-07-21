@@ -255,6 +255,8 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                                   pasteStartCol + j,
                                   QtGui.QTableWidgetItem(copyData))
                     table.item(pasteStartRow + i, pasteStartCol + j).setTextAlignment(QtCore.Qt.AlignCenter)
+                    item = table.item(pasteStartRow + i, pasteStartCol + j)
+                    self._autoUpdateCols(item)
         else:
             # Paste data in rows, starting from top and moving left to right
             for i in range(0, len(copyDataRows)):
@@ -265,6 +267,8 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                                   QtGui.QTableWidgetItem(copyDataCols[j]))
                     try:
                         table.item(pasteStartRow + i, pasteStartCol + j).setTextAlignment(QtCore.Qt.AlignCenter)
+                        item = table.item(pasteStartRow + i, pasteStartCol + j)
+                        self._autoUpdateCols(item)
                     except AttributeError:
                         pass
         table.blockSignals(False)
