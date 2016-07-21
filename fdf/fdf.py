@@ -31,6 +31,8 @@ import datetime
 column_config = yaml.load(open('column_config.yaml').read())
 app_config = yaml.load(open('app_config.yaml').read())
 
+# Set required globals
+CURRENT_EDITOR = None
 
 ###############################################################################
 # Main app constructor and initialisation
@@ -73,6 +75,8 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             self._copy()
         elif event.matches(QtGui.QKeySequence.Paste):
             self._paste()
+        elif event.key() in (QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return):
+            self._keyPressEnter()
         else:
             QtGui.QMainWindow.keyPressEvent(self, event)
 
@@ -282,6 +286,24 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                         pass
 
         table.blockSignals(False)
+
+    def _keyPressEnter(self):
+        table = self.tableWidgetData
+        table.commitData(CURRENT_EDITOR)
+        table.closeEditor(CURRENT_EDITOR, QtGui.QAbstractItemDelegate.NoHint)
+        #table.setDisabled(True)
+        item = table.currentItem()
+        row = item.row()
+        col = item.column()
+        text = item.text()
+        item.setText(text)
+        # Deselect current item
+        table.setItemSelected(table.item(row, col), False)
+        # Select next item
+        nextItem = table.item(row + 1, col)
+        table.setCurrentItem(nextItem)
+        nextItem.setSelected(True)
+
 
     def _autoUpdateCols(self, item):
         table = self.tableWidgetData
@@ -599,9 +621,13 @@ class listColumnItemDelegate(QtGui.QStyledItemDelegate):
             items = ['']
             items.extend(column_config[index.column()]['list_items'])
             combo.addItems(items)
-            return combo
+            editor = combo
         except KeyError:
-            return super(listColumnItemDelegate, self).createEditor(parent, option, index)
+            editor = super(listColumnItemDelegate, self).createEditor(parent, option, index)
+
+        CURRENT_EDITOR = editor
+
+        return editor
 
 
 # -----------------------------------------------------------------------------
