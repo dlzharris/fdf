@@ -14,9 +14,7 @@ MainApp: Constructor for the main application.
 Functions:
 Main: Runs the Field Data Formatter app.
 """
-# TODO: Dropdown only one return push to select and exit
 # TODO: Code clean and document
-# TODO: Implement move to next on enter
 
 import sys
 import os
@@ -31,8 +29,6 @@ import datetime
 column_config = yaml.load(open('column_config.yaml').read())
 app_config = yaml.load(open('app_config.yaml').read())
 
-# Set required globals
-CURRENT_EDITOR = None
 
 ###############################################################################
 # Main app constructor and initialisation
@@ -87,14 +83,6 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             item = table.horizontalHeaderItem(i)
             item.setText(self.headerLabels[i])
 
-    def setFlags(self, item):
-        for i in range(0, len(self.headerLabels)):
-            samplingNumberCol = [k for k, v in column_config.iteritems() if v['name'] == "sampling_number"][0]
-            if item.column() == samplingNumberCol:
-                item.setFlags(QtCore.Qt.ItemIsSelectable)
-            else:
-                item.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable)
-
     def _showHelp(self):
         self.helpBrowser.show()
 
@@ -120,7 +108,6 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
 
     def _addData(self, lists):
         self.tableWidgetData.blockSignals(True)
-        samplingNumberCol = [k for k, v in column_config.iteritems() if v['name'] == "sampling_number"][0]
         errorsFound = False
         for i in range(0, len(lists)):
             rowPosition = self.tableWidgetData.rowCount()
@@ -129,10 +116,6 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 value = str(lists[i][j])
                 self.tableWidgetData.setItem(rowPosition, j, QtGui.QTableWidgetItem(value))
                 item = self.tableWidgetData.item(i, j)
-                if j == samplingNumberCol:
-                    item.setFlags(QtCore.Qt.ItemIsSelectable)
-                else:
-                    item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable)
                 try:
                     validator = DoubleFixupValidator(item.column())
                     state, displayValue, returnInt = validator.validate(item.text(), 0)
@@ -257,14 +240,15 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             return
         # Parse the clipboard
         copyDataRows = QtGui.QApplication.clipboard().text().split('\n')
+
         if copyDataRows is None:
             # Nothing in the clipboard
             return
 
         # Paste data
         # Special case - only one value selected
-        if len(copyDataRows) == 1 and len(copyDataRows[0]) == 1:
-            copyData = copyDataRows[0][0]
+        if len(copyDataRows) == 1 and '\t' not in copyDataRows[0]:
+            copyData = copyDataRows[0]
             for i in range(0, pasteEndRow - pasteStartRow + 1):
                 for j in range(0, pasteEndCol - pasteStartCol + 1):
                     table.setItem(pasteStartRow + i,
@@ -281,29 +265,21 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                                   QtGui.QTableWidgetItem(copyDataCols[j]))
                     try:
                         table.item(pasteStartRow + i, pasteStartCol + j).setTextAlignment(QtCore.Qt.AlignCenter)
-                    #self._autoUpdateCols(table.item(pasteStartRow + i, pasteStartCol + j))
                     except AttributeError:
                         pass
-
         table.blockSignals(False)
 
     def _keyPressEnter(self):
         table = self.tableWidgetData
-        table.commitData(CURRENT_EDITOR)
-        table.closeEditor(CURRENT_EDITOR, QtGui.QAbstractItemDelegate.NoHint)
-        #table.setDisabled(True)
         item = table.currentItem()
         row = item.row()
         col = item.column()
-        text = item.text()
-        item.setText(text)
         # Deselect current item
         table.setItemSelected(table.item(row, col), False)
         # Select next item
         nextItem = table.item(row + 1, col)
         table.setCurrentItem(nextItem)
         nextItem.setSelected(True)
-
 
     def _autoUpdateCols(self, item):
         table = self.tableWidgetData
@@ -322,7 +298,6 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             except ValueError:
                 samplingNumber = ""
             table.setItem(row, 4, QtGui.QTableWidgetItem(samplingNumber))
-            table.item(row, 4).setFlags(QtCore.Qt.ItemIsSelectable)
 
         for i in range(1, 5):
             table.item(row, i).setTextAlignment(QtCore.Qt.AlignCenter)
@@ -583,6 +558,9 @@ def exportValidator(table):
 
 
 class filteredComboBox(QtGui.QComboBox):
+    # create returnPressed signal
+    returnPressed = QtCore.pyqtSignal()
+
     def __init__(self, parent):
         super(filteredComboBox, self).__init__(parent)
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
@@ -609,6 +587,7 @@ class filteredComboBox(QtGui.QComboBox):
         if text:
             index = self.findText(str(text))
             self.setCurrentIndex(index)
+            self.returnPressed.emit()
 
 
 class listColumnItemDelegate(QtGui.QStyledItemDelegate):
@@ -625,10 +604,18 @@ class listColumnItemDelegate(QtGui.QStyledItemDelegate):
         except KeyError:
             editor = super(listColumnItemDelegate, self).createEditor(parent, option, index)
 
-        CURRENT_EDITOR = editor
+        samplingNumberCol = [k for k, v in column_config.iteritems() if v['name'] == "sampling_number"][0]
+        if index.column() == samplingNumberCol:
+            editor.setReadOnly(True)
+
+        editor.returnPressed.connect(self.commitAndCloseEditor)
 
         return editor
 
+    def commitAndCloseEditor(self):
+        editor = self.sender()
+        self.commitData.emit(editor)
+        self.closeEditor.emit(editor, QtGui.QAbstractItemDelegate.NoHint)
 
 # -----------------------------------------------------------------------------
 def main():
