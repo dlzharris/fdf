@@ -26,8 +26,8 @@ import yaml
 import datetime
 
 # Load config files
-column_config = yaml.load(open('column_config.yaml').read())
-app_config = yaml.load(open('app_config.yaml').read())
+column_config = yaml.load(open(functions.resource_path('column_config.yaml')).read())
+app_config = yaml.load(open(functions.resource_path('app_config.yaml')).read())
 
 
 ###############################################################################
@@ -47,8 +47,9 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         self.pushButtonResetData.clicked.connect(self._resetData)
         self.pushButtonExportData.clicked.connect(self._exportData)
         # Add items to the instrument picker
+        instrumentCol = [k for k, v in column_config.iteritems() if v['name'] == 'sampling_instrument'][0]
         _instruments = ['']
-        _instruments.extend(column_config[10]['list_items'])
+        _instruments.extend(column_config[instrumentCol]['list_items'])
         self.instrumentComboBox.addItems(_instruments)
         # Set up the table
         self.headerLabels = [column_config[i]['display_name'] for i in range(0, len(column_config))]

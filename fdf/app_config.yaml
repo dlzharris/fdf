@@ -42,6 +42,7 @@ column_order:
   - location_id
   - sample_cid
   - sample_matrix
+  - collection_method
   - sample_type
   - calibration_record
   - sampling_instrument
@@ -68,7 +69,7 @@ csv_fieldnames:
   - date
   - event_time
   - sample_matrix
-  - sample_type
+  - collection_method
   - calibration_record
   - sampling_reason
   - sampling_officer

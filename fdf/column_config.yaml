@@ -42,29 +42,35 @@
   required: yes
   list_items: [ST, SG, GB, GP, PR]
 8:
+  name: collection_method
+  display_name: Collection method
+  allow_zero: yes
+  required: yes
+  list_items: [MG, MB, MP, MD, MS, RS, AU, BA, PG]
+9:
   name: sample_type
   display_name: Sample type
   allow_zero: yes
   required: yes
   list_items: [P, R, D, T, QR, QB, QT]
-9:
+10:
   name: calibration_record
   display_name: Calibration record
   allow_zero: yes
   required: no
-10:
+11:
   name: sampling_instrument
   display_name: Instrument
   allow_zero: yes
   required: yes
   list_items: [Hydrolab DS5, Hydrolab MS4, Hydrolab MS5, EXO]
-11:
+12:
   name: turbidity_instrument
   display_name: Turbidimeter
   allow_zero: yes
   required: no
-  list_items: [HACH Tubiditimeter 2100P, HACH Tubiditimeter 2100Q]
-12:
+  list_items: [HACH Turbidimeter 2100P, HACH Turbidimeter 2100Q]
+13:
   name: sampling_officer
   display_name: Sampling officer
   allow_zero: yes
@@ -95,13 +101,13 @@
     - Sue Botting
     - Tracy Fulford
     - Warwick Mawhinney
-13:
+14:
   name: sample_collected
   display_name: Sample collected
   allow_zero: yes
   required: no
   list_items: ['Yes', 'No']
-14:
+15:
   name: depth_upper
   display_name: Depth upper (m)
   allow_zero: yes
@@ -109,7 +115,7 @@
   lower_limit: 0
   upper_limit: 50
   precision: 2
-15:
+16:
   name: depth_lower
   display_name: Depth lower (m)
   allow_zero: yes
@@ -117,7 +123,7 @@
   lower_limit: 0
   upper_limit: 50
   precision: 2
-16:
+17:
   name: do
   display_name: DO (mg/L)
   allow_zero: no
@@ -125,7 +131,7 @@
   lower_limit: 0
   upper_limit: 50
   precision: 2
-17:
+18:
   name: do_sat
   display_name: DO (% sat)
   allow_zero: no
@@ -133,7 +139,7 @@
   lower_limit: 0
   upper_limit: 200
   precision: 2
-18:
+19:
   name: ph
   display_name: pH
   allow_zero: no
@@ -141,7 +147,7 @@
   lower_limit: 0
   upper_limit: 14
   precision: 2
-19:
+20:
   name: temp_c
   display_name: Temp (deg C)
   allow_zero: no
@@ -149,7 +155,7 @@
   lower_limit: 0
   upper_limit: 50
   precision: 2
-20:
+21:
   name: conductivity_uncomp
   display_name: EC (uS/cm)
   allow_zero: no
@@ -157,7 +163,7 @@
   lower_limit: 0
   upper_limit: 5000000
   precision: 1
-21:
+22:
   name: conductivity_comp
   display_name: EC@25 (uS/cm)
   allow_zero: no
@@ -165,7 +171,7 @@
   lower_limit: 0
   upper_limit: 5000000
   precision: 1
-22:
+23:
   name: turbidity
   display_name: Turbidity (NTU)
   allow_zero: no
@@ -173,7 +179,7 @@
   lower_limit: 0
   upper_limit: 5000
   precision: 2
-23:
+24:
   name: water_depth
   display_name: Water depth (m)
   allow_zero: yes
@@ -181,7 +187,7 @@
   lower_limit: 0
   upper_limit: 200
   precision: 2
-24:
+25:
   name: gauge_height
   display_name: Gauge height (m)
   allow_zero: yes
@@ -189,7 +195,7 @@
   lower_limit: -300
   upper_limit: 1000
   precision: 2
-25:
+26:
   name: sampling_comment
   display_name: Comments
   allow_zero: yes
