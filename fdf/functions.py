@@ -181,6 +181,7 @@ def load_instrument_file(instrument_file, instrument_type):
                 new_line['mp_number'] = ""
                 new_line['location_id'] = ""
                 new_line['station_number'] = ""
+                new_line['collection_method'] = ""
                 new_line['calibration_record'] = ""
                 new_line['sampling_officer'] = ""
                 new_line['sample_collected'] = ""
@@ -294,6 +295,7 @@ def load_instrument_file(instrument_file, instrument_type):
                 new_line['mp_number'] = ""
                 new_line['location_id'] = ""
                 new_line['station_number'] = ""
+                new_line['collection_method'] = ""
                 new_line['calibration_record'] = ""
                 new_line['sampling_officer'] = ""
                 new_line['sample_collected'] = ""
@@ -647,8 +649,8 @@ def lord2lorl(lord, colkeys):
     :param lord: list of dictionaries to be parsed
     :param colkeys: list of column keys
     """
-    return [[row[key] for key in colkeys if key in row]
-            for row in lord]
+    lists = [[row[key] for key in colkeys if key in row] for row in lord]
+    return lists
 
 
 def lorl2lord(lorl, colkeys):
