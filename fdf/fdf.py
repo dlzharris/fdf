@@ -14,6 +14,7 @@ MainApp: Constructor for the main application.
 Functions:
 Main: Runs the Field Data Formatter app.
 """
+__version__ = '0.0.0'
 # TODO: Code clean and document
 
 import sys
@@ -24,6 +25,7 @@ import functions
 from functions import DatetimeError, ValidityError
 import yaml
 import datetime
+from urllib2 import urlopen
 
 # Load config files
 column_config = yaml.load(open(functions.resource_path('column_config.yaml')).read())
@@ -39,6 +41,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
     """
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
+        self._checkVersion()
         self.setupUi(self)
         self.filePickerBtn.clicked.connect(self._filePicker)
         self.addFileBtn.clicked.connect(self._addFile)
@@ -66,6 +69,23 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         self.helpBrowser.setWindowTitle("FDF Utility Help Documentation")
         self.helpBrowser.setMinimumSize(500, 500)
         self.actionHelp.triggered.connect(self._showHelp)
+
+    def _checkVersion(self):
+        # Check that version is up-to-date
+        url = 'https://raw.githubusercontent.com/dlzharris/fdf/master/current_version.txt'
+        current_version = yaml.load(urlopen(url).read())['version_stable']
+        if __version__ != current_version:
+            txt = "There is a newer version of this application available. You can no longer use the current version. \n\n" \
+                  "Please download the latest version (zip file) from <a href='{url}'>{url}</a>. " \
+                  "Installation instructions can be found in the README.md file at the same location.\n\n" \
+                  "This application will now exit.".format(url='https://github.com/dlzharris/fdf/tree/master/stable_package')
+            msg = QtGui.QMessageBox()
+            msg.setIcon(QtGui.QMessageBox.Warning)
+            msg.setText(txt)
+            msg.setTextFormat(QtCore.Qt.RichText)
+            msg.setWindowTitle("File validity error!")
+            msg.exec_()
+            sys.exit()
 
     def keyPressEvent(self, event):
         if event.matches(QtGui.QKeySequence.Copy):
