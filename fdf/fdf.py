@@ -77,6 +77,13 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         else:
             QtGui.QMainWindow.keyPressEvent(self, event)
 
+    def contextMenuEvent(self, event):
+        if event.Reason() == QtGui.QContextMenuEvent.Mouse:
+            menu = QtGui.QMenu(self)
+            menu.addAction("Copy", self._copy, QtGui.QKeySequence.Copy)
+            menu.addAction("Paste", self._paste, QtGui.QKeySequence.Paste)
+            menu.popup(QtGui.QCursor.pos())
+
     def setHeaderData(self, table):
         for i in range(0, len(self.headerLabels)):
             item = QtGui.QTableWidgetItem()
@@ -621,6 +628,7 @@ class listColumnItemDelegate(QtGui.QStyledItemDelegate):
         editor = self.sender()
         self.commitData.emit(editor)
         self.closeEditor.emit(editor, QtGui.QAbstractItemDelegate.NoHint)
+
 
 # -----------------------------------------------------------------------------
 def main():
