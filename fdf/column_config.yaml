@@ -16,7 +16,7 @@
   allow_zero: yes
   required: yes
 3:
-  name: sample_time
+  name: time
   display_name: Time
   allow_zero: yes
   required: yes
