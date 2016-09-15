@@ -179,15 +179,18 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             msg.exec_()
 
     def _insertRows(self):
-        rows = self.tableWidgetData.selectionModel().selectedRows()
+        table = self.tableWidgetData
+        table.blockSignals(True)
+        rows = table.selectionModel().selectedRows()
         rowCount = len(rows)
         try:
             rowPosition = rows[0].row()
         except IndexError:
-            rowPosition = self.tableWidgetData.rowCount()
+            rowPosition = table.rowCount()
             rowCount = 1
         for i in range(0, rowCount):
-            self.tableWidgetData.insertRow(rowPosition)
+            table.insertRow(rowPosition)
+        table.blockSignals(False)
 
     def _delRows(self):
         rows = self.tableWidgetData.selectionModel().selectedRows()
@@ -318,32 +321,33 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         # Deselect current item
         table.setItemSelected(table.item(row, col), False)
         # Select next item
-        nextItem = table.item(row + 1, col)
-        table.setCurrentItem(nextItem)
-        nextItem.setSelected(True)
+        table.setCurrentCell(row + 1, col)
 
     def _autoUpdateCols(self, item):
         table = self.tableWidgetData
         table.blockSignals(True)
         row = item.row()
         col = item.column()
-        if col in [1, 2]:  # Sampling number
-            stationNumber = str(table.item(row, 1).text())
-            date = str(table.item(row, 2).text())
-            sampleType = str(table.item(row, 8).text())
-            try:
-                samplingNumber = functions.get_sampling_number(
-                    station_number=stationNumber,
-                    date=date,
-                    sample_type=sampleType)
-            except ValueError:
-                samplingNumber = ""
-            table.setItem(row, 4, QtGui.QTableWidgetItem(samplingNumber))
+        try:
+            if col in [1, 2]:  # Sampling number
+                stationNumber = str(table.item(row, 1).text())
+                date = str(table.item(row, 2).text())
+                sampleType = str(table.item(row, 8).text())
+                try:
+                    samplingNumber = functions.get_sampling_number(
+                        station_number=stationNumber,
+                        date=date,
+                        sample_type=sampleType)
+                except ValueError:
+                    samplingNumber = ""
+                table.setItem(row, 4, QtGui.QTableWidgetItem(samplingNumber))
 
-        for i in range(1, 5):
-            table.item(row, i).setTextAlignment(QtCore.Qt.AlignCenter)
-
-        table.blockSignals(False)
+            for i in range(1, 5):
+                table.item(row, i).setTextAlignment(QtCore.Qt.AlignCenter)
+        except AttributeError:
+            pass
+        finally:
+            table.blockSignals(False)
 
     def _validateInput(self, item):
         self.tableWidgetData.blockSignals(True)
@@ -437,7 +441,7 @@ class TimeValidator(QtGui.QValidator):
 
     def validate(self, testValue, col):
         try:
-            time = functions.parse_datetime_from_string(01/01/1900, testValue)
+            time = functions.parse_datetime_from_string('01/01/1900', str(testValue))
             try:
                 displayValue = time.strftime(app_config['datetime_formats']['time']['display'])
                 state = QtGui.QValidator.Acceptable
