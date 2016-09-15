@@ -63,6 +63,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         table.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed | QtGui.QAbstractItemView.DoubleClicked)
         table.itemChanged.connect(self._autoUpdateCols)
         table.itemChanged.connect(self._validateInput)
+        table.itemChanged.connect(self._setAlignment)
         # Set up the help documentation
         self.helpBrowser = QtGui.QTextBrowser()
         self.helpBrowser.setSource(QtCore.QUrl('help.html'))
@@ -323,16 +324,28 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         # Select next item
         table.setCurrentCell(row + 1, col)
 
+    def _getColumnNumber(self, columnName):
+        return [k for k, v in column_config.iteritems() if v['name'] == columnName][0]
+
     def _autoUpdateCols(self, item):
         table = self.tableWidgetData
         table.blockSignals(True)
         row = item.row()
         col = item.column()
+        stationCol = self._getColumnNumber('station_number')
+        dateCol = self._getColumnNumber('date')
+        sampleTypeCol = self._getColumnNumber('sample_type')
+        samplingNumberCol = self._getColumnNumber('sampling_number')
         try:
-            if col in [1, 2]:  # Sampling number
-                stationNumber = str(table.item(row, 1).text())
-                date = str(table.item(row, 2).text())
-                sampleType = str(table.item(row, 8).text())
+            if col in [stationCol, dateCol]:  # Sampling number
+                stationNumber = str(table.item(row, stationCol).text())
+                date = str(table.item(row, dateCol).text())
+
+                try:
+                    sampleType = str(table.item(row, sampleTypeCol).text())
+                except AttributeError:
+                    sampleType = None
+
                 try:
                     samplingNumber = functions.get_sampling_number(
                         station_number=stationNumber,
@@ -340,14 +353,17 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                         sample_type=sampleType)
                 except ValueError:
                     samplingNumber = ""
-                table.setItem(row, 4, QtGui.QTableWidgetItem(samplingNumber))
 
-            for i in range(1, 5):
-                table.item(row, i).setTextAlignment(QtCore.Qt.AlignCenter)
+                table.setItem(row, samplingNumberCol, QtGui.QTableWidgetItem(samplingNumber))
+                self._setAlignment(table.item(row, samplingNumberCol))
+
         except AttributeError:
             pass
         finally:
             table.blockSignals(False)
+
+    def _setAlignment(self, item):
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
 
     def _validateInput(self, item):
         self.tableWidgetData.blockSignals(True)
