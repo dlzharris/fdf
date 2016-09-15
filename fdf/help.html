@@ -7,7 +7,14 @@
 <h3 id="manual-data-entry">Manual data entry<a name="manual-data-entry"></a></h3>
 <p>To input data manually from a log sheet, just press the <em>Add lines</em> button (once press for each sample required) and start entering data in the table. See <a href="#description-of-fields">Description of fields</a> for descritions of the various fields, and details on mandatory and optional fields.</p>
 <h3 id="importing-a-data-file-from-a-field-instrument">Importing a data file from a field instrument<a name="importing-data-files"></a></h3>
-<p>To import a data file created by fa Hydrolab or YSI instrument, do the following: 1. Select the instrument from the <em>Instrument</em> drop down list at the top of the window. 2. Press the &quot;...&quot; key labeled <em>File location</em>. 3. Select the file you wish to import. 4. Press the <em>Add file</em> button. The data will be automatically imported from the selected file and the file name will be displayed in the <em>Current files</em> box. You will be notified if there are problems with the data or if the data file is invalid for the selected instrument.</p>
+<p>To import a data file created by fa Hydrolab or YSI instrument, do the following:</p>
+<ol style="list-style-type: decimal">
+<li>Select the instrument from the <em>Instrument</em> drop down list at the top of the window.</li>
+<li>Press the &quot;...&quot; key labeled <em>File location</em>.</li>
+<li>Select the file you wish to import.</li>
+<li>Press the <em>Add file</em> button.</li>
+</ol>
+<p>The data will be automatically imported from the selected file and the file name will be displayed in the <em>Current files</em> box. You will be notified if there are problems with the data or if the data file is invalid for the selected instrument.</p>
 <h3 id="adding-additional-data-or-files">Adding additional data or files</h3>
 <p>The user is not restricted to opening a single file at once. To import additional files, follow the procedure outlined in <a href="#importing-data-files">Importing a data file from a field instrument</a> above. The newly added data will be added at the bottom of the existing data display, and the new file name will be added to the list in the <em>Current files</em> box.</p>
 <p>You can also add additional data manually by pressing the <em>Add lines</em> button and following the steps in <a href="#manual-data-entry">Manual data entry</a>.</p>
@@ -15,7 +22,11 @@
 <p>Data can be edited directly in the table view. Some columns require selection of values from a drop-down list (see <a href="#description-of-fields">Description of fields</a> for more information).</p>
 <p>To edit values not requiring selection from a drop-down list, select the cell and begin typing. Once you are done (by pressing enter, tab, or one of the arrow keys, or by selecting another cell with the mouse), the application will check if the value added is valid and will report a message if it is not.</p>
 <p>To edit values in a drop down list, double-click in the cell you wish to edit and the drop-down list will appear. Alternatively, if you know all or part of the value you wish to select, simply click once in the cell and begin typing - a filtered list of options will appear and you can make your selection from the list.</p>
-<p>You can copy and paste data between cells and also between the FDF application and other programs such as Excel.</p>
+<p>You can copy and paste data between cells and also between the FDF application and other programs such as Excel. After selecting the range to copy or paste, copy and paste inside FDF can be accomplished by either of the following methods:</p>
+<ol style="list-style-type: decimal">
+<li>Right-click and select <em>copy</em> or <em>paste</em> from the menu as appropriate.</li>
+<li>Using the keyboard shortcuts <em>Ctrl-C</em> (copy) and <em>Ctrl-V</em> (paste)</li>
+</ol>
 <p>To delete an entire row (or rows), select the row(s) by pressing the row number at the left, and then press the <em>Delete selected</em> key. Lines can be added in the data set by selecting a row (or rows) and pressing the <em>Add lines</em> button - a number of blank lines will be added at the selected location.</p>
 <p>You can reset all data by pressing the <em>Reset data</em> button.</p>
 <h3 id="exporting-data">Exporting data</h3>
@@ -82,41 +93,46 @@
 <td><p>Y</p></td>
 </tr>
 <tr class="odd">
+<td><p>Collection method</p></td>
+<td><p>Indicates the method by which the sample was collected. This field must be populated with one of the acceptable values from the controlled list. Code definitions are provided in <a href="#collection-method-codes">Code definitions</a> below.</p></td>
+<td><p>Y</p></td>
+</tr>
+<tr class="even">
 <td><p>Sample type</p></td>
 <td><p>Indicates whether the sample is a primary sample or some kind of quality control sample. This field must be populated with one of the acceptable values from the controlled list. Code definitions are provided in <a href="#sample-type-codes">Code definitions</a> below.</p></td>
 <td><p>Y</p></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><p>Calibration record</p></td>
 <td><p>Instrument calibrations should be recorded using the appropriate <a href="http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/39004.doc"><em>Form 39004: Instrument calibration log and maintenance schedule</em></a>, according to the <a href="http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/32057.pdf"><em>Instrument calibration log user guide</em> (STOP 32057)</a>. The number to be recorded here is the <em>Instrument book number</em> and <em>Sheet number</em> combined, but separated by a forward slash. For example, if the calibration log for an instrument had an <em>Instrument book number</em> of <em>BA-0123</em>, and a <em>Sheet number</em> of <em>02</em>, then the calibration record to be noted is <em>BA-0123/02</em>. This provides the opportunity to trace back from the collected field data to the original calibration record if required. If more than one calibration record is relevant, note all the relevant record numbers.</p></td>
 <td><p>N</p></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><p>Instrument</p></td>
 <td><p>The model of water quality instrument used to collect the field measurements. This must be selected from the list of available instruments.</p></td>
 <td><p>Y</p></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><p>Sampling Officer</p></td>
 <td><p>Name of the staff member who collected the field measurements.</p></td>
 <td><p>Y</p></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><p>Sample collected</p></td>
 <td><p>Indicates whether a sample has been collected for laboratory analysis, or whether only field measurements have been collected. This is indicated by selecting either <em>Yes</em> or <em>No</em>.</p></td>
 <td><p>N</p></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><p>Depth Upper (m)</p></td>
 <td><p>If a sample is collected at a specific depth, write the depth in metres.</p></td>
 <td><p>Y</p></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><p>Depth Lower (m)</p></td>
 <td><p>If the sample is collected over a depth range, record the upper depth limit in <em>Depth Upper</em> and lower depth limit in <em>Depth Lower</em>.</p></td>
 <td><p>N</p></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><p>Comments</p></td>
 <td><p>Any relevant text comments that should accompany the data.</p></td>
 <td><p>N</p></td>
@@ -200,6 +216,61 @@
 <tr class="even">
 <td align="left">PS</td>
 <td align="left">Precipitation -- snow</td>
+</tr>
+</tbody>
+</table>
+<h3 id="collection-method-codes">Collection method codes<a name="collection-method-codes"></a></h3>
+<table border=1>
+<thead>
+<tr class="header">
+<th align="left">Code</th>
+<th align="left">Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">MG</td>
+<td align="left">Manual grab</td>
+</tr>
+<tr class="even">
+<td align="left">MB</td>
+<td align="left">Manual bucket</td>
+</tr>
+<tr class="odd">
+<td align="left">MP</td>
+<td align="left">Manual pole</td>
+</tr>
+<tr class="even">
+<td align="left">MD</td>
+<td align="left">Manual depth</td>
+</tr>
+<tr class="odd">
+<td align="left">MS</td>
+<td align="left">Manual sampling tube</td>
+</tr>
+<tr class="even">
+<td align="left">RS</td>
+<td align="left">Rising stage sampler</td>
+</tr>
+<tr class="odd">
+<td align="left">AU</td>
+<td align="left">Automatic sampler</td>
+</tr>
+<tr class="even">
+<td align="left">AG</td>
+<td align="left">Garnet</td>
+</tr>
+<tr class="odd">
+<td align="left">AM</td>
+<td align="left">Manning</td>
+</tr>
+<tr class="even">
+<td align="left">BA</td>
+<td align="left">Bailer</td>
+</tr>
+<tr class="odd">
+<td align="left">PG</td>
+<td align="left">Micropurge</td>
 </tr>
 </tbody>
 </table>
