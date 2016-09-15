@@ -14,7 +14,7 @@ MainApp: Constructor for the main application.
 Functions:
 Main: Runs the Field Data Formatter app.
 """
-__version__ = '0.0.0'
+__version__ = '1.0.0'
 # TODO: Code clean and document
 
 import sys
