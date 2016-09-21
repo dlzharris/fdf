@@ -6,6 +6,7 @@ instruments:
     - Hydrolab MS5
   ysi:
     - EXO
+    - EXO (KOR file)
   turbidity:
     - HACH Tubiditimeter 2100P
     - HACH Tubiditimeter 2100Q
