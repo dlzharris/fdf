@@ -14,7 +14,7 @@ MainApp: Constructor for the main application.
 Functions:
 Main: Runs the Field Data Formatter app.
 """
-__version__ = '1.0.0'
+__version__ = '0.9.0'
 # TODO: Code clean and document
 
 import sys
@@ -28,8 +28,10 @@ import datetime
 import urllib2
 
 # Load config files
-column_config = yaml.load(open(functions.resource_path('column_config.yaml')).read())
-app_config = yaml.load(open(functions.resource_path('app_config.yaml')).read())
+#column_config = yaml.load(open(functions.resource_path('column_config.yaml')).read())
+#app_config = yaml.load(open(functions.resource_path('app_config.yaml')).read())
+column_config = yaml.load(open('column_config.yaml').read())
+app_config = yaml.load(open('app_config.yaml').read())
 
 
 ###############################################################################
@@ -50,7 +52,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         self.pushButtonResetData.clicked.connect(self._resetData)
         self.pushButtonExportData.clicked.connect(self._exportData)
         # Add items to the instrument picker
-        instrumentCol = [k for k, v in column_config.iteritems() if v['name'] == 'sampling_instrument'][0]
+        instrumentCol = functions.get_column_number('sampling_instrument')
         _instruments = ['']
         _instruments.extend(column_config[instrumentCol]['list_items'])
         self.instrumentComboBox.addItems(_instruments)
@@ -324,18 +326,15 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         # Select next item
         table.setCurrentCell(row + 1, col)
 
-    def _getColumnNumber(self, columnName):
-        return [k for k, v in column_config.iteritems() if v['name'] == columnName][0]
-
     def _autoUpdateCols(self, item):
         table = self.tableWidgetData
         table.blockSignals(True)
         row = item.row()
         col = item.column()
-        stationCol = self._getColumnNumber('station_number')
-        dateCol = self._getColumnNumber('date')
-        sampleTypeCol = self._getColumnNumber('sample_type')
-        samplingNumberCol = self._getColumnNumber('sampling_number')
+        stationCol = functions.get_column_number('station_number')
+        dateCol = functions.get_column_number('date')
+        sampleTypeCol = functions.get_column_number('sample_type')
+        samplingNumberCol = functions.get_column_number('sampling_number')
         try:
             if col in [stationCol, dateCol]:  # Sampling number
                 stationNumber = str(table.item(row, stationCol).text())
@@ -549,11 +548,11 @@ def exportValidator(table):
     rows = table.rowCount() - 1
     columns = table.columnCount() - 1
     dataValid = True
-    sampleMeasProgColumn = [k for k, v in column_config.iteritems() if v['name'] == 'mp_number'][0]
-    sampleMatrixColumn = [k for k, v in column_config.iteritems() if v['name'] == 'sample_matrix'][0]
-    samplingNumberColumn = [k for k, v in column_config.iteritems() if v['name'] == 'sampling_number'][0]
-    sampleCIDColumn = [k for k, v in column_config.iteritems() if v['name'] == 'sample_cid'][0]
-    locationNumberColumn = [k for k, v in column_config.iteritems() if v['name'] == 'location_id'][0]
+    sampleMeasProgColumn = functions.get_column_number('mp_number')
+    sampleMatrixColumn = functions.get_column_number('sample_matrix')
+    samplingNumberColumn = functions.get_column_number('sampling_number')
+    sampleCIDColumn = functions.get_column_number('sample_cid')
+    locationNumberColumn = functions.get_column_number('location_id')
     # Test for presence of data
     if rows <= 0:
         dataValid = False
@@ -665,7 +664,7 @@ class listColumnItemDelegate(QtGui.QStyledItemDelegate):
         except KeyError:
             editor = super(listColumnItemDelegate, self).createEditor(parent, option, index)
 
-        samplingNumberCol = [k for k, v in column_config.iteritems() if v['name'] == "sampling_number"][0]
+        samplingNumberCol = functions.get_column_number("sampling_number")
         if index.column() == samplingNumberCol:
             editor.setReadOnly(True)
 
