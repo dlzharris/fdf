@@ -1,11 +1,11 @@
 # Application configuration
-instruments:
+sources:
   hydrolab:
     - Hydrolab DS5
     - Hydrolab MS4
     - Hydrolab MS5
   ysi:
-    - EXO
+    - EXO (instrument)
     - EXO (KOR file)
   turbidity:
     - HACH Tubiditimeter 2100P

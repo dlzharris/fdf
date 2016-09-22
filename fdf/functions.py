@@ -43,7 +43,8 @@ import os
 
 # Set up global configurations
 app_config = yaml.load(open('app_config.yaml').read())
-
+column_config = yaml.load(open('column_config.yaml').read())
+station_list = yaml.load(open('station_list.yaml')).read()
 
 class DatetimeError(Exception):
     """
@@ -59,17 +60,17 @@ class ValidityError(Exception):
     pass
 
 
-def check_file_validity(instrument_file, instrument_type):
+def check_file_validity(instrument_file, file_source):
     """
     Check the validity of the user-selected input file for the selected instrument
     :param instrument_file: Open instrument file object
-    :param instrument_type: The instrument from which the file was obtained (str)
+    :param file_source: The instrument from which the file was obtained (str)
     :return: Boolean indicating the validity of the file (True for valid, False for invalid)
     """
+    # Read the file into a list for interrogation
+    in_file = list(instrument_file.readlines())
     # File validity check for Hydrolab instruments:
-    if instrument_type in app_config['instruments']['hydrolab']:
-        # Read the file into a list for interrogation
-        in_file = list(instrument_file.readlines())
+    if file_source in app_config['sources']['hydrolab']:
         # Perform the validity tests
         valid_test_1 = True if "Log File Name" in in_file[0] else False
         valid_test_2 = True if "Setup" in in_file[1] else False
@@ -80,10 +81,12 @@ def check_file_validity(instrument_file, instrument_type):
             file_valid = True
         else:
             file_valid = False
-    elif instrument_type in app_config['instruments']['ysi']:
-        in_file = list(instrument_file.readlines())
+    elif file_source in app_config['sources']['ysi']:
         # Perform the validity tests
-        file_valid = True if "KOR Export File" in in_file[0] else False
+        if file_source == 'EXO (KOR file)':
+            file_valid = True if "KOR Export File" in in_file[0] else False
+        elif file_source == 'EXO (instrument)':
+            file_valid = True if "Date" in in_file[0] else False
     # If the instrument type is not found in the available instruments, then
     # the file is invalid.
     else:
@@ -108,12 +111,16 @@ def load_instrument_file(instrument_file, file_source):
 
     # File readings procedure for Hydrolab instruments:
     # Set the header and data start rows
-    if file_source in app_config['instruments']['hydrolab']:
+    if file_source in app_config['sources']['hydrolab']:
         header_start_row = 5
         data_start_row = 8
-    elif file_source in app_config['instruments']['ysi']:
-        header_start_row = 22
-        data_start_row = 23
+    elif file_source in app_config['sources']['ysi']:
+        if file_source == 'EXO (KOR file)':
+            header_start_row = 22
+            data_start_row = 23
+        elif file_source == 'EXO (instrument)':
+            header_start_row = 0
+            data_start_row = 1
 
     # Open the file
     with open(instrument_file, "rb") as f:
@@ -129,7 +136,7 @@ def load_instrument_file(instrument_file, file_source):
         in_list = list(f.readlines())
         parameters = in_list[header_start_row].replace('"', '').split(',')
 
-        if file_source in app_config['instruments']['hydrolab']:
+        if file_source in app_config['sources']['hydrolab']:
             # The hydrolab data headers are made up of two rows: one for the parameter and one
             # for the unit. Because temperature is reported more than once in different units,
             # we need to parse temperature with the respective unit (deg celsius or fahrenheit)
@@ -144,7 +151,8 @@ def load_instrument_file(instrument_file, file_source):
             if "Power" in in_list[data_start_row]:
                 data_start_row += 1
 
-        elif file_source in app_config['instruments']['ysi']:
+        elif file_source in app_config['sources']['ysi']:
+            if file_source == 'EXO (KOR file)':
                 for i, j in enumerate(parameters):
                     p = j.split(' ', 1)
                     if p[0] == "Time":
@@ -180,6 +188,22 @@ def load_instrument_file(instrument_file, file_source):
                         continue
                     else:
                         parameters[i] = p[0]
+            elif file_source == 'EXO (instrument)':
+                degree_sign = u'\N{DEGREE SIGN}'
+                for i, j in enumerate(parameters):
+                    p = j.split(' ', 1)
+                    if degree_sign in p[0]:
+                        temp_match = re.search('[CF]', j)
+                        parameters[i] = "Temp" + temp_match.group()
+                        continue
+                    elif p[0] == "DO":
+                        if p[1] == "%":
+                            parameters[i] = "ODO%"
+                        elif p[1] == "mg/L":
+                            parameters[i] = p[0]
+                        else:
+                            parameters[i] = "ODO_EU"
+                        continue
 
         # If the format for the instrument data file was not found, make the data list None
         else:
@@ -240,11 +264,30 @@ def load_instrument_file(instrument_file, file_source):
             new_line['turbidity'] = ""
             new_line['conductivity_comp'] = ""
             new_line['water_depth'] = ""
+
+            # Update items in dictionary for metadata in instrument file
+            if new_line['station_number'].split(' ', 1)[0] in station_list:
+                station_number = new_line['station_number'].split(' ', 1)[0]
+            else:
+                station_number = ""
+            new_line['station_number'] = station_number
+
+            sampling_officer_column = get_column_number('sampling_officer')
+            if new_line['sampling_officer'] in column_config[sampling_officer_column]['list_items']:
+                sampling_officer = new_line['sampling_officer']
+            else:
+                sampling_officer = ""
+            new_line['sampling_officer'] = sampling_officer
+
             # Add the new updated dictionary to our list
             data.append(new_line)
 
     # Return the list
     return data
+
+
+def get_column_number(column_name):
+    return [k for k, v in column_config.iteritems() if v['name'] == column_name][0]
 
 
 def parse_datetime_from_string(date_string, time_string):
@@ -344,7 +387,7 @@ def get_new_dict_key(key):
         "LDO%": "do_sat",  # hydrolab
         "LDO": "do",  # hydrolab
         "pH": "ph",  # hydrolab & YSI
-        "SpCond": "conductivity_uncomp",  # hydrolab & YSI
+        "SpCond": "conductivity_comp",  # hydrolab & YSI
         "IBVSvr4": "internal_voltage",  # hydrolab
         "BPSvr4": "barometric_pressure",  # hydrolab
         "PYC": "pyc",  # hydrolab
@@ -356,7 +399,12 @@ def get_new_dict_key(key):
         "ODO": "do",  # YSI
         "ORP": "orp",  # YSI
         "Depth": "depth_upper",  # YSI
-        "Baro": "barometric_pressure"  # YSI
+        "Baro": "barometric_pressure",  # YSI
+        "Site": "station_number",
+        "User ID": "sampling_officer",
+        "SPC": "conductivity_comp",
+        "C": "conductivity_uncomp",
+        "DEP": "water_depth"
     }
     return new_keys[key]
 
