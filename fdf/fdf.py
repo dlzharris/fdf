@@ -159,6 +159,10 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 value = str(lists[i][j])
                 self.tableWidgetData.setItem(rowPosition, j, QtGui.QTableWidgetItem(value))
                 item = self.tableWidgetData.item(i, j)
+                # TODO: Work out why sampling number is not updating in table even though it is generated
+                # TODO: Set blockSignals to True after autoUpdateCols
+                # TODO: Any additional unicode tinkering
+                self._autoUpdateCols(item)
                 try:
                     validator = DoubleFixupValidator(item.column())
                     state, displayValue, returnInt = validator.validate(item.text(), 0)
