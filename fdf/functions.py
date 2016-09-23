@@ -71,7 +71,10 @@ def check_file_validity(instrument_file, file_source):
     """
     # Read the file into a list for interrogation
     #in_file = list(instrument_file.readlines())
-    in_file = instrument_file.reader.readlines()
+    try:
+        in_file = instrument_file.reader.readlines()
+    except UnicodeError:
+        raise ValidityError
 
     # File validity check for Hydrolab instruments:
     if file_source in app_config['sources']['hydrolab']:
@@ -284,8 +287,12 @@ def load_instrument_file(instrument_file, file_source):
             new_line['turbidity_instrument'] = ""
             new_line['gauge_height'] = ""
             new_line['turbidity'] = ""
-            new_line['conductivity_comp'] = ""
             new_line['water_depth'] = ""
+
+            if 'conductivity_comp' not in new_line:
+                new_line['conductivity_comp'] = ""
+            if 'conductivity_uncomp' not in new_line:
+                new_line['conductivity_uncomp'] = ""
 
             # Set the instrument
             if 'EXO' in file_source:
