@@ -256,8 +256,8 @@ def load_instrument_file(instrument_file, file_source):
                 except ValueError:
                     try:
                         new_line[get_new_dict_key(item)] = line[item]
-                    except:
-                        raise
+                    except (KeyError, TypeError):
+                        pass
                 except (KeyError, TypeError):
                     pass
 

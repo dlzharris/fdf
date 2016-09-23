@@ -10,7 +10,6 @@
   display_name: Station#
   allow_zero: yes
   required: yes
-  list_items: []
 2:
   name: date
   display_name: Date
