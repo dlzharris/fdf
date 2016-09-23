@@ -40,11 +40,13 @@ import re
 import yaml
 import sys
 import os
+import codecs
+from configuration import app_config, column_config, station_list
 
 # Set up global configurations
-app_config = yaml.load(open('app_config.yaml').read())
-column_config = yaml.load(open('column_config.yaml').read())
-station_list = yaml.load(open('station_list.yaml')).read()
+#app_config = yaml.load(open('app_config.yaml').read())
+#column_config = yaml.load(open('column_config.yaml').read())
+#station_list = yaml.load(open('station_list.yaml')).read()
 
 class DatetimeError(Exception):
     """
@@ -68,7 +70,9 @@ def check_file_validity(instrument_file, file_source):
     :return: Boolean indicating the validity of the file (True for valid, False for invalid)
     """
     # Read the file into a list for interrogation
-    in_file = list(instrument_file.readlines())
+    #in_file = list(instrument_file.readlines())
+    in_file = instrument_file.reader.readlines()
+
     # File validity check for Hydrolab instruments:
     if file_source in app_config['sources']['hydrolab']:
         # Perform the validity tests
@@ -114,16 +118,19 @@ def load_instrument_file(instrument_file, file_source):
     if file_source in app_config['sources']['hydrolab']:
         header_start_row = 5
         data_start_row = 8
+        encoding = 'latin-1'
     elif file_source in app_config['sources']['ysi']:
         if file_source == 'EXO (KOR file)':
             header_start_row = 22
             data_start_row = 23
+            encoding = 'latin-1'
         elif file_source == 'EXO (instrument)':
             header_start_row = 0
             data_start_row = 1
+            encoding = 'utf16'
 
     # Open the file
-    with open(instrument_file, "rb") as f:
+    with codecs.open(instrument_file, "rb", encoding=encoding) as f:
         # Check the validity of the file
         try:
             check_file_validity(f, file_source)
@@ -186,6 +193,8 @@ def load_instrument_file(instrument_file, file_source):
                         else:
                             parameters[i] = "ORPRaw"
                         continue
+                    elif p[0] == "DEP":
+                        parameters[i] = "Depth"
                     else:
                         parameters[i] = p[0]
             elif file_source == 'EXO (instrument)':
@@ -200,7 +209,7 @@ def load_instrument_file(instrument_file, file_source):
                         if p[1] == "%":
                             parameters[i] = "ODO%"
                         elif p[1] == "mg/L":
-                            parameters[i] = p[0]
+                            parameters[i] = "ODO"
                         else:
                             parameters[i] = "ODO_EU"
                         continue
@@ -223,8 +232,16 @@ def load_instrument_file(instrument_file, file_source):
         # Generate a new iterator from the instrument file that contains only the headers
         # and data
         d = islice(f, data_start_row, n)
+        # Strip any trailing commas (generated in Excel) from the end of the line)
+        ls = []
+        for i in d:
+            s = i.replace(",\r\n", "")
+            ls.append(s)
+            print s
+        for i in d:
+            print i
         # Create the reader object to parse data into dictionaries and the data container list
-        reader = csv.DictReader(d, delimiter=',', skipinitialspace=True, quotechar='"', fieldnames=parameters)
+        reader = csv.DictReader(ls, delimiter=',', skipinitialspace=True, quotechar='"', fieldnames=parameters, restval=u"")
         data = []
         # Change the keys to our standard key values and remove items that are not relevant
         for line in reader:
@@ -236,13 +253,18 @@ def load_instrument_file(instrument_file, file_source):
             for item in line:
                 try:
                     new_line[get_new_dict_key(item)] = float(line[item])
-                except (KeyError, ValueError):
+                except ValueError:
+                    try:
+                        new_line[get_new_dict_key(item)] = line[item]
+                    except:
+                        raise
+                except (KeyError, TypeError):
                     pass
+
+
             # Format the date and time correctly
             new_line['date'] = sample_dt.strftime(app_config['datetime_formats']['date']['display'])
             new_line['sample_time'] = sample_dt.strftime(app_config['datetime_formats']['time']['display'])
-            # Set the instrument
-            new_line['sampling_instrument'] = file_source
             # Add the extra items we'll need access to later on
             new_line['event_time'] = ""
             new_line['sampling_number'] = ""
@@ -252,10 +274,10 @@ def load_instrument_file(instrument_file, file_source):
             new_line['sample_type'] = ""
             new_line['mp_number'] = ""
             new_line['location_id'] = ""
-            new_line['station_number'] = ""
+            #new_line['station_number'] = ""
             new_line['collection_method'] = ""
             new_line['calibration_record'] = ""
-            new_line['sampling_officer'] = ""
+            #new_line['sampling_officer'] = ""
             new_line['sample_collected'] = ""
             new_line['depth_lower'] = ""
             new_line['sampling_comment'] = ""
@@ -265,17 +287,31 @@ def load_instrument_file(instrument_file, file_source):
             new_line['conductivity_comp'] = ""
             new_line['water_depth'] = ""
 
-            # Update items in dictionary for metadata in instrument file
-            if new_line['station_number'].split(' ', 1)[0] in station_list:
-                station_number = new_line['station_number'].split(' ', 1)[0]
+            # Set the instrument
+            if 'EXO' in file_source:
+                new_line['sampling_instrument'] = 'EXO'
+            elif 'Hydrolab' in file_source:
+                new_line['sampling_instrument'] = file_source
             else:
+                new_line['sampling_instrument'] = ""
+
+            # Update items in dictionary for metadata in instrument file
+            try:
+                if new_line['station_number'].split(' ', 1)[0] in station_list:
+                    station_number = new_line['station_number'].split(' ', 1)[0]
+                else:
+                    station_number = ""
+            except KeyError:
                 station_number = ""
             new_line['station_number'] = station_number
 
-            sampling_officer_column = get_column_number('sampling_officer')
-            if new_line['sampling_officer'] in column_config[sampling_officer_column]['list_items']:
-                sampling_officer = new_line['sampling_officer']
-            else:
+            try:
+                sampling_officer_column = get_column_number('sampling_officer')
+                if new_line['sampling_officer'] in column_config[sampling_officer_column]['list_items']:
+                    sampling_officer = new_line['sampling_officer']
+                else:
+                    sampling_officer = ""
+            except KeyError:
                 sampling_officer = ""
             new_line['sampling_officer'] = sampling_officer
 
@@ -402,9 +438,9 @@ def get_new_dict_key(key):
         "Baro": "barometric_pressure",  # YSI
         "Site": "station_number",
         "User ID": "sampling_officer",
-        "SPC": "conductivity_comp",
-        "C": "conductivity_uncomp",
-        "DEP": "water_depth"
+        "SPC-uS/cm": "conductivity_comp",
+        "C-uS/cm": "conductivity_uncomp",
+        "DEP m": "depth_upper"
     }
     return new_keys[key]
 

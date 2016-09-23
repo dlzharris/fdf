@@ -23,6 +23,7 @@ from PyQt4 import QtGui, QtCore
 import fdfGui
 import functions
 from functions import DatetimeError, ValidityError
+from configuration import app_config, column_config
 import yaml
 import datetime
 import urllib2
@@ -30,8 +31,8 @@ import urllib2
 # Load config files
 #column_config = yaml.load(open(functions.resource_path('column_config.yaml')).read())
 #app_config = yaml.load(open(functions.resource_path('app_config.yaml')).read())
-column_config = yaml.load(open('column_config.yaml').read())
-app_config = yaml.load(open('app_config.yaml').read())
+#column_config = yaml.load(open('column_config.yaml').read())
+#app_config = yaml.load(open('app_config.yaml').read())
 
 
 ###############################################################################
@@ -54,7 +55,9 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         # Add items to the instrument picker
         instrumentCol = functions.get_column_number('sampling_instrument')
         _instruments = ['']
-        _instruments.extend(column_config[instrumentCol]['list_items'])
+        #_instruments.extend(column_config[instrumentCol]['list_items'])
+        _instruments.extend(app_config['sources']['hydrolab'])
+        _instruments.extend(app_config['sources']['ysi'])
         self.instrumentComboBox.addItems(_instruments)
         # Set up the table
         self.headerLabels = [column_config[i]['display_name'] for i in range(0, len(column_config))]
