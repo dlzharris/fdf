@@ -238,11 +238,8 @@ def load_instrument_file(instrument_file, file_source):
         # Strip any trailing commas (generated in Excel) from the end of the line)
         ls = []
         for i in d:
-            s = i.replace(",\r\n", "")
-            ls.append(s)
-            print s
-        for i in d:
-            print i
+            i = i.replace(",\r\n", "")
+            ls.append(i)
         # Create the reader object to parse data into dictionaries and the data container list
         reader = csv.DictReader(ls, delimiter=',', skipinitialspace=True, quotechar='"', fieldnames=parameters, restval=u"")
         data = []

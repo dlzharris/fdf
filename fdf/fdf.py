@@ -137,6 +137,16 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         try:
             # Validate file type
             _dicts = functions.load_instrument_file(self.fileLineEdit.text(), str(self.instrumentComboBox.currentText()))
+            # Update sampling number if enough information is in file
+            for i in _dicts:
+                try:
+                    i['sampling_number'] = functions.get_sampling_number(
+                        station_number=i['station_number'],
+                        date=i['date'],
+                        sample_type=i['sample_type'])
+                except ValueError:
+                    pass
+            # Add data to table
             self._addData(functions.lord2lorl(_dicts, app_config['column_order']))
             # Add file name to listbox
             self.listWidgetCurrentFiles.addItem(QtGui.QListWidgetItem(self.fileLineEdit.text()))
@@ -158,11 +168,8 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             for j in range(0, len(lists[i])):
                 value = str(lists[i][j])
                 self.tableWidgetData.setItem(rowPosition, j, QtGui.QTableWidgetItem(value))
-                item = self.tableWidgetData.item(i, j)
-                # TODO: Work out why sampling number is not updating in table even though it is generated
-                # TODO: Set blockSignals to True after autoUpdateCols
+                item = self.tableWidgetData.item(rowPosition, j)
                 # TODO: Any additional unicode tinkering
-                self._autoUpdateCols(item)
                 try:
                     validator = DoubleFixupValidator(item.column())
                     state, displayValue, returnInt = validator.validate(item.text(), 0)
@@ -176,7 +183,6 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         for i in range(0, self.tableWidgetData.rowCount()):
             for j in range(0, self.tableWidgetData.columnCount()):
                 self.tableWidgetData.item(i, j).setTextAlignment(QtCore.Qt.AlignCenter)
-
 
         self.tableWidgetData.blockSignals(False)
         if errorsFound is True:
@@ -362,7 +368,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
 
                 table.setItem(row, samplingNumberCol, QtGui.QTableWidgetItem(samplingNumber))
                 self._setAlignment(table.item(row, samplingNumberCol))
-
+            # TODO: Update on sampleType update
         except AttributeError:
             pass
         finally:
