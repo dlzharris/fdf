@@ -43,9 +43,11 @@ Thumbs.db
 
 # Untracked folders #
 #####################
-test
-sample_hydrolab_files
-sample_output
+extras
+build
+build_files
+distributed-testing
+fdf_*
 
 # Untracked project files #
 ############################
