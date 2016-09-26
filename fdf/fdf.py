@@ -14,26 +14,26 @@ MainApp: Constructor for the main application.
 Functions:
 Main: Runs the Field Data Formatter app.
 """
-__version__ = '0.9.0'
-__author__ = 'Daniel Harris'
 # TODO: Code clean and document
 
-import sys
+import datetime
 import os
+import sys
+import urllib2
+
+import yaml
 from PyQt4 import QtGui, QtCore
+
 import fdfGui
 import functions
 from functions import DatetimeError, ValidityError
 from configuration import app_config, column_config
-import yaml
-import datetime
-import urllib2
 
-# Load config files
-#column_config = yaml.load(open(functions.resource_path('column_config.yaml')).read())
-#app_config = yaml.load(open(functions.resource_path('app_config.yaml')).read())
-#column_config = yaml.load(open('column_config.yaml').read())
-#app_config = yaml.load(open('app_config.yaml').read())
+__author__ = 'Daniel Harris'
+__date__ = '26 October 2016'
+__email__ = 'daniel.harris@dpi.nsw.gov.au'
+__status__ = 'Production'
+__version__ = '0.9.1'
 
 
 ###############################################################################
@@ -53,57 +53,41 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         self.pushButtonAddLines.clicked.connect(self._insertRows)
         self.pushButtonResetData.clicked.connect(self._resetData)
         self.pushButtonExportData.clicked.connect(self._exportData)
+
         # Add items to the instrument picker
-        instrumentCol = functions.get_column_number('sampling_instrument')
         _instruments = ['']
-        #_instruments.extend(column_config[instrumentCol]['list_items'])
         _instruments.extend(app_config['sources']['hydrolab'])
         _instruments.extend(app_config['sources']['ysi'])
         self.instrumentComboBox.addItems(_instruments)
+
         # Set up the table
         self.headerLabels = [column_config[i]['display_name'] for i in range(0, len(column_config))]
         table = self.tableWidgetData
         table.setColumnCount(len(self.headerLabels))
-        self.setHeaderData(table)
+        self._setHeaderData(table)
         table.setItemDelegate(listColumnItemDelegate())
         table.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed | QtGui.QAbstractItemView.DoubleClicked)
         table.itemChanged.connect(self._autoUpdateCols)
         table.itemChanged.connect(self._validateInput)
         table.itemChanged.connect(self._setAlignment)
+
         # Set up the help documentation
         self.helpBrowser = QtGui.QTextBrowser()
         self.helpBrowser.setSource(QtCore.QUrl('help.html'))
         self.helpBrowser.setWindowTitle("FDF Utility Help Documentation")
         self.helpBrowser.setMinimumSize(500, 500)
         self.actionHelp.triggered.connect(self._showHelp)
+
         # Set up the about documentation
         self.actionAbout.triggered.connect(self._showAbout)
 
-    def _checkVersion(self):
-        try:
-            # Check that version is up-to-date
-            version_url = 'https://raw.githubusercontent.com/dlzharris/fdf/master/current_version.txt'
-            package_url = 'https://github.com/dlzharris/fdf/tree/master/stable_package'
-            proxy = urllib2.ProxyHandler({'http': 'oranprodproxy.dpi.nsw.gov.au:8080',
-                                          'https': 'oranprodproxy.dpi.nsw.gov.au:8080'})
-            opener = urllib2.build_opener(proxy)
-            urllib2.install_opener(opener)
-            current_version = yaml.load(urllib2.urlopen(version_url).read())['version_stable']
-            if __version__ != current_version:
-                txt = "There is a newer version of this application available. " \
-                      "You can no longer use the current version. <br><br>" \
-                      "Please download the latest version (zip file) from <a href='{url}'>{url}</a>. " \
-                      "Installation instructions can be found in the README.md file at the same location.<br><br>" \
-                      "This application will now exit.".format(url=package_url)
-                msg = QtGui.QMessageBox()
-                msg.setIcon(QtGui.QMessageBox.Information)
-                msg.setText(txt)
-                msg.setTextFormat(QtCore.Qt.RichText)
-                msg.setWindowTitle("New version available!")
-                msg.exec_()
-                sys.exit()
-        except urllib2.URLError:
-            return
+    # Reimplemented methods
+    def contextMenuEvent(self, event):
+        if event.Reason() == QtGui.QContextMenuEvent.Mouse:
+            menu = QtGui.QMenu(self)
+            menu.addAction("Copy", self._copy, QtGui.QKeySequence.Copy)
+            menu.addAction("Paste", self._paste, QtGui.QKeySequence.Paste)
+            menu.popup(QtGui.QCursor.pos())
 
     def keyPressEvent(self, event):
         if event.matches(QtGui.QKeySequence.Copy):
@@ -115,65 +99,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         else:
             QtGui.QMainWindow.keyPressEvent(self, event)
 
-    def contextMenuEvent(self, event):
-        if event.Reason() == QtGui.QContextMenuEvent.Mouse:
-            menu = QtGui.QMenu(self)
-            menu.addAction("Copy", self._copy, QtGui.QKeySequence.Copy)
-            menu.addAction("Paste", self._paste, QtGui.QKeySequence.Paste)
-            menu.popup(QtGui.QCursor.pos())
-
-    def setHeaderData(self, table):
-        for i in range(0, len(self.headerLabels)):
-            item = QtGui.QTableWidgetItem()
-            table.setHorizontalHeaderItem(i, item)
-            item = table.horizontalHeaderItem(i)
-            item.setText(self.headerLabels[i])
-
-    def _showHelp(self):
-        self.helpBrowser.show()
-
-    def _showAbout(self):
-        aboutMsgBox = QtGui.QMessageBox()
-        title = "FDF Utility v%s" % __version__
-        text = "FDF Utility - an application to format water quality field data " \
-            "for import to KISTERS Water Quality Module (KiWQM) water quality database.\n\n" \
-            "Author: %s\n\nVersion: %s\n\n" \
-            "(C) 2016 New South Wales Department of Industry\n\n" \
-            "For further information, contact the Data & Procedures Officer at DPI Water." \
-            % (__author__, __version__)
-        aboutMsgBox.about(self, title, text)
-
-
-    def _filePicker(self):
-        # Show file picker dialog and show name in text box
-        self.fileLineEdit.setText(QtGui.QFileDialog.getOpenFileName())
-
-    def _addFile(self):
-        try:
-            # Validate file type
-            _dicts = functions.load_instrument_file(self.fileLineEdit.text(), str(self.instrumentComboBox.currentText()))
-            # Update sampling number if enough information is in file
-            for i in _dicts:
-                try:
-                    i['sampling_number'] = functions.get_sampling_number(
-                        station_number=i['station_number'],
-                        date=i['date'],
-                        sample_type=i['sample_type'])
-                except ValueError:
-                    pass
-            # Add data to table
-            self._addData(functions.lord2lorl(_dicts, app_config['column_order']))
-            # Add file name to listbox
-            self.listWidgetCurrentFiles.addItem(QtGui.QListWidgetItem(self.fileLineEdit.text()))
-        except ValidityError:
-            txt = "The chosen file is not valid for the specified instrument.\n\n" \
-                  "Please select a different file or a different instrument from the drop-down list."
-            msg = QtGui.QMessageBox()
-            msg.setIcon(QtGui.QMessageBox.Warning)
-            msg.setText(txt)
-            msg.setWindowTitle("File validity error!")
-            msg.exec_()
-
+    # Private methods
     def _addData(self, lists):
         self.tableWidgetData.blockSignals(True)
         errorsFound = False
@@ -209,39 +135,117 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             msg.setWindowTitle("Data import - errors detected!")
             msg.exec_()
 
-    def _insertRows(self):
+    def _addFile(self):
+        try:
+            # Validate file type
+            _dicts = functions.load_instrument_file(self.fileLineEdit.text(), str(self.instrumentComboBox.currentText()))
+            # Update sampling number if enough information is in file
+            for i in _dicts:
+                try:
+                    i['sampling_number'] = functions.get_sampling_number(
+                        station_number=i['station_number'],
+                        date=i['date'],
+                        sample_type=i['sample_type'])
+                except ValueError:
+                    pass
+            # Add data to table
+            self._addData(functions.lord2lorl(_dicts, app_config['column_order']))
+            # Add file name to listbox
+            self.listWidgetCurrentFiles.addItem(QtGui.QListWidgetItem(self.fileLineEdit.text()))
+        except ValidityError:
+            txt = "The chosen file is not valid for the specified instrument.\n\n" \
+                  "Please select a different file or a different instrument from the drop-down list."
+            msg = QtGui.QMessageBox()
+            msg.setIcon(QtGui.QMessageBox.Warning)
+            msg.setText(txt)
+            msg.setWindowTitle("File validity error!")
+            msg.exec_()
+
+    def _autoUpdateCols(self, item):
         table = self.tableWidgetData
         table.blockSignals(True)
-        rows = table.selectionModel().selectedRows()
-        rowCount = len(rows)
+        row = item.row()
+        col = item.column()
+        stationCol = functions.get_column_number('station_number')
+        dateCol = functions.get_column_number('date')
+        sampleTypeCol = functions.get_column_number('sample_type')
+        samplingNumberCol = functions.get_column_number('sampling_number')
         try:
-            rowPosition = rows[0].row()
-        except IndexError:
-            rowPosition = table.rowCount()
-            rowCount = 1
-        for i in range(0, rowCount):
-            table.insertRow(rowPosition)
-        table.blockSignals(False)
+            if col in [stationCol, dateCol, sampleTypeCol]:  # Sampling number
+                stationNumber = str(table.item(row, stationCol).text())
+                date = str(table.item(row, dateCol).text())
+
+                try:
+                    sampleType = str(table.item(row, sampleTypeCol).text())
+                except AttributeError:
+                    sampleType = None
+
+                try:
+                    samplingNumber = functions.get_sampling_number(
+                        station_number=stationNumber,
+                        date=date,
+                        sample_type=sampleType)
+                except ValueError:
+                    samplingNumber = ""
+
+                table.setItem(row, samplingNumberCol, QtGui.QTableWidgetItem(samplingNumber))
+                self._setAlignment(table.item(row, samplingNumberCol))
+        except AttributeError:
+            pass
+        finally:
+            table.blockSignals(False)
+
+    def _checkVersion(self):
+        try:
+            # Check that version is up-to-date
+            version_url = 'https://raw.githubusercontent.com/dlzharris/fdf/master/current_version.txt'
+            package_url = 'https://github.com/dlzharris/fdf/tree/master/stable_package'
+            proxy = urllib2.ProxyHandler({'http': 'oranprodproxy.dpi.nsw.gov.au:8080',
+                                          'https': 'oranprodproxy.dpi.nsw.gov.au:8080'})
+            opener = urllib2.build_opener(proxy)
+            urllib2.install_opener(opener)
+            current_version = yaml.load(urllib2.urlopen(version_url).read())['version_stable']
+            if __version__ != current_version:
+                txt = "There is a newer version of this application available. " \
+                      "You can no longer use the current version. <br><br>" \
+                      "Please download the latest version (zip file) from <a href='{url}'>{url}</a>. " \
+                      "Installation instructions can be found in the README.md file at the same location.<br><br>" \
+                      "This application will now exit.".format(url=package_url)
+                msg = QtGui.QMessageBox()
+                msg.setIcon(QtGui.QMessageBox.Information)
+                msg.setText(txt)
+                msg.setTextFormat(QtCore.Qt.RichText)
+                msg.setWindowTitle("New version available!")
+                msg.exec_()
+                sys.exit()
+        except urllib2.URLError:
+            return
+
+    def _copy(self):
+        selection = self.tableWidgetData.selectionModel()
+        indexes = selection.selectedIndexes()
+        if len(indexes) < 1:
+            # Nothing selected
+            return
+        text = ''
+        rows = [r.row() for r in indexes]
+        cols = [c.column() for c in indexes]
+        for r in range(min(rows), max(rows) + 1):
+            for c in range(min(cols), max(cols) + 1):
+                item = self.tableWidgetData.item(r, c)
+                if item:
+                    text += item.text()
+                if c != max(cols):
+                    text += '\t'
+            if r != max(rows):
+                text += '\n'
+        QtGui.QApplication.clipboard().setText(text)
 
     def _delRows(self):
         rows = self.tableWidgetData.selectionModel().selectedRows()
         rows.reverse()
         for r in rows:
             self.tableWidgetData.removeRow(r.row())
-
-    def _resetData(self):
-        txt = "All data will be lost. Are you sure you want to continue?"
-        msg = QtGui.QMessageBox()
-        msg.setIcon(QtGui.QMessageBox.Warning)
-        msg.setStandardButtons(QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel)
-        msg.setDefaultButton(QtGui.QMessageBox.Cancel)
-        msg.setText(txt)
-        retVal = msg.exec_()
-        if retVal == QtGui.QMessageBox.Ok:
-            self.tableWidgetData.setRowCount(0)
-            self.listWidgetCurrentFiles.clear()
-        else:
-            return None
 
     def _exportData(self):
         dataValid, txt = exportValidator(self.tableWidgetData)
@@ -285,25 +289,47 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             msg.setWindowTitle("Export error!")
             msg.exec_()
 
-    def _copy(self):
-        selection = self.tableWidgetData.selectionModel()
-        indexes = selection.selectedIndexes()
-        if len(indexes) < 1:
-            # Nothing selected
-            return
-        text = ''
-        rows = [r.row() for r in indexes]
-        cols = [c.column() for c in indexes]
-        for r in range(min(rows), max(rows) + 1):
-            for c in range(min(cols), max(cols) + 1):
-                item = self.tableWidgetData.item(r, c)
-                if item:
-                    text += item.text()
-                if c != max(cols):
-                    text += '\t'
-            if r != max(rows):
-                text += '\n'
-        QtGui.QApplication.clipboard().setText(text)
+    def _filePicker(self):
+        # Show file picker dialog and show name in text box
+        self.fileLineEdit.setText(QtGui.QFileDialog.getOpenFileName())
+
+    def _insertRows(self):
+        table = self.tableWidgetData
+        table.blockSignals(True)
+        rows = table.selectionModel().selectedRows()
+        rowCount = len(rows)
+        try:
+            rowPosition = rows[0].row()
+        except IndexError:
+            rowPosition = table.rowCount()
+            rowCount = 1
+        for i in range(0, rowCount):
+            table.insertRow(rowPosition)
+        table.blockSignals(False)
+
+    def _keyPressEnter(self):
+        table = self.tableWidgetData
+        item = table.currentItem()
+        row = item.row()
+        col = item.column()
+        # Deselect current item
+        table.setItemSelected(table.item(row, col), False)
+        # Select next item
+        table.setCurrentCell(row + 1, col)
+
+    def _resetData(self):
+        txt = "All data will be lost. Are you sure you want to continue?"
+        msg = QtGui.QMessageBox()
+        msg.setIcon(QtGui.QMessageBox.Warning)
+        msg.setStandardButtons(QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel)
+        msg.setDefaultButton(QtGui.QMessageBox.Cancel)
+        msg.setText(txt)
+        retVal = msg.exec_()
+        if retVal == QtGui.QMessageBox.Ok:
+            self.tableWidgetData.setRowCount(0)
+            self.listWidgetCurrentFiles.clear()
+        else:
+            return None
 
     def _paste(self):
         table = self.tableWidgetData
@@ -354,53 +380,29 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                         pass
         table.blockSignals(False)
 
-    def _keyPressEnter(self):
-        table = self.tableWidgetData
-        item = table.currentItem()
-        row = item.row()
-        col = item.column()
-        # Deselect current item
-        table.setItemSelected(table.item(row, col), False)
-        # Select next item
-        table.setCurrentCell(row + 1, col)
-
-    def _autoUpdateCols(self, item):
-        table = self.tableWidgetData
-        table.blockSignals(True)
-        row = item.row()
-        col = item.column()
-        stationCol = functions.get_column_number('station_number')
-        dateCol = functions.get_column_number('date')
-        sampleTypeCol = functions.get_column_number('sample_type')
-        samplingNumberCol = functions.get_column_number('sampling_number')
-        try:
-            if col in [stationCol, dateCol, sampleTypeCol]:  # Sampling number
-                stationNumber = str(table.item(row, stationCol).text())
-                date = str(table.item(row, dateCol).text())
-
-                try:
-                    sampleType = str(table.item(row, sampleTypeCol).text())
-                except AttributeError:
-                    sampleType = None
-
-                try:
-                    samplingNumber = functions.get_sampling_number(
-                        station_number=stationNumber,
-                        date=date,
-                        sample_type=sampleType)
-                except ValueError:
-                    samplingNumber = ""
-
-                table.setItem(row, samplingNumberCol, QtGui.QTableWidgetItem(samplingNumber))
-                self._setAlignment(table.item(row, samplingNumberCol))
-            # TODO: Update on sampleType update
-        except AttributeError:
-            pass
-        finally:
-            table.blockSignals(False)
+    def _setHeaderData(self, table):
+        for i in range(0, len(self.headerLabels)):
+            item = QtGui.QTableWidgetItem()
+            table.setHorizontalHeaderItem(i, item)
+            item = table.horizontalHeaderItem(i)
+            item.setText(self.headerLabels[i])
 
     def _setAlignment(self, item):
         item.setTextAlignment(QtCore.Qt.AlignCenter)
+
+    def _showAbout(self):
+        aboutMsgBox = QtGui.QMessageBox()
+        title = "FDF Utility v%s" % __version__
+        text = "FDF Utility - an application to format water quality field data " \
+            "for import to KISTERS Water Quality Module (KiWQM) water quality database.\n\n" \
+            "Author: %s\n\nVersion: %s\n\n" \
+            "(C) 2016 New South Wales Department of Industry\n\n" \
+            "For further information, contact the Data & Procedures Officer at DPI Water." \
+            % (__author__, __version__)
+        aboutMsgBox.about(self, title, text)
+
+    def _showHelp(self):
+        self.helpBrowser.show()
 
     def _validateInput(self, item):
         self.tableWidgetData.blockSignals(True)
