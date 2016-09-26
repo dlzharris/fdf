@@ -14,7 +14,7 @@ MainApp: Constructor for the main application.
 Functions:
 Main: Runs the Field Data Formatter app.
 """
-__version__ = '0.9.0'
+__version__ = '0.9.1'
 # TODO: Code clean and document
 
 import sys
@@ -215,8 +215,18 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             self.tableWidgetData.removeRow(r.row())
 
     def _resetData(self):
-        self.tableWidgetData.setRowCount(0)
-        self.listWidgetCurrentFiles.clear()
+        txt = "All data will be lost. Are you sure you want to continue?"
+        msg = QtGui.QMessageBox()
+        msg.setIcon(QtGui.QMessageBox.Warning)
+        msg.setStandardButtons(QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel)
+        msg.setDefaultButton(QtGui.QMessageBox.Cancel)
+        msg.setText(txt)
+        retVal = msg.exec_()
+        if retVal == QtGui.QMessageBox.Ok:
+            self.tableWidgetData.setRowCount(0)
+            self.listWidgetCurrentFiles.clear()
+        else:
+            return None
 
     def _exportData(self):
         dataValid, txt = exportValidator(self.tableWidgetData)
@@ -349,7 +359,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         sampleTypeCol = functions.get_column_number('sample_type')
         samplingNumberCol = functions.get_column_number('sampling_number')
         try:
-            if col in [stationCol, dateCol]:  # Sampling number
+            if col in [stationCol, dateCol, sampleTypeCol]:  # Sampling number
                 stationNumber = str(table.item(row, stationCol).text())
                 date = str(table.item(row, dateCol).text())
 
