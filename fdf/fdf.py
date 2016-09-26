@@ -14,7 +14,8 @@ MainApp: Constructor for the main application.
 Functions:
 Main: Runs the Field Data Formatter app.
 """
-__version__ = '0.9.1'
+__version__ = '0.9.0'
+__author__ = 'Daniel Harris'
 # TODO: Code clean and document
 
 import sys
@@ -75,6 +76,8 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         self.helpBrowser.setWindowTitle("FDF Utility Help Documentation")
         self.helpBrowser.setMinimumSize(500, 500)
         self.actionHelp.triggered.connect(self._showHelp)
+        # Set up the about documentation
+        self.actionAbout.triggered.connect(self._showAbout)
 
     def _checkVersion(self):
         try:
@@ -128,6 +131,18 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
 
     def _showHelp(self):
         self.helpBrowser.show()
+
+    def _showAbout(self):
+        aboutMsgBox = QtGui.QMessageBox()
+        title = "FDF Utility v%s" % __version__
+        text = "FDF Utility - an application to format water quality field data " \
+            "for import to KISTERS Water Quality Module (KiWQM) water quality database.\n\n" \
+            "Author: %s\n\nVersion: %s\n\n" \
+            "(C) 2016 New South Wales Department of Industry\n\n" \
+            "For further information, contact the Data & Procedures Officer at DPI Water." \
+            % (__author__, __version__)
+        aboutMsgBox.about(self, title, text)
+
 
     def _filePicker(self):
         # Show file picker dialog and show name in text box
