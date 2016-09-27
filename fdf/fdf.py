@@ -1,20 +1,27 @@
 """
-Module: mainapp.py
+Module: fdf.py
 Runs the KiWQM Field Data Formatter GUI, used to generate a valid
 field data import file for KiWQM.
 
 Author: Daniel Harris
 Title: Data & Procedures Officer
 Organisation: DPI Water
-Date modified: 13/10/2015
+Date modified: 27/09/2016
+
+External dependencies: PyYAML, PyQT4
 
 Classes:
 MainApp: Constructor for the main application.
+DateValidator: Validator for dates
+DoubleFixupValidator: Validator for doubles
+FilteredComboBox: Drop-down jQuery-style filtered combo-box
+ListColumnItemDelegate: Style delegate for list columns
+ListValidator: Validator for list items
+TimeValidator: Validator for times
 
 Functions:
 Main: Runs the Field Data Formatter app.
 """
-# TODO: Code clean and document
 
 import datetime
 import os
@@ -30,7 +37,7 @@ from functions import DatetimeError, ValidityError
 from configuration import app_config, column_config
 
 __author__ = 'Daniel Harris'
-__date__ = '26 October 2016'
+__date__ = '27 October 2016'
 __email__ = 'daniel.harris@dpi.nsw.gov.au'
 __status__ = 'Production'
 __version__ = '0.9.1'
@@ -45,41 +52,41 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
     """
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
-        self._checkVersion()
+        self.checkVersion()
         self.setupUi(self)
-        self.filePickerBtn.clicked.connect(self._filePicker)
-        self.addFileBtn.clicked.connect(self._addFile)
-        self.pushButtonDeleteLines.clicked.connect(self._delRows)
-        self.pushButtonAddLines.clicked.connect(self._insertRows)
-        self.pushButtonResetData.clicked.connect(self._resetData)
-        self.pushButtonExportData.clicked.connect(self._exportData)
+        self.filePickerBtn.clicked.connect(self.filePicker)
+        self.addFileBtn.clicked.connect(self.addFile)
+        self.pushButtonDeleteLines.clicked.connect(self.delRows)
+        self.pushButtonAddLines.clicked.connect(self.insertRows)
+        self.pushButtonResetData.clicked.connect(self.resetData)
+        self.pushButtonExportData.clicked.connect(self.exportData)
 
         # Add items to the instrument picker
-        _instruments = ['']
-        _instruments.extend(app_config['sources']['hydrolab'])
-        _instruments.extend(app_config['sources']['ysi'])
-        self.instrumentComboBox.addItems(_instruments)
+        instruments = ['']
+        instruments.extend(app_config['sources']['hydrolab'])
+        instruments.extend(app_config['sources']['ysi'])
+        self.instrumentComboBox.addItems(instruments)
 
         # Set up the table
         self.headerLabels = [column_config[i]['display_name'] for i in range(0, len(column_config))]
         table = self.tableWidgetData
         table.setColumnCount(len(self.headerLabels))
-        self._setHeaderData(table)
-        table.setItemDelegate(listColumnItemDelegate())
+        self.setHeaderData(table)
+        table.setItemDelegate(ListColumnItemDelegate())
         table.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed | QtGui.QAbstractItemView.DoubleClicked)
-        table.itemChanged.connect(self._autoUpdateCols)
-        table.itemChanged.connect(self._validateInput)
-        table.itemChanged.connect(self._setAlignment)
+        table.itemChanged.connect(self.autoUpdateCols)
+        table.itemChanged.connect(self.validateInput)
+        table.itemChanged.connect(self.setAlignment)
 
         # Set up the help documentation
         self.helpBrowser = QtGui.QTextBrowser()
         self.helpBrowser.setSource(QtCore.QUrl('help.html'))
         self.helpBrowser.setWindowTitle(u"FDF Utility Help Documentation")
         self.helpBrowser.setMinimumSize(500, 500)
-        self.actionHelp.triggered.connect(self._showHelp)
+        self.actionHelp.triggered.connect(self.showHelp)
 
         # Set up the about documentation
-        self.actionAbout.triggered.connect(self._showAbout)
+        self.actionAbout.triggered.connect(self.showAbout)
 
     ##########################################################################
     # Reimplemented methods
@@ -87,24 +94,24 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
     def contextMenuEvent(self, event):
         if event.Reason() == QtGui.QContextMenuEvent.Mouse:
             menu = QtGui.QMenu(self)
-            menu.addAction(u"Copy", self._copy, QtGui.QKeySequence.Copy)
-            menu.addAction(u"Paste", self._paste, QtGui.QKeySequence.Paste)
+            menu.addAction(u"Copy", self.copy, QtGui.QKeySequence.Copy)
+            menu.addAction(u"Paste", self.paste, QtGui.QKeySequence.Paste)
             menu.popup(QtGui.QCursor.pos())
 
     def keyPressEvent(self, event):
         if event.matches(QtGui.QKeySequence.Copy):
-            self._copy()
+            self.copy()
         elif event.matches(QtGui.QKeySequence.Paste):
-            self._paste()
+            self.paste()
         elif event.key() in (QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return):
-            self._keyPressEnter()
+            self.keyPressEnter()
         else:
             QtGui.QMainWindow.keyPressEvent(self, event)
 
     ##########################################################################
     # Private methods
     ##########################################################################
-    def _addData(self, lists):
+    def addData(self, lists):
         """Takes data provided and add to the table instance."""
         self.tableWidgetData.blockSignals(True)
         errorsFound = False
@@ -141,7 +148,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
 
         self.tableWidgetData.blockSignals(False)
 
-    def _addFile(self):
+    def addFile(self):
         """Loads the file specified in the UI and adds it to the table instance."""
         try:
             # Validate file type
@@ -159,7 +166,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                     pass
 
             # Add data to table
-            self._addData(functions.lord2lorl(dicts, app_config['column_order']))
+            self.addData(functions.lord2lorl(dicts, app_config['column_order']))
             # Add file name to listbox
             self.listWidgetCurrentFiles.addItem(QtGui.QListWidgetItem(self.fileLineEdit.text()))
 
@@ -172,7 +179,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             msg.setWindowTitle(u"File validity error!")
             msg.exec_()
 
-    def _autoUpdateCols(self, item):
+    def autoUpdateCols(self, item):
         """
         Updates the sampling number if the station, date or sampling type
         columns are modified
@@ -202,19 +209,20 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                     samplingNumber = functions.get_sampling_number(
                         station_number=stationNumber,
                         date=date,
-                        sample_type=sampleType)
+                        sample_type=sampleType
+                    )
                 except ValueError:
                     samplingNumber = ""
 
                 # Set sampling number and correct alignment
                 table.setItem(row, samplingNumberCol, QtGui.QTableWidgetItem(samplingNumber))
-                self._setAlignment(table.item(row, samplingNumberCol))
+                self.setAlignment(table.item(row, samplingNumberCol))
         except AttributeError:
             pass
         finally:
             table.blockSignals(False)
 
-    def _checkVersion(self):
+    def checkVersion(self):
         """
         Checks the version of FDF utility to ensure it is up-to-date.
         Displays a message if the utility is out of date.
@@ -245,7 +253,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             msg.exec_()
             sys.exit()
 
-    def _copy(self):
+    def copy(self):
         """Implements Excel-style copy."""
         # Find the selected cells
         selection = self.tableWidgetData.selectionModel()
@@ -269,7 +277,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 text += '\n'
         QtGui.QApplication.clipboard().setText(text)
 
-    def _delRows(self):
+    def delRows(self):
         """Deletes selected rows from the table."""
         rows = self.tableWidgetData.selectionModel().selectedRows()
         # Reverse the order of rows so we delete from the bottom up
@@ -278,9 +286,9 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         for r in rows:
             self.tableWidgetData.removeRow(r.row())
 
-    def _exportData(self):
+    def exportData(self):
         """Exports data to csv file."""
-        dataValid, txt = self.ValidateExport(self.tableWidgetData)
+        dataValid, txt = self.validateExport(self.tableWidgetData)
         if not dataValid:
             msg = QtGui.QMessageBox()
             msg.setIcon(QtGui.QMessageBox.Warning)
@@ -325,11 +333,11 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             msg.exec_()
             return None
 
-    def _filePicker(self):
+    def filePicker(self):
         """Shows file picker dialog and name in text box."""
         self.fileLineEdit.setText(QtGui.QFileDialog.getOpenFileName())
 
-    def _insertRows(self):
+    def insertRows(self):
         """Inserts additional rows to the table instance."""
         table = self.tableWidgetData
         table.blockSignals(True)
@@ -346,7 +354,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
 
         table.blockSignals(False)
 
-    def _keyPressEnter(self):
+    def keyPressEnter(self):
         """Sets the action of pressing Enter to move the selection to the next row down."""
         table = self.tableWidgetData
         item = table.currentItem()
@@ -357,7 +365,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         # Select next item
         table.setCurrentCell(row + 1, col)
 
-    def _resetData(self):
+    def resetData(self):
         """Resets all data in the table instance after confirming with the user."""
         txt = u"All data will be lost. Are you sure you want to continue?"
         msg = QtGui.QMessageBox()
@@ -372,7 +380,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         else:
             return None
 
-    def _paste(self):
+    def paste(self):
         """Creates Excel-style paste into the table instance from the clipboard."""
         table = self.tableWidgetData
         table.blockSignals(True)
@@ -405,7 +413,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                                   QtGui.QTableWidgetItem(copyData))
                     table.item(pasteStartRow + i, pasteStartCol + j).setTextAlignment(QtCore.Qt.AlignCenter)
                     item = table.item(pasteStartRow + i, pasteStartCol + j)
-                    self._autoUpdateCols(item)
+                    self.autoUpdateCols(item)
         else:
             # Paste data in rows, starting from top and moving left to right
             for i in range(0, len(copyDataRows)):
@@ -417,12 +425,12 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                     try:
                         table.item(pasteStartRow + i, pasteStartCol + j).setTextAlignment(QtCore.Qt.AlignCenter)
                         item = table.item(pasteStartRow + i, pasteStartCol + j)
-                        self._autoUpdateCols(item)
+                        self.autoUpdateCols(item)
                     except AttributeError:
                         pass
         table.blockSignals(False)
 
-    def _setHeaderData(self, table):
+    def setHeaderData(self, table):
         """Sets the header labels based on column_config settings."""
         for i in range(0, len(self.headerLabels)):
             item = QtGui.QTableWidgetItem()
@@ -430,11 +438,11 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             item = table.horizontalHeaderItem(i)
             item.setText(self.headerLabels[i])
 
-    def _setAlignment(self, item):
+    def setAlignment(self, item):
         """Sets alignment for an item."""
         item.setTextAlignment(QtCore.Qt.AlignCenter)
 
-    def _showAbout(self):
+    def showAbout(self):
         """Displays the about box from the help menu."""
         aboutMsgBox = QtGui.QMessageBox()
         title = u"FDF Utility v%s" % __version__
@@ -446,11 +454,11 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             % (__author__, __version__)
         aboutMsgBox.about(self, title, text)
 
-    def _showHelp(self):
+    def showHelp(self):
         """Displays the HTML help documentation."""
         self.helpBrowser.show()
 
-    def ValidateExport(self):
+    def validateExport(self):
         """Validates the table data for completeness and for fitting to business rules"""
         table = self.tableWidgetData
         dataValid = True
@@ -533,7 +541,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
 
         return dataValid, msg
 
-    def _validateInput(self, item):
+    def validateInput(self, item):
         """Validates the input of data to a cell."""
         self.tableWidgetData.blockSignals(True)
         col = item.column()
@@ -728,19 +736,19 @@ class TimeValidator(QtGui.QValidator):
 ##############################################################################
 # Style delegates
 ##############################################################################
-class listColumnItemDelegate(QtGui.QStyledItemDelegate):
+class ListColumnItemDelegate(QtGui.QStyledItemDelegate):
     def __init__(self):
-        super(listColumnItemDelegate, self).__init__()
+        super(ListColumnItemDelegate, self).__init__()
 
     def createEditor(self, parent, option, index):
-        combo = filteredComboBox(parent)
+        combo = FilteredComboBox(parent)
         try:
             items = ['']
             items.extend(column_config[index.column()]['list_items'])
             combo.addItems(items)
             editor = combo
         except KeyError:
-            editor = super(listColumnItemDelegate, self).createEditor(parent, option, index)
+            editor = super(ListColumnItemDelegate, self).createEditor(parent, option, index)
 
         samplingNumberCol = functions.get_column_number("sampling_number")
         if index.column() == samplingNumberCol:
@@ -759,7 +767,7 @@ class listColumnItemDelegate(QtGui.QStyledItemDelegate):
 ##############################################################################
 # Widgets
 ##############################################################################
-class filteredComboBox(QtGui.QComboBox):
+class FilteredComboBox(QtGui.QComboBox):
     """
     Creates a combo box that filters the available options based on user
     input, in a similar way to jQuery.
@@ -768,7 +776,7 @@ class filteredComboBox(QtGui.QComboBox):
     returnPressed = QtCore.pyqtSignal()
 
     def __init__(self, parent):
-        super(filteredComboBox, self).__init__(parent)
+        super(FilteredComboBox, self).__init__(parent)
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setEditable(True)
         # Add a filter model to filter matching items
