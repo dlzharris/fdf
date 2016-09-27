@@ -288,7 +288,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
 
     def exportData(self):
         """Exports data to csv file."""
-        dataValid, txt = self.validateExport(self.tableWidgetData)
+        dataValid, txt = self.validateExport()
         if not dataValid:
             msg = QtGui.QMessageBox()
             msg.setIcon(QtGui.QMessageBox.Warning)
@@ -372,6 +372,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         msg.setIcon(QtGui.QMessageBox.Warning)
         msg.setStandardButtons(QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel)
         msg.setDefaultButton(QtGui.QMessageBox.Cancel)
+        msg.setWindowTitle(u"Warning! Data reset!")
         msg.setText(txt)
         retVal = msg.exec_()
         if retVal == QtGui.QMessageBox.Ok:

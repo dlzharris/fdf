@@ -31,23 +31,30 @@ check_data_zero_values: check that parameter values are not zero
 prepare_dictionary: transform the data to parameter-oriented format
 write_to_csv: write the data to a dictionary for import to KiWQM
 """
-import csv
-import copy
-import datetime
-from dateutil.parser import parse
-from itertools import islice
-import re
-import yaml
-import sys
-import os
+# TODO: Finalise doc string of functions.py and remove unnecessary files from package
 import codecs
+import copy
+import csv
+import datetime
+from itertools import islice
+import os
+import re
+import sys
+
+from dateutil.parser import parse
+
 from configuration import app_config, column_config, station_list
 
-# Set up global configurations
-#app_config = yaml.load(open('app_config.yaml').read())
-#column_config = yaml.load(open('column_config.yaml').read())
-#station_list = yaml.load(open('station_list.yaml')).read()
+__author__ = 'Daniel Harris'
+__date__ = '27 October 2016'
+__email__ = 'daniel.harris@dpi.nsw.gov.au'
+__status__ = 'Production'
+__version__ = '1.0.0'
 
+
+###############################################################################
+# Custom exception classes
+###############################################################################
 class DatetimeError(Exception):
     """
     Custom exception for date format errors
@@ -62,23 +69,40 @@ class ValidityError(Exception):
     pass
 
 
+###############################################################################
+# Helper functions
+###############################################################################
+def check_date_validity(data_list):
+    """
+    Checks that all samples use dates that are in the past.
+    :param data_list: The list of dictionaries to be checked
+    :return: Boolean indicating if the dates are valid or not.
+    """
+    dates_valid = True
+    try:
+        for sample in data_list:
+            sample_dt = parse_datetime_from_string(sample['date'], sample['sample_time'])
+            if sample_dt > datetime.datetime.now():
+                dates_valid = False
+    except ValueError:
+        dates_valid = False
+    return dates_valid
+
+
 def check_file_validity(instrument_file, file_source):
     """
-    Check the validity of the user-selected input file for the selected instrument
+    Checks the validity of the user-selected input file for the selected instrument
     :param instrument_file: Open instrument file object
     :param file_source: The instrument from which the file was obtained (str)
     :return: Boolean indicating the validity of the file (True for valid, False for invalid)
     """
-    # Read the file into a list for interrogation
-    #in_file = list(instrument_file.readlines())
     try:
-        in_file = instrument_file.reader.readlines()
+        in_file = instrument_file.readlines()
     except UnicodeError:
         raise ValidityError
 
     # File validity check for Hydrolab instruments:
     if file_source in app_config['sources']['hydrolab']:
-        # Perform the validity tests
         valid_test_1 = True if "Log File Name" in in_file[0] else False
         valid_test_2 = True if "Setup" in in_file[1] else False
         valid_test_3 = True if "Setup" in in_file[2] else False
@@ -88,21 +112,97 @@ def check_file_validity(instrument_file, file_source):
             file_valid = True
         else:
             file_valid = False
+
+    # File validity check for YSI instruments:
     elif file_source in app_config['sources']['ysi']:
-        # Perform the validity tests
         if file_source == 'EXO (KOR file)':
             file_valid = True if "KOR Export File" in in_file[0] else False
         elif file_source == 'EXO (instrument)':
             file_valid = True if "Date" in in_file[0] else False
+
     # If the instrument type is not found in the available instruments, then
     # the file is invalid.
     else:
         file_valid = False
+
     # Raise an exception if the file is not valid
-    if file_valid is False:
+    if not file_valid:
         raise ValidityError
     else:
         return file_valid
+
+
+def check_matrix_consistency(table, col_mp_number, col_sample_matrix, col_sampling_number):
+    """
+    Checks that all samples in a single sampling use the same matrix.
+    This is a requirement for KiWQM.
+    :param table: Instance of QTableWidget
+    :param col_mp_number: Measuring program column number in table
+    :param col_sample_matrix: Matrix details column number in table
+    :param col_sampling_number: Sampling number column number in table
+    :return: Boolean indicating if matrix is consistent or not
+    """
+    matrix_consistent = True
+    matrix_list = []
+
+    for row in range(0, table.rowCount()):
+        matrix_list.append(
+            (table.item(row, col_mp_number).text(),
+             table.item(row, col_sample_matrix).text(),
+             table.item(row, col_sampling_number).text())
+        )
+
+    for sample in matrix_list:
+        sampling_matrix = [x for (m, x, s) in matrix_list if m == sample[0] and s == sample[2]]
+        if len(set(sampling_matrix)) > 1:
+            matrix_consistent = False
+            break
+
+    return matrix_consistent
+
+
+def check_sequence_numbers(table, col_mp_number, col_sample_cid, col_sampling_number, col_location_number):
+    """
+    Checks that all samples in a single sampling use distinct sequence
+    numbers and that they start at 1 and increment sequentially.
+    :param table: Instance of QTableWidget
+    :param col_mp_number: Measuring program column number in table
+    :param col_sample_cid: Sample consecutive ID number column number in table
+    :param col_sampling_number: Sampling number column number in table
+    :param col_location_number: Location number column number in table
+    :return: Boolean indicating if sequence numbers are acceptable
+    """
+    sequence_correct = True
+    sequence_list = []
+
+    try:
+        for row in range(0, table.rowCount()):
+            sequence_list.append(
+                (table.item(row, col_mp_number).text(),
+                 table.item(row, col_sample_cid).text(),
+                 table.item(row, col_sampling_number).text(),
+                 table.item(row, col_location_number).text())
+            )
+
+        for sample in sequence_list:
+            # Get a list of all sequence numbers at a single location in a
+            # single sampling.
+            sequence_numbers = [
+                int(s) for (m, s, n, l) in sequence_list if
+                m == sample[0] and
+                n == sample[2] and
+                l == sample[3]
+            ]
+            # Check that sequence numbers in a single sampling are distinct,
+            # start at 1, and increment sequentially
+            if not all(a == b for a, b in list(enumerate(sorted(sequence_numbers), start=1))):
+                sequence_correct = False
+
+    # If we are missing sampling numbers or location IDs then we will get a ValueError
+    except ValueError:
+        sequence_correct = False
+
+    return sequence_correct
 
 
 def load_instrument_file(instrument_file, file_source):
@@ -111,13 +211,12 @@ def load_instrument_file(instrument_file, file_source):
     :param instrument_file: The csv file to be loaded
     :param file_source: The instrument from which the file was obtained
     :return: List of dictionaries, with each dictionary representing a
-    different measurement point
+    different measurement point or time
     """
     if file_source == '':
         raise ValidityError
 
-    # File readings procedure for Hydrolab instruments:
-    # Set the header and data start rows
+    # Set the header and data start rows and file encoding
     if file_source in app_config['sources']['hydrolab']:
         header_start_row = 5
         data_start_row = 8
@@ -132,15 +231,16 @@ def load_instrument_file(instrument_file, file_source):
             data_start_row = 1
             encoding = 'utf16'
 
-    # Open the file
     with codecs.open(instrument_file, "rb", encoding=encoding) as f:
         # Check the validity of the file
         try:
             check_file_validity(f, file_source)
         except ValidityError:
             raise ValidityError
+
         # Rewind the file head
         f.seek(0)
+
         # Read the file into a list for initial interrogation and processing. We will
         # read the data portion into a dictionary further below.
         in_list = list(f.readlines())
@@ -163,18 +263,23 @@ def load_instrument_file(instrument_file, file_source):
 
         elif file_source in app_config['sources']['ysi']:
             if file_source == 'EXO (KOR file)':
+                # Parse out parameter names from potentially
+                # ambiguous parameters.
                 for i, j in enumerate(parameters):
                     p = j.split(' ', 1)
+
                     if p[0] == "Time":
                         if p[1] == "(HH:MM:SS)":
                             parameters[i] = "Time"
                         else:
                             parameters[i] = "TimeFraction"
                         continue
+
                     elif p[0] == "Temp":
                         temp_match = re.search('[CF]', j)
                         parameters[i] = "Temp" + temp_match.group()
                         continue
+
                     elif p[0] == "ODO":
                         if p[1] == "% sat":
                             parameters[i] = "ODO%"
@@ -183,6 +288,7 @@ def load_instrument_file(instrument_file, file_source):
                         else:
                             parameters[i] = "ODO_EU"
                         continue
+
                     elif p[0] == "pH":
                         try:
                             if p[1] == "mV":
@@ -190,24 +296,31 @@ def load_instrument_file(instrument_file, file_source):
                         except IndexError:
                             parameters[i] = p[0]
                         continue
+
                     elif p[0] == "ORP":
                         if p[1] == "mV":
                             parameters[i] = p[0]
                         else:
                             parameters[i] = "ORPRaw"
                         continue
+
                     elif p[0] == "DEP":
                         parameters[i] = "Depth"
                     else:
                         parameters[i] = p[0]
+
             elif file_source == 'EXO (instrument)':
+                # Parse out parameter names from potentially
+                # ambiguous parameters.
                 degree_sign = u'\N{DEGREE SIGN}'
                 for i, j in enumerate(parameters):
                     p = j.split(' ', 1)
+
                     if degree_sign in p[0]:
                         temp_match = re.search('[CF]', j)
                         parameters[i] = "Temp" + temp_match.group()
                         continue
+
                     elif p[0] == "DO":
                         if p[1] == "%":
                             parameters[i] = "ODO%"
@@ -217,7 +330,8 @@ def load_instrument_file(instrument_file, file_source):
                             parameters[i] = "ODO_EU"
                         continue
 
-        # If the format for the instrument data file was not found, make the data list None
+        # If the format for the instrument data file was not found,
+        # make the data list None
         else:
             return None
 
@@ -241,7 +355,11 @@ def load_instrument_file(instrument_file, file_source):
             i = i.replace(",\r\n", "")
             ls.append(i)
         # Create the reader object to parse data into dictionaries and the data container list
-        reader = csv.DictReader(ls, delimiter=',', skipinitialspace=True, quotechar='"', fieldnames=parameters, restval=u"")
+        reader = csv.DictReader(
+            ls, delimiter=',', skipinitialspace=True,
+            quotechar='"', fieldnames=parameters, restval=u""
+        )
+        # Initialise the data container
         data = []
         # Change the keys to our standard key values and remove items that are not relevant
         for line in reader:
@@ -249,7 +367,11 @@ def load_instrument_file(instrument_file, file_source):
                 sample_dt = parse_datetime_from_string(line['Date'], line['Time'])
             except DatetimeError:
                 continue
+
+            # Initialise the dictionary for the line of data
             new_line = {}
+
+            # Populate the dictionary with the data from the data file
             for item in line:
                 try:
                     new_line[get_new_dict_key(item)] = float(line[item])
@@ -261,36 +383,6 @@ def load_instrument_file(instrument_file, file_source):
                 except (KeyError, TypeError):
                     pass
 
-
-            # Format the date and time correctly
-            new_line['date'] = sample_dt.strftime(app_config['datetime_formats']['date']['display'])
-            new_line['sample_time'] = sample_dt.strftime(app_config['datetime_formats']['time']['display'])
-            # Add the extra items we'll need access to later on
-            new_line['event_time'] = ""
-            new_line['sampling_number'] = ""
-            new_line['replicate_number'] = ""
-            new_line['sample_cid'] = ""
-            new_line['sample_matrix'] = ""
-            new_line['sample_type'] = ""
-            new_line['mp_number'] = ""
-            new_line['location_id'] = ""
-            #new_line['station_number'] = ""
-            new_line['collection_method'] = ""
-            new_line['calibration_record'] = ""
-            #new_line['sampling_officer'] = ""
-            new_line['sample_collected'] = ""
-            new_line['depth_lower'] = ""
-            new_line['sampling_comment'] = ""
-            new_line['turbidity_instrument'] = ""
-            new_line['gauge_height'] = ""
-            new_line['turbidity'] = ""
-            new_line['water_depth'] = ""
-
-            if 'conductivity_comp' not in new_line:
-                new_line['conductivity_comp'] = ""
-            if 'conductivity_uncomp' not in new_line:
-                new_line['conductivity_uncomp'] = ""
-
             # Set the instrument
             if 'EXO' in file_source:
                 new_line['sampling_instrument'] = 'EXO'
@@ -299,7 +391,11 @@ def load_instrument_file(instrument_file, file_source):
             else:
                 new_line['sampling_instrument'] = ""
 
-            # Update items in dictionary for metadata in instrument file
+            # Format the date and time correctly
+            new_line['date'] = sample_dt.strftime(app_config['datetime_formats']['date']['display'])
+            new_line['sample_time'] = sample_dt.strftime(app_config['datetime_formats']['time']['display'])
+
+            # Update station number
             try:
                 if new_line['station_number'].split(' ', 1)[0] in station_list:
                     station_number = new_line['station_number'].split(' ', 1)[0]
@@ -309,6 +405,7 @@ def load_instrument_file(instrument_file, file_source):
                 station_number = ""
             new_line['station_number'] = station_number
 
+            # Update sampler name
             try:
                 sampling_officer_column = get_column_number('sampling_officer')
                 if new_line['sampling_officer'] in column_config[sampling_officer_column]['list_items']:
@@ -319,6 +416,29 @@ def load_instrument_file(instrument_file, file_source):
                 sampling_officer = ""
             new_line['sampling_officer'] = sampling_officer
 
+            # Add the extra items we'll need access to later on
+            new_line['event_time'] = ""
+            new_line['sampling_number'] = ""
+            new_line['replicate_number'] = ""
+            new_line['sample_cid'] = ""
+            new_line['sample_matrix'] = ""
+            new_line['sample_type'] = ""
+            new_line['mp_number'] = ""
+            new_line['location_id'] = ""
+            new_line['collection_method'] = ""
+            new_line['calibration_record'] = ""
+            new_line['sample_collected'] = ""
+            new_line['depth_lower'] = ""
+            new_line['sampling_comment'] = ""
+            new_line['turbidity_instrument'] = ""
+            new_line['gauge_height'] = ""
+            new_line['turbidity'] = ""
+            new_line['water_depth'] = ""
+            if 'conductivity_comp' not in new_line:
+                new_line['conductivity_comp'] = ""
+            if 'conductivity_uncomp' not in new_line:
+                new_line['conductivity_uncomp'] = ""
+
             # Add the new updated dictionary to our list
             data.append(new_line)
 
@@ -326,68 +446,60 @@ def load_instrument_file(instrument_file, file_source):
     return data
 
 
+def lord2lorl(lord, colkeys):
+    """
+    Converts a list of dicts where each dict is a row (lord) to
+    a list of lists where each inner list is a row (lorl).
+    Adapted from tabular.py package, available from
+    http://www.saltycrane.com/blog/2007/12/tabular-data-structure-conversion-in-python/
+    :param lord: list of dictionaries to be parsed
+    :param colkeys: list of column keys
+    """
+    lists = [[row[key] for key in colkeys if key in row] for row in lord]
+    return lists
+
+
+def lorl2lord(lorl, colkeys):
+    """
+    Converts a list of lists where each inner list is a row (lorl) to
+    a list of dicts where each dict is a row (lord).
+    Adapted from tabular.py package, available from
+    http://www.saltycrane.com/blog/2007/12/tabular-data-structure-conversion-in-python/
+    :param lorl: list of lists to be parsed
+    :param colkeys: list of column keys
+    """
+    return [dict(zip(colkeys, row)) for row in lorl]
+
+
 def get_column_number(column_name):
+    """
+    Gets the column number for a given column name
+    :param column_name: Name of column as defined in column_config.yaml
+    :return: Integer representing the column number (from left to right) as
+    it appears in the table instance.
+    """
     return [k for k, v in column_config.iteritems() if v['name'] == column_name][0]
 
 
-def parse_datetime_from_string(date_string, time_string):
+def get_column_title(key):
     """
-    Take a date string and time string (in any format) and parse it into a
-    datetime object.
-    :param date_string: String containing date information
-    :param time_string: String containing time information
-    :return: Datetime object containing date and time information
+    Get the column title used in the GUI ObjectListView based on the
+    original dictionary key. Used in check_data_completeness to
+    tell the user which required columns have been left empty.
     """
-    try:
-        datetime_concat = " ".join([date_string, time_string])
-        dt = parse(datetime_concat, dayfirst=True, yearfirst=False, default=None)
-    except (ValueError, TypeError):
-        raise DatetimeError
-    return dt
-
-
-def get_sampling_time(sample_set, station, sample_date):
-    """
-    Find the sampling time for a set of samples collected at the same station
-    on a given date. The sampling time is different from the sample time and
-    is used in KiWQM to collect related samples into a group (depth profiles or
-    primary and replicate samples).
-    :param sample_set: The entire set of field data from the instrument as a
-    dictionary, with extra metadata such as station already added in.
-    :param station: String of the station number to be queried
-    :param sample_date: String of the date used for the query
-    :return: The sampling time used to identify samplings in KiWQM.
-    """
-    # sample_set is a dictionary of samples extracted from the csv
-    # with extra attributes
-    sample_times = [parse_datetime_from_string(s['date'], s['sample_time'])
-                    for s in sample_set if s['station_number'] == station and s['date'] == sample_date]
-    # Find the earliest time and convert it to a string
-    sampling_time = min(sample_times).strftime(app_config['datetime_formats']['time']['export_event'])
-    return sampling_time
-
-
-def get_sampling_number(station_number, date, sample_type):
-    """
-    Return a new sampling number
-    :param field_dict: Dictionary created from data imported from the instrument file
-    :return: The sampling number used to identify the sample in KiWQM
-    """
-    # Set the date format and delimiter for the sampling number
-    sampling_delimiter = "-"
-    # Get the required parts of the sampling number from the field_dict
-    try:
-        date = parse_datetime_from_string(date, "").strftime(app_config['datetime_formats']['date']['sampling_number'])
-    except DatetimeError:
-        date = ""
-    # Create the sampling number in format STATION#-DDMMYY[-SAMPLE_TYPE]
-    if (not station_number) or (not date):
-        sampling_number = ""
-    elif sample_type in ["QR", "QB", "QT"]:
-        sampling_number = sampling_delimiter.join([station_number, date, sample_type])
-    else:
-        sampling_number = sampling_delimiter.join([station_number, date])
-    return sampling_number
+    titles = {
+        'mp_number': "MP#",
+        'station_number': "Station#",
+        'date': "Date",
+        'sample_matrix': "Matrix",
+        'sample_type': "Sample type",
+        # 'sampling_reason',
+        'sampling_officer': "Sampling officer",
+        'location_id': "Loc#",
+        'sample_cid': "Seq#",
+        'sample_time': "Time",
+        'depth_upper': "Depth (upper)"}
+    return titles[key]
 
 
 def get_fraction_number(field_dict):
@@ -399,16 +511,20 @@ def get_fraction_number(field_dict):
     """
     # Set the delimiter to be used in the fraction number
     fraction_delimiter = "_"
-    # Get the sampling number and strip out the matrix code from the end
-    # Using 9 as the starting point for str.find allows us to skip over the first hyphen.
+    # Get the sampling number and strip out the matrix code from the end if it is there
+    # Using 9 as the starting point for str.index allows us to skip over the first hyphen.
     sampling_number = field_dict['sampling_number']
     try:
         delimiter_position = sampling_number.index("-", 9)
     except ValueError:
         delimiter_position = None
     # Create the fraction number in form STATION#-DDMMYY_(CID+LOCATION ID)_F
-    fraction_number = sampling_number[:delimiter_position] + fraction_delimiter + str(field_dict['sample_cid']) +\
-        str(field_dict['location_id']) + fraction_delimiter + "F"
+    fraction_number = sampling_number[:delimiter_position] \
+                      + fraction_delimiter \
+                      + str(field_dict['sample_cid']) \
+                      + str(field_dict['location_id']) \
+                      + fraction_delimiter \
+                      + "F"
     return fraction_number
 
 
@@ -416,7 +532,7 @@ def get_new_dict_key(key):
     """
     Generate a new "friendly" dictionary key for the variables loaded in load_instrument_file.
     :param key: The original dictionary key
-    :return: The new dictioanry key
+    :return: The new dictionary key
     """
     new_keys = {
         "Date": "date",  # hydrolab & YSI
@@ -467,27 +583,6 @@ def get_parameter_unit(key):
     return units[key]
 
 
-def get_column_title(key):
-    """
-    Get the column title used in the GUI ObjectListView based on the
-    original dictionary key. Used in check_data_completeness to
-    tell the user which required columns have been left empty.
-    """
-    titles = {
-        'mp_number': "MP#",
-        'station_number': "Station#",
-        'date': "Date",
-        'sample_matrix': "Matrix",
-        'sample_type': "Sample type",
-        # 'sampling_reason',
-        'sampling_officer': "Sampling officer",
-        'location_id': "Loc#",
-        'sample_cid': "Seq#",
-        'sample_time': "Time",
-        'depth_upper': "Depth (upper)"}
-    return titles[key]
-
-
 def get_replicate_number(rep_code):
     """
     Get the replicate number used in KiWQM based on the sample type code.
@@ -503,73 +598,65 @@ def get_replicate_number(rep_code):
     return replicate_numbers[rep_code]
 
 
-def check_matrix_consistency(table, col_mp_number, col_sample_matrix, col_sampling_number):
+def get_sampling_number(station_number, date, sample_type):
     """
-    Check that all samples in a single sampling use the same matrix.
-    This is a requirement for KiWQM.
-    :param data_list: The list of dictionaries to be checked.
-    :return: Boolean value indicating if the matrix is consistent for
-    all samplings.
+    Returns a new sampling number
+    :param station_number: String representing the station number
+    :param date: String with date (in any format)
+    :param sample_type: String representing the sample type code
+    :return: String of well-formatted sampling identification number
     """
-    matrix_consistent = True
-    matrix_list = []
-    for row in range(0, table.rowCount()):
-        matrix_list.append((table.item(row, col_mp_number).text(),
-                            table.item(row, col_sample_matrix).text(),
-                            table.item(row, col_sampling_number).text()))
-    for sample in matrix_list:
-        sampling_matrix = [x for (m, x, s) in matrix_list if m == sample[0] and s == sample[2]]
-        if len(set(sampling_matrix)) > 1:
-            matrix_consistent = False
-            break
-    return matrix_consistent
+    # Set the date format and delimiter for the sampling number
+    sampling_delimiter = "-"
+    # Get the required parts of the sampling number from the field_dict
+    try:
+        date = parse_datetime_from_string(date, "").strftime(app_config['datetime_formats']['date']['sampling_number'])
+    except DatetimeError:
+        date = ""
+    # Create the sampling number in format STATION#-DDMMYY[-SAMPLE_TYPE]
+    if (not station_number) or (not date):
+        sampling_number = ""
+    elif sample_type in ["QR", "QB", "QT"]:
+        sampling_number = sampling_delimiter.join([station_number, date, sample_type])
+    else:
+        sampling_number = sampling_delimiter.join([station_number, date])
+    return sampling_number
 
 
-def check_sequence_numbers(table, col_mp_number, col_sample_cid, col_sampling_number, col_location_number):
+def get_sampling_time(sample_set, station, sample_date):
     """
-    Check that all samples in a single sampling use distinct sequence
-    numbers and that they start at 1 and increment sequentially.
-    :param data_list: The list of dictionaries to be checked
-    :return:
+    Find the sampling time for a set of samples collected at the same station
+    on a given date. The sampling time is different from the sample time and
+    is used in KiWQM to collect related samples into a group (depth profiles or
+    primary and replicate samples).
+    :param sample_set: The entire set of field data from the instrument as a
+    dictionary, with extra metadata such as station already added in.
+    :param station: String of the station number to be queried
+    :param sample_date: String of the date used for the query
+    :return: The sampling time used to identify samplings in KiWQM.
+    """
+    sample_times = [parse_datetime_from_string(s['date'], s['sample_time'])
+                    for s in sample_set if s['station_number'] == station and s['date'] == sample_date]
+    # Find the earliest time and convert it to a string
+    sampling_time = min(sample_times).strftime(app_config['datetime_formats']['time']['export_event'])
+    return sampling_time
+
+
+def parse_datetime_from_string(date_string, time_string):
+    """
+    Wrapper function for dateutil.parser.parse.
+    Takes a date string and time string (in any format) and parses it into a
+    datetime object.
+    :param date_string: String containing date information
+    :param time_string: String containing time information
+    :return: Datetime object containing date and time information
     """
     try:
-        sequence_list = []
-        sequence_correct = True
-        for row in range(0, table.rowCount()):
-            sequence_list.append((table.item(row, col_mp_number).text(),
-                                  table.item(row, col_sample_cid).text(),
-                                  table.item(row, col_sampling_number).text(),
-                                  table.item(row, col_location_number).text()))
-        for sample in sequence_list:
-            # Get a list of all sequence numbers at a single location in a
-            # single sampling.
-            sequence_numbers = [int(s) for (m, s, n, l) in sequence_list
-                                if m == sample[0] and n == sample[2] and l == sample[3]]
-            # Check that sequence numbers in a single sampling are distinct,
-            # start at 1, and increment sequentially
-            if not all(a == b for a, b in list(enumerate(sorted(sequence_numbers), start=1))):
-                sequence_correct = False
-    # If we are missing sampling numbers or location IDs then we will get a ValueError
-    except ValueError:
-        sequence_correct = False
-    return sequence_correct
-
-
-def check_date_validity(data_list):
-    """
-    Check that all samples use dates that are in the past.
-    :param data_list: The list of dictionaries to be checked
-    :return: Boolean indicating if the dates are valid or not.
-    """
-    try:
-        dates_valid = True
-        for sample in data_list:
-            sample_dt = parse_datetime_from_string(sample['date'], sample['sample_time'])
-            if sample_dt > datetime.datetime.now():
-                dates_valid = False
-    except ValueError:
-        dates_valid = False
-    return dates_valid
+        datetime_concat = " ".join([date_string, time_string])
+        dt = parse(datetime_concat, dayfirst=True, yearfirst=False, default=None)
+    except (ValueError, TypeError):
+        raise DatetimeError
+    return dt
 
 
 def prepare_dictionary(data_list):
@@ -598,22 +685,26 @@ def prepare_dictionary(data_list):
         sample['event_time'] = get_sampling_time(data_list, sample['station_number'], sample['date'])
         sample['replicate_number'] = get_replicate_number(sample['sample_type'])
         # Assign the static fraction information to the sample
-        sample['fraction_lab_shortname'] = "FLD"                                         # Static text
-        sample['fraction_data_source'] = "Field Data"                                    # Static text
-        sample['fraction_number'] = get_fraction_number(sample)                          # Calculated value
-        sample['fraction_entry_datetime'] = datetime.datetime.now().strftime(app_config['datetime_formats']['datetime']['fraction'])  # Current time
+        sample['fraction_lab_shortname'] = app_config['key_value_settings']['field_fraction_lab_shortname']
+        sample['fraction_data_source'] = app_config['key_value_settings']['field_fraction_data_source']
+        sample['fraction_number'] = get_fraction_number(sample)
+        sample['fraction_entry_datetime'] = datetime.datetime.now().strftime(
+            app_config['datetime_formats']['datetime']['fraction']
+        )
+
         # If more than one replicate per sampling, increment replicate number on export
         rep_depth_tolerance = 0.15
         min_depth = float(sample['depth_upper']) - rep_depth_tolerance
         max_depth = float(sample['depth_upper']) + rep_depth_tolerance
-        reps_in_sampling = [r['sample_time'] for r in data_list
-                            if r['sampling_number'] == sample['sampling_number'] and
+        reps_in_sampling = [r['sample_time'] for r in data_list if
+                            r['sampling_number'] == sample['sampling_number'] and
                             r['sample_type'] == sample['sample_type'] and
                             min_depth <= float(r['depth_upper']) <= max_depth]
         if len(reps_in_sampling) > 1:
             sorted(reps_in_sampling, key=lambda x: x[0])
             sample_idx = reps_in_sampling.index(sample['sample_time'])
             sample['replicate_number'] += sample_idx
+
         # Transform the data to parameter-oriented
         for param in app_config['parameters']:
             # Store sample metadata for reuse. We use deepcopy here so we create
@@ -626,10 +717,10 @@ def prepare_dictionary(data_list):
                 sample_param_oriented["units"] = get_parameter_unit(param)
                 if param == 'turbidity':
                     sample_param_oriented["device"] = sample['turbidity_instrument']
-                    sample_param_oriented["method"] = "FLD_TURB"
+                    sample_param_oriented["method"] = app_config['key_value_settings']['turbidity_method']
                 else:
                     sample_param_oriented["device"] = sample['sampling_instrument']
-                    sample_param_oriented["method"] = "FLD_MULTI_PROBE"
+                    sample_param_oriented["method"] = app_config['key_value_settings']['multiprobe_method']
                 # If the value is empty, skip to the next value
                 if sample_param_oriented["value"] != "":
                     # Add the dictionary to the parameter-oriented container
@@ -639,7 +730,21 @@ def prepare_dictionary(data_list):
             # If the parameter wasn't found in the list, skip to the next one
             except KeyError:
                 pass
+
     return data_list_param_oriented
+
+
+def resource_path(relative_path):
+    """
+    Get absolute path to resource. This is necessary for
+    bundling PyInstaller exes.
+    """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 
 def write_to_csv(data_list, out_filepath, fieldnames_list):
@@ -652,43 +757,12 @@ def write_to_csv(data_list, out_filepath, fieldnames_list):
     :return: No return value
     """
     with open(out_filepath, 'wb') as f:
-        writer = csv.DictWriter(f, delimiter=',', extrasaction='ignore',
-                                fieldnames=fieldnames_list)
+        writer = csv.DictWriter(
+            f,
+            delimiter=',',
+            extrasaction='ignore',
+            fieldnames=fieldnames_list
+        )
         writer.writeheader()
         writer.writerows(data_list)
     return True
-
-
-def lord2lorl(lord, colkeys):
-    """
-    Converts a list of dicts where each dict is a row (lord) to
-    a list of lists where each inner list is a row (lorl).
-    Adapted from tabular.py package, available from
-    http://www.saltycrane.com/blog/2007/12/tabular-data-structure-conversion-in-python/
-    :param lord: list of dictionaries to be parsed
-    :param colkeys: list of column keys
-    """
-    lists = [[row[key] for key in colkeys if key in row] for row in lord]
-    return lists
-
-
-def lorl2lord(lorl, colkeys):
-    """
-    Converts a list of lists where each inner list is a row (lorl) to
-    a list of dicts where each dict is a row (lord).
-    Adapted from tabular.py package, available from
-    http://www.saltycrane.com/blog/2007/12/tabular-data-structure-conversion-in-python/
-    :param lorl: list of lists to be parsed
-    :param colkeys: list of column keys
-    """
-    return [dict(zip(colkeys, row)) for row in lorl]
-
-
-def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)

@@ -11,6 +11,7 @@ sources:
     - HACH Tubiditimeter 2100P
     - HACH Tubiditimeter 2100Q
 
+
 datetime_formats:
   date:
     display: '%d/%m/%Y'
@@ -23,6 +24,7 @@ datetime_formats:
   datetime:
     fraction: '%Y-%m-%d %H:%M:%S'
 
+
 parameters:
   - conductivity_uncomp
   - conductivity_comp
@@ -33,6 +35,7 @@ parameters:
   - temp_c
   - turbidity
   - water_depth
+
 
 column_order:
   - mp_number
@@ -63,6 +66,7 @@ column_order:
   - gauge_height
   - sampling_comment
 
+
 csv_fieldnames:
   - mp_number
   - station_number
@@ -91,3 +95,9 @@ csv_fieldnames:
   - value
   - units
   - device
+
+key_value_settings:
+  turbidity_method: FLD_TURB
+  multiprobe_method: FLD_MULTI_PROBE
+  field_fraction_lab_shortname: FLD
+  field_fraction_data_source: Field Data
