@@ -74,19 +74,21 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         # Set up the help documentation
         self.helpBrowser = QtGui.QTextBrowser()
         self.helpBrowser.setSource(QtCore.QUrl('help.html'))
-        self.helpBrowser.setWindowTitle("FDF Utility Help Documentation")
+        self.helpBrowser.setWindowTitle(u"FDF Utility Help Documentation")
         self.helpBrowser.setMinimumSize(500, 500)
         self.actionHelp.triggered.connect(self._showHelp)
 
         # Set up the about documentation
         self.actionAbout.triggered.connect(self._showAbout)
 
+    ##########################################################################
     # Reimplemented methods
+    ##########################################################################
     def contextMenuEvent(self, event):
         if event.Reason() == QtGui.QContextMenuEvent.Mouse:
             menu = QtGui.QMenu(self)
-            menu.addAction("Copy", self._copy, QtGui.QKeySequence.Copy)
-            menu.addAction("Paste", self._paste, QtGui.QKeySequence.Paste)
+            menu.addAction(u"Copy", self._copy, QtGui.QKeySequence.Copy)
+            menu.addAction(u"Paste", self._paste, QtGui.QKeySequence.Paste)
             menu.popup(QtGui.QCursor.pos())
 
     def keyPressEvent(self, event):
@@ -99,10 +101,14 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         else:
             QtGui.QMainWindow.keyPressEvent(self, event)
 
+    ##########################################################################
     # Private methods
+    ##########################################################################
     def _addData(self, lists):
+        """Takes data provided and add to the table instance."""
         self.tableWidgetData.blockSignals(True)
         errorsFound = False
+
         for i in range(0, len(lists)):
             rowPosition = self.tableWidgetData.rowCount()
             self.tableWidgetData.insertRow(rowPosition)
@@ -110,7 +116,6 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 value = str(lists[i][j])
                 self.tableWidgetData.setItem(rowPosition, j, QtGui.QTableWidgetItem(value))
                 item = self.tableWidgetData.item(rowPosition, j)
-                # TODO: Any additional unicode tinkering
                 try:
                     validator = DoubleFixupValidator(item.column())
                     state, displayValue, returnInt = validator.validate(item.text(), 0)
@@ -125,22 +130,26 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             for j in range(0, self.tableWidgetData.columnCount()):
                 self.tableWidgetData.item(i, j).setTextAlignment(QtCore.Qt.AlignCenter)
 
-        self.tableWidgetData.blockSignals(False)
-        if errorsFound is True:
-            txt = "Errors have been found in the imported data set. " \
-                  "Please check items highlighted in red before exporting."
+        if errorsFound:
+            txt = u"Errors have been found in the imported data set. " \
+                  u"Please check items highlighted in red before exporting."
             msg = QtGui.QMessageBox()
             msg.setIcon(QtGui.QMessageBox.Warning)
             msg.setText(txt)
-            msg.setWindowTitle("Data import - errors detected!")
+            msg.setWindowTitle(u"Data import - errors detected!")
             msg.exec_()
 
+        self.tableWidgetData.blockSignals(False)
+
     def _addFile(self):
+        """Loads the file specified in the UI and adds it to the table instance."""
         try:
             # Validate file type
-            _dicts = functions.load_instrument_file(self.fileLineEdit.text(), str(self.instrumentComboBox.currentText()))
+            dicts = functions.load_instrument_file(self.fileLineEdit.text(),
+                                                   str(self.instrumentComboBox.currentText()))
+
             # Update sampling number if enough information is in file
-            for i in _dicts:
+            for i in dicts:
                 try:
                     i['sampling_number'] = functions.get_sampling_number(
                         station_number=i['station_number'],
@@ -148,38 +157,47 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                         sample_type=i['sample_type'])
                 except ValueError:
                     pass
+
             # Add data to table
-            self._addData(functions.lord2lorl(_dicts, app_config['column_order']))
+            self._addData(functions.lord2lorl(dicts, app_config['column_order']))
             # Add file name to listbox
             self.listWidgetCurrentFiles.addItem(QtGui.QListWidgetItem(self.fileLineEdit.text()))
+
         except ValidityError:
-            txt = "The chosen file is not valid for the specified instrument.\n\n" \
-                  "Please select a different file or a different instrument from the drop-down list."
+            txt = u"The chosen file is not valid for the specified instrument.\n\n" \
+                  u"Please select a different file or a different instrument from the drop-down list."
             msg = QtGui.QMessageBox()
             msg.setIcon(QtGui.QMessageBox.Warning)
             msg.setText(txt)
-            msg.setWindowTitle("File validity error!")
+            msg.setWindowTitle(u"File validity error!")
             msg.exec_()
 
     def _autoUpdateCols(self, item):
+        """
+        Updates the sampling number if the station, date or sampling type
+        columns are modified
+        """
         table = self.tableWidgetData
         table.blockSignals(True)
+
         row = item.row()
         col = item.column()
         stationCol = functions.get_column_number('station_number')
         dateCol = functions.get_column_number('date')
         sampleTypeCol = functions.get_column_number('sample_type')
         samplingNumberCol = functions.get_column_number('sampling_number')
+
         try:
-            if col in [stationCol, dateCol, sampleTypeCol]:  # Sampling number
+            if col in [stationCol, dateCol, sampleTypeCol]:
+                # Get information required for generating the sampling number
                 stationNumber = str(table.item(row, stationCol).text())
                 date = str(table.item(row, dateCol).text())
-
                 try:
                     sampleType = str(table.item(row, sampleTypeCol).text())
                 except AttributeError:
                     sampleType = None
 
+                # Generate the sampling number
                 try:
                     samplingNumber = functions.get_sampling_number(
                         station_number=stationNumber,
@@ -188,6 +206,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 except ValueError:
                     samplingNumber = ""
 
+                # Set sampling number and correct alignment
                 table.setItem(row, samplingNumberCol, QtGui.QTableWidgetItem(samplingNumber))
                 self._setAlignment(table.item(row, samplingNumberCol))
         except AttributeError:
@@ -196,37 +215,46 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             table.blockSignals(False)
 
     def _checkVersion(self):
+        """
+        Checks the version of FDF utility to ensure it is up-to-date.
+        Displays a message if the utility is out of date.
+        """
+        version_url = u'https://raw.githubusercontent.com/dlzharris/fdf/master/current_version.txt'
+        package_url = u'https://github.com/dlzharris/fdf/releases'
+
         try:
-            # Check that version is up-to-date
-            version_url = 'https://raw.githubusercontent.com/dlzharris/fdf/master/current_version.txt'
-            package_url = 'https://github.com/dlzharris/fdf/tree/master/stable_package'
             proxy = urllib2.ProxyHandler({'http': 'oranprodproxy.dpi.nsw.gov.au:8080',
                                           'https': 'oranprodproxy.dpi.nsw.gov.au:8080'})
             opener = urllib2.build_opener(proxy)
             urllib2.install_opener(opener)
             current_version = yaml.load(urllib2.urlopen(version_url).read())['version_stable']
-            if __version__ != current_version:
-                txt = "There is a newer version of this application available. " \
-                      "You can no longer use the current version. <br><br>" \
-                      "Please download the latest version (zip file) from <a href='{url}'>{url}</a>. " \
-                      "Installation instructions can be found in the README.md file at the same location.<br><br>" \
-                      "This application will now exit.".format(url=package_url)
-                msg = QtGui.QMessageBox()
-                msg.setIcon(QtGui.QMessageBox.Information)
-                msg.setText(txt)
-                msg.setTextFormat(QtCore.Qt.RichText)
-                msg.setWindowTitle("New version available!")
-                msg.exec_()
-                sys.exit()
         except urllib2.URLError:
-            return
+            return None
+
+        if __version__ != current_version:
+            txt = u"There is a newer version of this application available. " \
+                  u"You can no longer use the current version. <br><br>" \
+                  u"Please download the latest version (zip file) from <a href='{url}'>{url}</a>. " \
+                  u"Installation instructions can be found in the README.md file at the same location.<br><br>" \
+                  u"This application will now exit.".format(url=package_url)
+            msg = QtGui.QMessageBox()
+            msg.setIcon(QtGui.QMessageBox.Information)
+            msg.setText(txt)
+            msg.setTextFormat(QtCore.Qt.RichText)
+            msg.setWindowTitle(u"New version available!")
+            msg.exec_()
+            sys.exit()
 
     def _copy(self):
+        """Implements Excel-style copy."""
+        # Find the selected cells
         selection = self.tableWidgetData.selectionModel()
         indexes = selection.selectedIndexes()
         if len(indexes) < 1:
             # Nothing selected
             return
+
+        # Start copying
         text = ''
         rows = [r.row() for r in indexes]
         cols = [c.column() for c in indexes]
@@ -242,23 +270,28 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         QtGui.QApplication.clipboard().setText(text)
 
     def _delRows(self):
+        """Deletes selected rows from the table."""
         rows = self.tableWidgetData.selectionModel().selectedRows()
+        # Reverse the order of rows so we delete from the bottom up
+        # to avoid errors.
         rows.reverse()
         for r in rows:
             self.tableWidgetData.removeRow(r.row())
 
     def _exportData(self):
-        dataValid, txt = exportValidator(self.tableWidgetData)
+        """Exports data to csv file."""
+        dataValid, txt = self.ValidateExport(self.tableWidgetData)
         if not dataValid:
             msg = QtGui.QMessageBox()
             msg.setIcon(QtGui.QMessageBox.Warning)
             msg.setText(txt)
-            msg.setWindowTitle("Data validation - errors detected!")
+            msg.setWindowTitle(u"Data validation - errors detected!")
             msg.exec_()
             return None
-        # If the data is valid, keep going with the export
-        fileName = QtGui.QFileDialog.getSaveFileName(caption='Save file', selectedFilter='*.csv')
-        # take a row and append each item to a list
+
+        # If the data is valid, keep going with the export.
+        fileName = QtGui.QFileDialog.getSaveFileName(caption=u'Save file', selectedFilter=u'*.csv')
+        # Take a row and append each item to a list.
         tableData = []
         for i in range(0, self.tableWidgetData.rowCount()):
             rowData = []
@@ -266,11 +299,13 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 value = self.tableWidgetData.item(i, j).text()
                 rowData.append(str(value))
             tableData.append(rowData)
+        # Transform the list to a dictionary for dictWriter
         tableData = functions.lorl2lord(tableData, app_config['column_order'])
         # Reformat the data in parameter-oriented format
         data_reformatted = functions.prepare_dictionary(tableData)
-        # Write the data to csv
+        # Prepare the message box for confirmation after export
         msg = QtGui.QMessageBox()
+        # Write the data to csv
         try:
             # Write to sample oriented file for QA
             if self.chkBoxSampleOriented.isChecked():
@@ -279,23 +314,26 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             # Write to parameter oriented file for import to KiWQM
             if functions.write_to_csv(data_reformatted, fileName, app_config['csv_fieldnames']):
                 msg.setIcon(QtGui.QMessageBox.Information)
-                msg.setText("Data exported successfully!")
-                msg.setWindowTitle("Export successful!")
+                msg.setText(u"Data exported successfully!")
+                msg.setWindowTitle(u"Export successful!")
                 msg.exec_()
                 return None
         except IOError:
             msg.setIcon(QtGui.QMessageBox.Warning)
-            msg.setText("There was an error exporting your file.")
-            msg.setWindowTitle("Export error!")
+            msg.setText(u"There was an error exporting your file.")
+            msg.setWindowTitle(u"Export error!")
             msg.exec_()
+            return None
 
     def _filePicker(self):
-        # Show file picker dialog and show name in text box
+        """Shows file picker dialog and name in text box."""
         self.fileLineEdit.setText(QtGui.QFileDialog.getOpenFileName())
 
     def _insertRows(self):
+        """Inserts additional rows to the table instance."""
         table = self.tableWidgetData
         table.blockSignals(True)
+
         rows = table.selectionModel().selectedRows()
         rowCount = len(rows)
         try:
@@ -305,9 +343,11 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             rowCount = 1
         for i in range(0, rowCount):
             table.insertRow(rowPosition)
+
         table.blockSignals(False)
 
     def _keyPressEnter(self):
+        """Sets the action of pressing Enter to move the selection to the next row down."""
         table = self.tableWidgetData
         item = table.currentItem()
         row = item.row()
@@ -318,7 +358,8 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         table.setCurrentCell(row + 1, col)
 
     def _resetData(self):
-        txt = "All data will be lost. Are you sure you want to continue?"
+        """Resets all data in the table instance after confirming with the user."""
+        txt = u"All data will be lost. Are you sure you want to continue?"
         msg = QtGui.QMessageBox()
         msg.setIcon(QtGui.QMessageBox.Warning)
         msg.setStandardButtons(QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel)
@@ -332,8 +373,10 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             return None
 
     def _paste(self):
+        """Creates Excel-style paste into the table instance from the clipboard."""
         table = self.tableWidgetData
         table.blockSignals(True)
+        # Get the selected cell or cells
         selection = self.tableWidgetData.selectionModel()
         indexes = selection.selectedIndexes()
         # Get the location of the top left cell in selection
@@ -341,13 +384,12 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         pasteStartCol = min(c.column() for c in indexes)
         pasteEndRow = max(r.row() for r in indexes)
         pasteEndCol = max(c.column() for c in indexes)
-
         if len(indexes) < 1:
             # Nothing selected
             return
+
         # Parse the clipboard
         copyDataRows = QtGui.QApplication.clipboard().text().split('\n')
-
         if copyDataRows is None:
             # Nothing in the clipboard
             return
@@ -381,6 +423,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         table.blockSignals(False)
 
     def _setHeaderData(self, table):
+        """Sets the header labels based on column_config settings."""
         for i in range(0, len(self.headerLabels)):
             item = QtGui.QTableWidgetItem()
             table.setHorizontalHeaderItem(i, item)
@@ -388,25 +431,113 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             item.setText(self.headerLabels[i])
 
     def _setAlignment(self, item):
+        """Sets alignment for an item."""
         item.setTextAlignment(QtCore.Qt.AlignCenter)
 
     def _showAbout(self):
+        """Displays the about box from the help menu."""
         aboutMsgBox = QtGui.QMessageBox()
-        title = "FDF Utility v%s" % __version__
-        text = "FDF Utility - an application to format water quality field data " \
-            "for import to KISTERS Water Quality Module (KiWQM) water quality database.\n\n" \
-            "Author: %s\n\nVersion: %s\n\n" \
-            "(C) 2016 New South Wales Department of Industry\n\n" \
-            "For further information, contact the Data & Procedures Officer at DPI Water." \
+        title = u"FDF Utility v%s" % __version__
+        text = u"FDF Utility - an application to format water quality field data " \
+            u"for import to KISTERS Water Quality Module (KiWQM) water quality database.\n\n" \
+            u"Author: %s\n\nVersion: %s\n\n" \
+            u"(C) 2016 New South Wales Department of Industry\n\n" \
+            u"For further information, contact the Data & Procedures Officer at DPI Water." \
             % (__author__, __version__)
         aboutMsgBox.about(self, title, text)
 
     def _showHelp(self):
+        """Displays the HTML help documentation."""
         self.helpBrowser.show()
 
+    def ValidateExport(self):
+        """Validates the table data for completeness and for fitting to business rules"""
+        table = self.tableWidgetData
+        dataValid = True
+        rows = table.rowCount() - 1
+        columns = table.columnCount() - 1
+        sampleMeasProgColumn = functions.get_column_number('mp_number')
+        sampleMatrixColumn = functions.get_column_number('sample_matrix')
+        samplingNumberColumn = functions.get_column_number('sampling_number')
+        sampleCIDColumn = functions.get_column_number('sample_cid')
+        locationNumberColumn = functions.get_column_number('location_id')
+
+        # Test for presence of data
+        if rows <= 0:
+            dataValid = False
+            msg = u"There is no data to export! Please add data and try again."
+            return dataValid, msg
+
+        # Test for red cells (previously validated)
+        invalidColumns = []
+        for i in range(0, columns):
+            for j in range(0, rows):
+                if table.item(j, i).backgroundColor() == QtCore.Qt.red:
+                    invalidColumns.append(i)
+                    break
+
+        # Test for incomplete required fields
+        incompleteColumns = []
+        for i in range(0, columns):
+            if column_config[i]['required']:
+                for j in range(0, rows):
+                    if table.item(j, i).text() == "":
+                        incompleteColumns.append(i)
+                    break
+
+        # Test matrix consistency
+        matrixConsistent = functions.check_matrix_consistency(
+            table, sampleMeasProgColumn, sampleMatrixColumn, samplingNumberColumn
+        )
+
+        # Test sequence number validity
+        sequenceCorrect = functions.check_sequence_numbers(
+            table, sampleMeasProgColumn, sampleCIDColumn,
+            samplingNumberColumn, locationNumberColumn
+        )
+
+        # Prepare message for user
+        msg = u""
+        if invalidColumns:
+            dataValid = False
+            listOfColumnNames = u'\n'.join(column_config[k]['name'] for k in invalidColumns)
+            msg += u"The following columns have invalid values:\n" + listOfColumnNames
+
+        if incompleteColumns:
+            dataValid = False
+            listOfColumnNames = u'\n'.join(column_config[k]['name'] for k in incompleteColumns)
+            if not msg:
+                msg += u"\n\n"
+            msg += u"The following required columns have one or more empty values:\n" + listOfColumnNames
+
+        if not matrixConsistent:
+            dataValid = False
+            if not msg:
+                msg += u"\n\n"
+            msg += u"Matrix errors detected:\n" \
+                   u"More than one matrix has been defined for a single sampling event.\n" \
+                   u"Please ensure that only a single matrix is used for all samples in a " \
+                   u"sampling event (for primary and replicates) before exporting."
+
+        if not sequenceCorrect:
+            dataValid = False
+            if not msg:
+                msg += u"\n\n"
+            msg += u"Sequence number errors detected:\nOne or more problems have been " \
+                   u"detected with the provided sequence numbers. Please ensure that:\n" \
+                   u"- All samples in a single sampling event use distinct sequence numbers;\n" \
+                   u"- The first sample in all sampling events is 1;\n" \
+                   u"- All sequence numbers in a single sampling event increment sequentially." \
+                   u"\nA sampling event consists of all samples collected at the same station " \
+                   u"on the same date."
+
+        return dataValid, msg
+
     def _validateInput(self, item):
+        """Validates the input of data to a cell."""
         self.tableWidgetData.blockSignals(True)
         col = item.column()
+
         # Select correct validator
         if column_config[col]['name'] == 'date':
             validator = DateValidator()
@@ -419,12 +550,14 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         else:
             self.tableWidgetData.blockSignals(False)
             return
+
         # Validate item
         state, displayValue, returnInt = validator.validate(item.text(), col)
         if state == QtGui.QValidator.Intermediate:
             self.tableWidgetData.blockSignals(False)
             return
-        elif state != QtGui.QValidator.Acceptable:
+        elif state == QtGui.QValidator.Invalid:
+            # Prepare message to inform user of invalid value.
             paramName = column_config[col]['name']
             item.setText(displayValue)
             item.setBackgroundColor(QtCore.Qt.red)
@@ -455,13 +588,16 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             msg.setText(txt)
             msg.setWindowTitle(windowTitleTxt)
             msg.exec_()
-        else:
+        else:  # Valid value
             item.setText(displayValue)
             item.setBackgroundColor(QtCore.Qt.white)
 
         self.tableWidgetData.blockSignals(False)
 
 
+##############################################################################
+# Validator classes
+##############################################################################
 class DateValidator(QtGui.QValidator):
     def __init__(self):
         super(DateValidator, self).__init__()
@@ -472,75 +608,25 @@ class DateValidator(QtGui.QValidator):
             try:
                 displayValue = date.strftime(app_config['datetime_formats']['date']['display'])
             except ValueError:
+                # Invalid date error
                 displayValue = ""
                 state = QtGui.QValidator.Invalid
                 returnInt = 4
                 return state, displayValue, returnInt
             if date > datetime.datetime.now():
+                # Future date error
                 state = QtGui.QValidator.Invalid
                 returnInt = 3
             else:
                 state = QtGui.QValidator.Acceptable
                 returnInt = 0
         except DatetimeError:
+            # Invalid date error
             displayValue = ""
             state = QtGui.QValidator.Invalid
             returnInt = 4
 
         return state, displayValue, returnInt
-
-
-class TimeValidator(QtGui.QValidator):
-    def __init__(self):
-        super(TimeValidator, self).__init__()
-
-    def validate(self, testValue, col):
-        try:
-            time = functions.parse_datetime_from_string('01/01/1900', str(testValue))
-            try:
-                displayValue = time.strftime(app_config['datetime_formats']['time']['display'])
-                state = QtGui.QValidator.Acceptable
-                returnInt = 0
-            except ValueError:
-                displayValue = testValue
-                state = QtGui.QValidator.Invalid
-                returnInt = 4
-        except DatetimeError:
-            displayValue = testValue
-            state = QtGui.QValidator.Invalid
-            returnInt = 4
-
-        return state, displayValue, returnInt
-
-
-class ListValidator(QtGui.QValidator):
-    def __init__(self, column):
-        self.column = column
-        self.list = column_config[self.column]['list_items']
-        super(ListValidator, self).__init__()
-
-    def validate(self, testValue, p_int):
-        if testValue not in self.list:
-            if self.fixup(testValue) in self.list:
-                state = QtGui.QValidator.Acceptable
-                value = self.fixup(testValue)
-                returnInt = 0
-            elif testValue == "":
-                state = QtGui.QValidator.Intermediate
-                value = testValue
-                returnInt = 0
-            else:
-                state = QtGui.QValidator.Invalid
-                value = testValue
-                returnInt = 2
-        else:
-            state = QtGui.QValidator.Acceptable
-            value = testValue
-            returnInt = 0
-        return state, value, returnInt
-
-    def fixup(self, input):
-        return str(input).upper()
 
 
 class DoubleFixupValidator(QtGui.QDoubleValidator):
@@ -580,116 +666,68 @@ class DoubleFixupValidator(QtGui.QDoubleValidator):
         return state, str(value), returnInt
 
     def fixup(self, input):
+        """Rounds value to precision specified in column_config."""
         return round(float(input), self.decimals)
 
 
-def exportValidator(table):
-    table = table
-    rows = table.rowCount() - 1
-    columns = table.columnCount() - 1
-    dataValid = True
-    sampleMeasProgColumn = functions.get_column_number('mp_number')
-    sampleMatrixColumn = functions.get_column_number('sample_matrix')
-    samplingNumberColumn = functions.get_column_number('sampling_number')
-    sampleCIDColumn = functions.get_column_number('sample_cid')
-    locationNumberColumn = functions.get_column_number('location_id')
-    # Test for presence of data
-    if rows <= 0:
-        dataValid = False
-        msg = "There is no data to export! Please add data and try again."
-        return dataValid, msg
-    # Test for red cells (previously validated)
-    invalidColumns = []
-    for i in range(0, columns):
-        for j in range(0, rows):
-            if table.item(j, i).backgroundColor() == QtCore.Qt.red:
-                invalidColumns.append(i)
-                break
-    # Test incomplete_fields:
-    incompleteColumns = []
-    for i in range(0, columns):
-        if column_config[i]['required'] is True:
-            for j in range(0, rows):
-                if table.item(j, i).text() == "":
-                    incompleteColumns.append(i)
-                break
-    # Test matrix consistency
-    matrixConsistent = functions.check_matrix_consistency(table, sampleMeasProgColumn,
-                                                          sampleMatrixColumn, samplingNumberColumn)
-    # Test sequence number validity
-    sequenceCorrect = functions.check_sequence_numbers(table, sampleMeasProgColumn,
-                                                       sampleCIDColumn, samplingNumberColumn, locationNumberColumn)
-    # Prepare message for user
-    msg = ""
-    if invalidColumns:
-        listOfColumnNames = '\n'.join(column_config[k]['name']for k in invalidColumns)
-        msg += "The following columns have invalid values:\n" + listOfColumnNames
-        dataValid = False
+class ListValidator(QtGui.QValidator):
+    def __init__(self, column):
+        self.column = column
+        self.list = column_config[self.column]['list_items']
+        super(ListValidator, self).__init__()
 
-    if incompleteColumns:
-        listOfColumnNames = '\n'.join(column_config[k]['name']for k in incompleteColumns)
-        if msg != "":
-            msg += "\n\n"
-        msg += "The following required columns have one or more empty values:\n" + listOfColumnNames
-        dataValid = False
+    def validate(self, testValue, p_int):
+        if testValue not in self.list:
+            if self.fixup(testValue) in self.list:
+                state = QtGui.QValidator.Acceptable
+                value = self.fixup(testValue)
+                returnInt = 0
+            elif testValue == "":
+                state = QtGui.QValidator.Intermediate
+                value = testValue
+                returnInt = 0
+            else:
+                state = QtGui.QValidator.Invalid
+                value = testValue
+                returnInt = 2
+        else:
+            state = QtGui.QValidator.Acceptable
+            value = testValue
+            returnInt = 0
+        return state, value, returnInt
 
-    if matrixConsistent is False:
-        if msg != "":
-            msg += "\n\n"
-        msg += "Matrix errors detected:\n" \
-               "More than one matrix has been defined for a single sampling event.\n" \
-               "Please ensure that only a single matrix is used for all samples in a " \
-               "sampling event (for primary and replicates) before exporting."
-        dataValid = False
-
-    if sequenceCorrect is False:
-        if msg != "":
-            msg += "\n\n"
-        msg += "Sequence number errors detected:\nOne or more problems have been " \
-               "detected with the provided sequence numbers. Please ensure that:\n" \
-               "- All samples in a single sampling event use distinct sequence numbers;\n" \
-               "- The first sample in all sampling events is 1;\n" \
-               "- All sequence numbers in a single sampling event increment sequentially." \
-               "\nA sampling event consists of all samples collected at the same station " \
-               "on the same date."
-        dataValid = False
-
-    return dataValid, msg
+    def fixup(self, input):
+        return str(input).upper()
 
 
-class filteredComboBox(QtGui.QComboBox):
-    # create returnPressed signal
-    returnPressed = QtCore.pyqtSignal()
+class TimeValidator(QtGui.QValidator):
+    def __init__(self):
+        super(TimeValidator, self).__init__()
 
-    def __init__(self, parent):
-        super(filteredComboBox, self).__init__(parent)
-        self.setFocusPolicy(QtCore.Qt.StrongFocus)
-        self.setEditable(True)
-        # add a filter model to filter matching items
-        self.pFilterModel = QtGui.QSortFilterProxyModel(self)
-        self.pFilterModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
-        self.pFilterModel.setSourceModel(self.model())
-        # add a completer, which uses the filter model
-        self.completer = QtGui.QCompleter(self.pFilterModel, self)
-        # always show all (filtered) completions
-        self.completer.setCompletionMode(QtGui.QCompleter.UnfilteredPopupCompletion)
-        self.setCompleter(self.completer)
+    def validate(self, testValue, col):
+        try:
+            time = functions.parse_datetime_from_string('01/01/1900', str(testValue))
+            try:
+                displayValue = time.strftime(app_config['datetime_formats']['time']['display'])
+                state = QtGui.QValidator.Acceptable
+                returnInt = 0
+            except ValueError:
+                # Invalid time error
+                displayValue = testValue
+                state = QtGui.QValidator.Invalid
+                returnInt = 4
+        except DatetimeError:
+            # Invalid time error
+            displayValue = testValue
+            state = QtGui.QValidator.Invalid
+            returnInt = 4
 
-        # connect signals
-        def filter(text):
-            self.pFilterModel.setFilterFixedString(str(text))
-
-        self.lineEdit().textEdited[unicode].connect(filter)
-        self.completer.activated.connect(self.on_completer_activated)
-
-    # on selection of an item from the completer, select the corresponding item from combobox
-    def on_completer_activated(self, text):
-        if text:
-            index = self.findText(str(text))
-            self.setCurrentIndex(index)
-            self.returnPressed.emit()
+        return state, displayValue, returnInt
 
 
+##############################################################################
+# Style delegates
+##############################################################################
 class listColumnItemDelegate(QtGui.QStyledItemDelegate):
     def __init__(self):
         super(listColumnItemDelegate, self).__init__()
@@ -718,7 +756,49 @@ class listColumnItemDelegate(QtGui.QStyledItemDelegate):
         self.closeEditor.emit(editor, QtGui.QAbstractItemDelegate.NoHint)
 
 
-# -----------------------------------------------------------------------------
+##############################################################################
+# Widgets
+##############################################################################
+class filteredComboBox(QtGui.QComboBox):
+    """
+    Creates a combo box that filters the available options based on user
+    input, in a similar way to jQuery.
+    """
+    # create returnPressed signal
+    returnPressed = QtCore.pyqtSignal()
+
+    def __init__(self, parent):
+        super(filteredComboBox, self).__init__(parent)
+        self.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.setEditable(True)
+        # Add a filter model to filter matching items
+        self.pFilterModel = QtGui.QSortFilterProxyModel(self)
+        self.pFilterModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        self.pFilterModel.setSourceModel(self.model())
+        # Add a completer, which uses the filter model
+        self.completer = QtGui.QCompleter(self.pFilterModel, self)
+        # Always show all (filtered) completions
+        self.completer.setCompletionMode(QtGui.QCompleter.UnfilteredPopupCompletion)
+        self.setCompleter(self.completer)
+
+        # Connect signals
+        def filter(text):
+            self.pFilterModel.setFilterFixedString(str(text))
+
+        self.lineEdit().textEdited[unicode].connect(filter)
+        self.completer.activated.connect(self.onCompleterActivated)
+
+    # On selection of an item from the completer, select the corresponding item from combobox
+    def onCompleterActivated(self, text):
+        if text:
+            index = self.findText(str(text))
+            self.setCurrentIndex(index)
+            self.returnPressed.emit()
+
+
+##############################################################################
+# Main application
+##############################################################################
 def main():
     """
     Run the Field Data Formatter app
@@ -729,6 +809,5 @@ def main():
     sys.exit(app.exec_())
 
 
-# -----------------------------------------------------------------------------
 if __name__ == "__main__":
     main()
