@@ -23,14 +23,17 @@ Functions:
 Main: Runs the Field Data Formatter app.
 """
 
+# Standard library imports
 import datetime
 import os
 import sys
 import urllib2
 
+# Related third party imports
 import yaml
 from PyQt4 import QtGui, QtCore
 
+# Local application imports
 import fdfGui
 import functions
 from functions import DatetimeError, ValidityError

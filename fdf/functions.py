@@ -7,31 +7,38 @@ import file for KiWQM.
 Author: Daniel Harris
 Title: Data & Procedures Officer
 Organisation: DPI Water
-Date modified: 13/10/2015
+Date modified: 27/09/2016
+
+External dependencies: dateutil
 
 Exceptions:
 DatetimeError: Custom exception for date and time format errors
+ValidityError: Custom exception for file format errors
 
 Functions:
+check_date_validity
 check_file_validity: check the validity of the instrument file
+check_matrix_consistency: check that each sampling only uses a single matrix
+check_sequence_numbers: check validitiy of sequence numbers in a sampling
 load_instrument_file: load the instrument file to memory
-load_manual_entry: prepare an empty dictionary for manual data entry
-parse_time_from_string: format a time string
-parse_date_from_string: format a date string
-get_sampling_time: get the sampling time from a group of samples
-get_sampling_number: generate the sampling number for a sample
+lord2lorl: transform data from a list of dictionaries to a list of lists
+lorl2lord: transform data from a list of lists to a list of dictionaries
+get_column_number: get the column number for the table instance of a
+    parameter or metadata field
+get_column_title: get the display name for a required field
 get_fraction_number: generate the field fraction number for a sample
 get_new_dict_key: update the dictionary key to a friendlier version
 get_parameter_unit: get the parameter code for a variable
-get_column_title: get the display name for a required field
-get_parameter_name: get the display name for a parameter
-check_data_completeness: check that required fields are not empty
-check_matrix_consistency: check that each sampling only uses a single matrix
-check_data_zero_values: check that parameter values are not zero
-prepare_dictionary: transform the data to parameter-oriented format
-write_to_csv: write the data to a dictionary for import to KiWQM
+get_replicate_number: get the replicate number corresponding to the sample type
+get_sampling_number: generate the sampling number for a sample
+get_sampling_time: get the sampling time for a group of samples
+parse_datetime_from_string: parse a datetime object from a string representation
+prepare_dictionary: transform the data set to a list of dictionaries
+resource_path: get absolute path to resource for PyInstaller
+write_to_csv: write the data to a csv file for import to KiWQM
 """
-# TODO: Finalise doc string of functions.py and remove unnecessary files from package
+
+# Standard library imports
 import codecs
 import copy
 import csv
@@ -41,8 +48,10 @@ import os
 import re
 import sys
 
+# Related third party imports
 from dateutil.parser import parse
 
+# Local application imports
 from configuration import app_config, column_config, station_list
 
 __author__ = 'Daniel Harris'
