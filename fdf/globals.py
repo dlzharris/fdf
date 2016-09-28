@@ -89,6 +89,36 @@ MP_NUMBERS = ["MP406",
 
 # Instrument names as variables
 HYDROLAB_INSTRUMENTS = ["Hydrolab DS5", "Hydrolab MS4", "Hydrolab MS5"]
+YSI_INSTRUMENTS = ["EXO"]
+
+# Display column order
+COL_ORDER = [
+    "mp_number",
+    "station_number",
+    "date",
+    "sample_time",
+    "sampling_number",
+    "location_id",
+    "sample_cid",
+    "sample_matrix",
+    "sample_type",
+    #"collection_method",
+    "calibration_record",
+    "sampling_instrument",
+    "sampling_officer",
+    "sample_collected",
+    "depth_upper",
+    "depth_lower",
+    "do",
+    "do_sat",
+    "ph",
+    "temp_c",
+    "conductivity_uncomp",
+    "conductivity_comp",
+    "turbidity",
+    "water_depth",
+    "gauge_height",
+    "sampling_comment"]
 
 # Required fields for export
 REQUIRED_FIELDS = [
@@ -123,7 +153,7 @@ FIELDNAMES = [
     'date',
     'event_time',
     'sample_matrix',
-    'sample_type',
+    #'sample_type',
     'calibration_record',
     'sampling_reason',
     'sampling_officer',
@@ -196,3 +226,30 @@ PRECISION = {
     'turbidity': 2,
     'water_depth': 2,
     'gauge_height': 2}
+
+COL_NUM = {
+    'MP_NUMBER': 0,
+    'STATION_NUMBER': 1,
+    'DATE': 2,
+    'SAMPLE_TIME': 3,
+    'SAMPLING_NUMBER': 4,
+    'LOCATION_ID': 5,
+    'SAMPLE_CID': 6,
+    'SAMPLE_MATRIX': 7,
+    'SAMPLE_TYPE': 8,
+    'CALIBRATION_RECORD': 9,
+    'SAMPLING_INSTRUMENT': 10,
+    'SAMPLING_OFFICER': 11,
+    'SAMPLE_COLLECTED': 12,
+    'DEPTH_UPPER': 13,
+    'DEPTH_LOWER': 14,
+    'DO': 15,
+    'DO_SAT': 16,
+    'PH': 17,
+    'TEMP_C': 18,
+    'CONDUCTIVITY_UNCOMP': 19,
+    'CONDUCTIVITY_COMP': 20,
+    'TURBIDITY': 21,
+    'WATER_DEPTH': 22,
+    'GAUGE_HEIGHT': 23,
+    'SAMPLING_COMMENT': 24}

@@ -1,0 +1,202 @@
+ # Column configuration
+0: 
+  name: mp_number
+  display_name: MP#
+  allow_zero: yes
+  required: yes
+  list_items: [MP406, MP409, MP418, MP420, MP424, MP430, MP433, MP479, MP514, MP516, MP639, MP676, MP699, MP709, MP720, MP721]
+1:
+  name: station_number
+  display_name: Station#
+  allow_zero: yes
+  required: yes
+2:
+  name: date
+  display_name: Date
+  allow_zero: yes
+  required: yes
+3:
+  name: time
+  display_name: Time
+  allow_zero: yes
+  required: yes
+4:
+  name: sampling_number
+  display_name: Sampling ID
+  allow_zero: yes
+  required: no
+5:
+  name: location_id
+  display_name: Location#
+  allow_zero: yes
+  required: yes
+6:
+  name: sample_cid
+  display_name: Sequence#
+  allow_zero: yes
+  required: yes
+7:
+  name: sample_matrix
+  display_name: Matrix
+  allow_zero: yes
+  required: yes
+  list_items: [ST, SG, GB, GP, PR]
+8:
+  name: collection_method
+  display_name: Collection method
+  allow_zero: yes
+  required: yes
+  list_items: [MG, MB, MP, MD, MS, RS, AU, BA, PG]
+9:
+  name: sample_type
+  display_name: Sample type
+  allow_zero: yes
+  required: yes
+  list_items: [P, R, D, T, QR, QB, QT]
+10:
+  name: calibration_record
+  display_name: Calibration record
+  allow_zero: yes
+  required: no
+11:
+  name: sampling_instrument
+  display_name: Instrument
+  allow_zero: yes
+  required: yes
+  list_items: [Hydrolab DS5, Hydrolab MS4, Hydrolab MS5, EXO]
+12:
+  name: turbidity_instrument
+  display_name: Turbidimeter
+  allow_zero: yes
+  required: no
+  list_items: [HACH Turbidimeter 2100P, HACH Turbidimeter 2100Q]
+13:
+  name: sampling_officer
+  display_name: Sampling officer
+  allow_zero: yes
+  required: yes
+  list_items:
+    - Alison Lewis
+    - Andy Wise
+    - Brad Mouat
+    - Claire Evans
+    - Dan Poflotski
+    - Dane Clarke
+    - Daniel Irving
+    - Darice Pepper
+    - David Donnelly
+    - Dean Jukes
+    - Gerhard Schulz
+    - Gordon Honeyman
+    - James Hitchcock
+    - Jane Rowlands
+    - Luke Cruikshank
+    - Maxine Rowley
+    - Michael Rowe
+    - Monika Muschal
+    - Peter Klowss
+    - Phillip Cocks
+    - Sarah McGeoch
+    - Skye Taylor
+    - Sue Botting
+    - Tracy Fulford
+    - Warwick Mawhinney
+14:
+  name: sample_collected
+  display_name: Sample collected
+  allow_zero: yes
+  required: no
+  list_items: ['Yes', 'No']
+15:
+  name: depth_upper
+  display_name: Depth upper (m)
+  allow_zero: yes
+  required: yes
+  lower_limit: 0
+  upper_limit: 50
+  precision: 2
+16:
+  name: depth_lower
+  display_name: Depth lower (m)
+  allow_zero: yes
+  required: no
+  lower_limit: 0
+  upper_limit: 50
+  precision: 2
+17:
+  name: do
+  display_name: DO (mg/L)
+  allow_zero: no
+  required: no
+  lower_limit: 0
+  upper_limit: 50
+  precision: 2
+18:
+  name: do_sat
+  display_name: DO (% sat)
+  allow_zero: no
+  required: no
+  lower_limit: 0
+  upper_limit: 200
+  precision: 2
+19:
+  name: ph
+  display_name: pH
+  allow_zero: no
+  required: no
+  lower_limit: 0
+  upper_limit: 14
+  precision: 2
+20:
+  name: temp_c
+  display_name: Temp (deg C)
+  allow_zero: no
+  required: no
+  lower_limit: 0
+  upper_limit: 50
+  precision: 2
+21:
+  name: conductivity_uncomp
+  display_name: EC (uS/cm)
+  allow_zero: no
+  required: no
+  lower_limit: 0
+  upper_limit: 5000000
+  precision: 1
+22:
+  name: conductivity_comp
+  display_name: EC@25 (uS/cm)
+  allow_zero: no
+  required: no
+  lower_limit: 0
+  upper_limit: 5000000
+  precision: 1
+23:
+  name: turbidity
+  display_name: Turbidity (NTU)
+  allow_zero: no
+  required: no
+  lower_limit: 0
+  upper_limit: 5000
+  precision: 2
+24:
+  name: water_depth
+  display_name: Water depth (m)
+  allow_zero: yes
+  required: no
+  lower_limit: 0
+  upper_limit: 200
+  precision: 2
+25:
+  name: gauge_height
+  display_name: Gauge height (m)
+  allow_zero: yes
+  required: no
+  lower_limit: -300
+  upper_limit: 1000
+  precision: 2
+26:
+  name: sampling_comment
+  display_name: Comments
+  allow_zero: yes
+  required: no
