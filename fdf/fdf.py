@@ -132,6 +132,8 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                     if state == QtGui.QValidator.Invalid:
                         item.setBackgroundColor(QtCore.Qt.red)
                         errorsFound = True
+                    else:
+                        item.setText(displayValue)
                 except KeyError:
                     pass
 
