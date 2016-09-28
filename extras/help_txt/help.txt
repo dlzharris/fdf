@@ -114,6 +114,12 @@ Three buttons are provided in the data entry screen to facilitate easy data edit
 |                        | list. Code definitions are provided in                       |                  |
 |                        | [Code definitions](#matrix-codes) below.                     |                  |
 +------------------------+--------------------------------------------------------------+------------------+
+| Collection method      | Indicates the method by which the sample was collected.      | Y                |
+|						 | This field must be populated with one of the acceptable      |                  |
+|						 | values from the controlled list. Code definitions are        |                  |
+|						 | provided in [Code definitions](#collection-method-codes)     |                  |
+|						 | below.                                                       |                  | 
++------------------------+--------------------------------------------------------------+------------------+
 | Sample type            | Indicates whether the sample is a primary sample or some     | Y                |
 |                        | kind of quality control sample. This field must be populated |                  |
 |                        | with one of the acceptable values from the controlled        |                  |
@@ -183,6 +189,22 @@ The following columns are available for data collected in the field.
 | GP   | Piezometer            |
 | PR   | Precipitation -- rain |
 | PS   | Precipitation -- snow |
+
+
+###Collection method codes<a name="collection-method-codes"></a>
+| Code | Definition           |
+|:-----|:---------------------|
+| MG   | Manual grab          |      
+| MB   | Manual bucket        |       
+| MP   | Manual pole          |      
+| MD   | Manual depth         |        
+| MS   | Manual sampling tube |       
+| RS   | Rising stage sampler |    
+| AU   | Automatic sampler    |      
+| AG   | Garnet               |        
+| AM   | Manning              |      
+| BA   | Bailer               |       
+| PG   | Micropurge           |          
 
 
 ###Sample type codes<a name="sample-type-codes"></a>
