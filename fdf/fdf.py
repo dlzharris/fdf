@@ -98,12 +98,17 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         if event.Reason() == QtGui.QContextMenuEvent.Mouse:
             menu = QtGui.QMenu(self)
             menu.addAction(u"Copy", self.copy, QtGui.QKeySequence.Copy)
+            menu.addAction(u"Cut", self.copy, QtGui.QKeySequence.Cut)
             menu.addAction(u"Paste", self.paste, QtGui.QKeySequence.Paste)
             menu.popup(QtGui.QCursor.pos())
 
     def keyPressEvent(self, event):
         if event.matches(QtGui.QKeySequence.Copy):
             self.copy()
+        elif event.matches(QtGui.QKeySequence.Cut):
+            self.cut()
+        elif event.matches(QtGui.QKeySequence.Delete):
+            self.delete()
         elif event.matches(QtGui.QKeySequence.Paste):
             self.paste()
         elif event.key() in (QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return):
@@ -281,6 +286,31 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             if r != max(rows):
                 text += '\n'
         QtGui.QApplication.clipboard().setText(text)
+        return rows, cols
+
+    def cut(self):
+        """Implements Excel-style cut."""
+        # Copy the selected cells
+        rows, cols = self.copy()
+        for r in range(min(rows), max(rows) + 1):
+            for c in range(min(cols), max(cols) + 1):
+                self.tableWidgetData.item(r, c).setText("")
+
+    def delete(self):
+        """Deletes data from currently selected cells."""
+        # Find the selected cells
+        selection = self.tableWidgetData.selectionModel()
+        indexes = selection.selectedIndexes()
+        if len(indexes) < 1:
+            # Nothing selected
+            return
+
+        # Start deleting
+        rows = [r.row() for r in indexes]
+        cols = [c.column() for c in indexes]
+        for r in range(min(rows), max(rows) + 1):
+            for c in range(min(cols), max(cols) + 1):
+                self.tableWidgetData.item(r, c).setText("")
 
     def delRows(self):
         """Deletes selected rows from the table."""
