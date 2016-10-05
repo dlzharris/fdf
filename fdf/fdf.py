@@ -42,8 +42,8 @@ from configuration import app_config, column_config
 __author__ = 'Daniel Harris'
 __date__ = '27 October 2016'
 __email__ = 'daniel.harris@dpi.nsw.gov.au'
-__status__ = 'Production'
-__version__ = '0.9.1'
+__status__ = 'Development'
+__version__ = '0.9.2'
 
 
 ###############################################################################
