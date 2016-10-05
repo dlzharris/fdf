@@ -406,6 +406,11 @@ def load_instrument_file(instrument_file, file_source):
 
             # Update station number
             try:
+                # Change station number to a string if it has been coerced to a float
+                try:
+                    new_line['station_number'] = str(int(new_line['station_number']))
+                except ValueError:
+                    pass
                 if new_line['station_number'].split(' ', 1)[0] in station_list:
                     station_number = new_line['station_number'].split(' ', 1)[0]
                 else:
