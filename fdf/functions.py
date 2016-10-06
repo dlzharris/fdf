@@ -360,8 +360,12 @@ def load_instrument_file(instrument_file, file_source):
         d = islice(f, data_start_row, n)
         # Strip any trailing commas (generated in Excel) from the end of the line)
         ls = []
+        conductivity_is_compensated = False
         for i in d:
             i = i.replace(",\r\n", "")
+            # Find if Hydrolab is using compensated or uncompensated conductivity
+            if "~" in i:
+                conductivity_is_compensated = True
             ls.append(i)
         # Create the reader object to parse data into dictionaries and the data container list
         reader = csv.DictReader(
@@ -384,6 +388,9 @@ def load_instrument_file(instrument_file, file_source):
             for item in line:
                 try:
                     new_line[get_new_dict_key(item)] = float(line[item])
+                    if all([file_source in app_config['sources']['hydrolab'],
+                            conductivity_is_compensated is True, item == "SpCond"]):
+                        new_line['conductivity_uncomp'] = new_line.pop('conductivity_comp')
                 except ValueError:
                     try:
                         new_line[get_new_dict_key(item)] = line[item]
