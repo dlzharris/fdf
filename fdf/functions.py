@@ -719,6 +719,7 @@ def prepare_dictionary(data_list):
         max_depth = float(sample['depth_upper']) + rep_depth_tolerance
         reps_in_sampling = [r['sample_time'] for r in data_list if
                             r['sampling_number'] == sample['sampling_number'] and
+                            r['location_id'] == sample['location_id'] and
                             r['sample_type'] == sample['sample_type'] and
                             min_depth <= float(r['depth_upper']) <= max_depth]
         if len(reps_in_sampling) > 1:
