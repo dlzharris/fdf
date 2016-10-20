@@ -170,7 +170,8 @@ def check_matrix_consistency(table, col_mp_number, col_sample_matrix, col_sampli
     return matrix_consistent
 
 
-def check_sequence_numbers(table, col_mp_number, col_sample_cid, col_sampling_number, col_location_number):
+def check_sequence_numbers(table, col_mp_number, col_sample_cid, col_sampling_number,
+                           col_location_number, col_sample_collected):
     """
     Checks that all samples in a single sampling use distinct sequence
     numbers and that they start at 1 and increment sequentially.
@@ -190,17 +191,19 @@ def check_sequence_numbers(table, col_mp_number, col_sample_cid, col_sampling_nu
                 (table.item(row, col_mp_number).text(),
                  table.item(row, col_sample_cid).text(),
                  table.item(row, col_sampling_number).text(),
-                 table.item(row, col_location_number).text())
+                 table.item(row, col_location_number).text(),
+                 table.item(row, col_sample_collected).text())
             )
 
         for sample in sequence_list:
             # Get a list of all sequence numbers at a single location in a
             # single sampling.
             sequence_numbers = [
-                int(s) for (m, s, n, l) in sequence_list if
+                int(s) for (m, s, n, l, c) in sequence_list if
                 m == sample[0] and
                 n == sample[2] and
-                l == sample[3]
+                l == sample[3] and
+                c != "No"
             ]
             # Check that sequence numbers in a single sampling are distinct,
             # start at 1, and increment sequentially
@@ -702,9 +705,23 @@ def prepare_dictionary(data_list):
             raise
     # Each item in the list is a single dictionary representing a single sample
     for sample in data_list:
-        # Get the sampling event time and replicate number
+        # Get the sampling event time
         sample['event_time'] = get_sampling_time(data_list, sample['station_number'], sample['date'])
+
+        # If no sample or data was collected, prepare a shortened dictionary
+        if sample['sample_collected'] == 'No':
+            sample_param_oriented = copy.deepcopy(sample)
+            sample_param_oriented["parameter"] = 'no_results_available'
+            sample_param_oriented["value"] = True
+            sample_param_oriented["units"] = 'SCAL'
+            sample_param_oriented["method"] = 'NULL_METHOD'
+            # Add the dictionary to the parameter-oriented container
+            data_list_param_oriented.append(sample_param_oriented)
+            continue
+
+        # Get replicate number
         sample['replicate_number'] = get_replicate_number(sample['sample_type'])
+
         # Assign the static fraction information to the sample
         sample['fraction_lab_shortname'] = app_config['key_value_settings']['field_fraction_lab_shortname']
         sample['fraction_data_source'] = app_config['key_value_settings']['field_fraction_data_source']

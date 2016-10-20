@@ -508,6 +508,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         samplingNumberColumn = functions.get_column_number('sampling_number')
         sampleCIDColumn = functions.get_column_number('sample_cid')
         locationNumberColumn = functions.get_column_number('location_id')
+        sampleCollectedColumn = functions.get_column_number('sample_collected')
 
         # Test for presence of data
         if rows <= 0:
@@ -528,6 +529,10 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         for i in range(0, columns):
             if column_config[i]['required']:
                 for j in range(0, rows):
+                    if table.item(j, sampleCollectedColumn).text() == "No":
+                        if column_config[i]['required_if_not_sampled']:
+                            incompleteColumns.append(i)
+                        break
                     if table.item(j, i).text() == "":
                         incompleteColumns.append(i)
                     break
@@ -540,7 +545,8 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         # Test sequence number validity
         sequenceCorrect = functions.check_sequence_numbers(
             table, sampleMeasProgColumn, sampleCIDColumn,
-            samplingNumberColumn, locationNumberColumn
+            samplingNumberColumn, locationNumberColumn,
+            sampleCollectedColumn
         )
 
         # Prepare message for user
