@@ -366,6 +366,7 @@ def load_instrument_file(instrument_file, file_source):
         conductivity_is_compensated = False
         for i in d:
             i = i.replace(",\r\n", "")
+            i = i.replace(u'\xb0', "")
             # Find if Hydrolab is using compensated or uncompensated conductivity
             if "~" in i:
                 conductivity_is_compensated = True
@@ -378,6 +379,7 @@ def load_instrument_file(instrument_file, file_source):
         # Initialise the data container
         data = []
         # Change the keys to our standard key values and remove items that are not relevant
+        # TODO: Ignore coordinates if they use degrees minutes and seconds
         for line in reader:
             try:
                 sample_dt = parse_datetime_from_string(line['Date'], line['Time'])
@@ -392,7 +394,7 @@ def load_instrument_file(instrument_file, file_source):
                 try:
                     new_line[get_new_dict_key(item)] = float(line[item])
                     if all([file_source in app_config['sources']['hydrolab'],
-                            conductivity_is_compensated is True, item == "SpCond"]):
+                            conductivity_is_compensated, item == "SpCond"]):
                         new_line['conductivity_uncomp'] = new_line.pop('conductivity_comp')
                 except ValueError:
                     try:
@@ -451,6 +453,7 @@ def load_instrument_file(instrument_file, file_source):
             new_line['location_id'] = ""
             new_line['collection_method'] = ""
             new_line['calibration_record'] = ""
+            new_line['station_visited'] = ""
             new_line['sample_collected'] = ""
             new_line['depth_lower'] = ""
             new_line['sampling_comment'] = ""

@@ -52,6 +52,7 @@ column_order:
   - sampling_instrument
   - turbidity_instrument
   - sampling_officer
+  - station_visited
   - sample_collected
   - depth_upper
   - depth_lower
@@ -85,6 +86,7 @@ csv_fieldnames:
   - sample_time
   - depth_upper
   - depth_lower
+  - station_visited
   - sample_collected
   - fraction_lab_shortname  # Static text
   - fraction_data_source  # Static text
