@@ -1,4 +1,17 @@
- # Column configuration
+ # FDF Column configuration
+ # ------------------------
+ # Notes:
+ # 1. This configuration file is written in standard YAML syntax. The file
+ #    imports to the app as a dictionary with the key for each entry
+ #    representing the column number as it is displayed in FDF. Column numbers
+ #    are zero-indexed and move from left to right.
+ # 2. Precisions are taken from the manufacturer's specifications for the
+ #    EXO, DS5 and Hach Turbidimeter instruments. Precisions are the same
+ #    for both EXO and DS5 with the exception of temperature, which is to
+ #    3 DP for the EXO and to 2 DP for the DS5. The precision for temperature
+ #    has been set to 3 DP for both these instruments in the interests of
+ #    expediency and keeping the code as simple as possible.
+
 0: 
   name: mp_number
   display_name: MP#
@@ -133,7 +146,7 @@
   required_if_not_sampled: no
   lower_limit: 0
   upper_limit: 50
-  precision: 2
+  precision: 3
 17:
   name: depth_lower
   display_name: Depth lower (m)
@@ -142,7 +155,7 @@
   required_if_not_sampled: no
   lower_limit: 0
   upper_limit: 50
-  precision: 2
+  precision: 3
 18:
   name: do
   display_name: DO (mg/L)
@@ -160,7 +173,7 @@
   required_if_not_sampled: no
   lower_limit: 0
   upper_limit: 200
-  precision: 2
+  precision: 1
 20:
   name: ph
   display_name: pH
@@ -178,7 +191,7 @@
   required_if_not_sampled: no
   lower_limit: 0
   upper_limit: 50
-  precision: 2
+  precision: 3
 22:
   name: conductivity_uncomp
   display_name: EC (uS/cm)
@@ -187,7 +200,7 @@
   required_if_not_sampled: no
   lower_limit: 0
   upper_limit: 5000000
-  precision: 1
+  precision: 4
 23:
   name: conductivity_comp
   display_name: EC@25 (uS/cm)
@@ -196,7 +209,7 @@
   required_if_not_sampled: no
   lower_limit: 0
   upper_limit: 5000000
-  precision: 1
+  precision: 4
 24:
   name: turbidity
   display_name: Turbidity (NTU)
@@ -214,7 +227,7 @@
   required_if_not_sampled: no
   lower_limit: 0
   upper_limit: 200
-  precision: 2
+  precision: 3
 26:
   name: gauge_height
   display_name: Gauge height (m)
@@ -223,7 +236,7 @@
   required_if_not_sampled: no
   lower_limit: -300
   upper_limit: 1000
-  precision: 2
+  precision: 3
 27:
   name: sampling_comment
   display_name: Comments
