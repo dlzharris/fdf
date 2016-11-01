@@ -113,8 +113,10 @@
     - Dean Jukes
     - Gerhard Schulz
     - Gordon Honeyman
+    - Harry Philp
     - James Hitchcock
     - Jane Rowlands
+    - Jason McInnes
     - Luke Cruikshank
     - Maxine Rowley
     - Michael Rowe
@@ -219,6 +221,16 @@
   precision: 4
   unit_code: MISC
 24:
+  name: barometric_pressure
+  display_name: BP (Torr)
+  allow_zero: yes
+  required: no
+  required_if_not_sampled: no
+  lower_limit: 0
+  upper_limit: 10000
+  precision: 3
+  unit_code: MMHG
+25:
   name: turbidity
   display_name: Turbidity (NTU)
   allow_zero: no
@@ -228,7 +240,7 @@
   upper_limit: 5000
   precision: 2
   unit_code: NTU
-25:
+26:
   name: water_depth
   display_name: Water depth (m)
   allow_zero: yes
@@ -238,7 +250,7 @@
   upper_limit: 200
   precision: 3
   unit_code: M
-26:
+27:
   name: gauge_height
   display_name: Gauge height (m)
   allow_zero: yes
@@ -248,7 +260,7 @@
   upper_limit: 1000
   precision: 3
   unit_code: M
-27:
+28:
   name: sampling_comment
   display_name: Comments
   allow_zero: yes

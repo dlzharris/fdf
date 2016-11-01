@@ -461,6 +461,8 @@ def load_instrument_file(instrument_file, file_source):
             new_line['gauge_height'] = ""
             new_line['turbidity'] = ""
             new_line['water_depth'] = ""
+            if 'barometric_pressure' not in new_line:
+                new_line['barometric_pressure'] = ""
             if 'conductivity_comp' not in new_line:
                 new_line['conductivity_comp'] = ""
             if 'conductivity_uncomp' not in new_line:
@@ -587,7 +589,8 @@ def get_new_dict_key(key):
         "User ID": "sampling_officer",
         "SPC-uS/cm": "conductivity_comp",
         "C-uS/cm": "conductivity_uncomp",
-        "DEP m": "depth_upper"
+        "DEP m": "depth_upper",
+        "mmHg": "barometric_pressure"
     }
     return new_keys[key]
 

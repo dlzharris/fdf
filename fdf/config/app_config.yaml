@@ -33,6 +33,7 @@ parameters:
   - gauge_height
   - ph
   - temp_c
+  - barometric_pressure
   - turbidity
   - water_depth
 
@@ -62,6 +63,7 @@ column_order:
   - temp_c
   - conductivity_uncomp
   - conductivity_comp
+  - barometric_pressure
   - turbidity
   - water_depth
   - gauge_height
