@@ -147,6 +147,7 @@
   lower_limit: 0
   upper_limit: 50
   precision: 3
+  unit_code: M
 17:
   name: depth_lower
   display_name: Depth lower (m)
@@ -156,6 +157,7 @@
   lower_limit: 0
   upper_limit: 50
   precision: 3
+  unit_code: M
 18:
   name: do
   display_name: DO (mg/L)
@@ -165,6 +167,7 @@
   lower_limit: 0
   upper_limit: 50
   precision: 2
+  unit_code: MGL
 19:
   name: do_sat
   display_name: DO (% sat)
@@ -174,6 +177,7 @@
   lower_limit: 0
   upper_limit: 200
   precision: 1
+  unit_code: WISKI_PSAT
 20:
   name: ph
   display_name: pH
@@ -183,6 +187,7 @@
   lower_limit: 0
   upper_limit: 14
   precision: 2
+  unit_code: SCAL
 21:
   name: temp_c
   display_name: Temp (deg C)
@@ -192,6 +197,7 @@
   lower_limit: 0
   upper_limit: 50
   precision: 3
+  unit_code: DEGC
 22:
   name: conductivity_uncomp
   display_name: EC (uS/cm)
@@ -201,6 +207,7 @@
   lower_limit: 0
   upper_limit: 5000000
   precision: 4
+  unit_code: MISC
 23:
   name: conductivity_comp
   display_name: EC@25 (uS/cm)
@@ -210,6 +217,7 @@
   lower_limit: 0
   upper_limit: 5000000
   precision: 4
+  unit_code: MISC
 24:
   name: turbidity
   display_name: Turbidity (NTU)
@@ -219,6 +227,7 @@
   lower_limit: 0
   upper_limit: 5000
   precision: 2
+  unit_code: NTU
 25:
   name: water_depth
   display_name: Water depth (m)
@@ -228,6 +237,7 @@
   lower_limit: 0
   upper_limit: 200
   precision: 3
+  unit_code: M
 26:
   name: gauge_height
   display_name: Gauge height (m)
@@ -237,6 +247,7 @@
   lower_limit: -300
   upper_limit: 1000
   precision: 3
+  unit_code: M
 27:
   name: sampling_comment
   display_name: Comments

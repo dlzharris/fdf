@@ -592,25 +592,6 @@ def get_new_dict_key(key):
     return new_keys[key]
 
 
-def get_parameter_unit(key):
-    """
-    Get the unit code as used in KiWQM for use in prepare_dictionary.
-    :param key: The variable name.
-    :return: The unit code for the variable.
-    """
-    units = {
-        "conductivity_uncomp": "MISC",
-        "conductivity_comp": "MISC",
-        "do": "MGL",
-        "do_sat": "WISKI_PSAT",
-        "gauge_height": "M",
-        "ph": "SCAL",
-        "temp_c": "DEGC",
-        "turbidity": "NTU",
-        "water_depth": "M"}
-    return units[key]
-
-
 def get_replicate_number(rep_code):
     """
     Get the replicate number used in KiWQM based on the sample type code.
@@ -757,7 +738,8 @@ def prepare_dictionary(data_list):
                 # Create dictionary items for parameter, value, unit, device & method
                 sample_param_oriented["parameter"] = param
                 sample_param_oriented["value"] = sample_param_oriented.pop(param)
-                sample_param_oriented["units"] = get_parameter_unit(param)
+                col_number = get_column_number(param)
+                sample_param_oriented["units"] = column_config[col_number]['unit_code']
                 if param == 'turbidity':
                     sample_param_oriented["device"] = sample['turbidity_instrument']
                     sample_param_oriented["method"] = app_config['key_value_settings']['turbidity_method']
