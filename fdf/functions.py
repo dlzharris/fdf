@@ -600,6 +600,7 @@ def get_parameter_unit(key):
     """
     units = {
         "conductivity_uncomp": "MISC",
+        "conductivity_comp": "MISC",
         "do": "MGL",
         "do_sat": "WISKI_PSAT",
         "gauge_height": "M",

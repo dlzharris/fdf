@@ -341,10 +341,13 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         tableData = []
         for i in range(0, self.tableWidgetData.rowCount()):
             rowData = []
-            for j in range(0, self.tableWidgetData.columnCount()):
-                value = self.tableWidgetData.item(i, j).text()
-                rowData.append(str(value))
-            tableData.append(rowData)
+            try:
+                for j in range(0, self.tableWidgetData.columnCount()):
+                    value = self.tableWidgetData.item(i, j).text()
+                    rowData.append(str(value))
+                tableData.append(rowData)
+            except AttributeError:
+                pass
         # Transform the list to a dictionary for dictWriter
         tableData = functions.lorl2lord(tableData, app_config['column_order'])
         # Reformat the data in parameter-oriented format
@@ -435,13 +438,21 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             # Nothing selected
             return
 
+        # Excel places an extra newline at the end of everything copied to the
+        # clipboard. To ensure we do not lose data, and to ensure consistency
+        # we remove any extra newline characters from the end of the text.
+        txt = QtGui.QApplication.clipboard().text()
+        if txt.endsWith('\n'):
+            txt.chop(1)
+
         # Parse the clipboard
-        copyDataRows = QtGui.QApplication.clipboard().text().split('\n')
+        copyDataRows = txt.split('\n')
         if copyDataRows is None:
             # Nothing in the clipboard
             return
 
         # Paste data
+        table.blockSignals(False)
         # Special case - only one value selected
         if len(copyDataRows) == 1 and '\t' not in copyDataRows[0]:
             copyData = copyDataRows[0]
@@ -463,11 +474,8 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                                   QtGui.QTableWidgetItem(copyDataCols[j]))
                     try:
                         table.item(pasteStartRow + i, pasteStartCol + j).setTextAlignment(QtCore.Qt.AlignCenter)
-                        item = table.item(pasteStartRow + i, pasteStartCol + j)
-                        self.autoUpdateCols(item)
                     except AttributeError:
                         pass
-        table.blockSignals(False)
 
     def setHeaderData(self, table):
         """Sets the header labels based on column_config settings."""
@@ -656,28 +664,33 @@ class DateValidator(QtGui.QValidator):
         super(DateValidator, self).__init__()
 
     def validate(self, testValue, col):
-        try:
-            date = functions.parse_datetime_from_string(str(testValue), '00:00:00')
+        if testValue == "":
+            displayValue = ""
+            state = QtGui.QValidator.Acceptable
+            returnInt = 0
+        else:
             try:
-                displayValue = date.strftime(app_config['datetime_formats']['date']['display'])
-            except ValueError:
+                date = functions.parse_datetime_from_string(str(testValue), '00:00:00')
+                try:
+                    displayValue = date.strftime(app_config['datetime_formats']['date']['display'])
+                except ValueError:
+                    # Invalid date error
+                    displayValue = ""
+                    state = QtGui.QValidator.Invalid
+                    returnInt = 4
+                    return state, displayValue, returnInt
+                if date > datetime.datetime.now():
+                    # Future date error
+                    state = QtGui.QValidator.Invalid
+                    returnInt = 3
+                else:
+                    state = QtGui.QValidator.Acceptable
+                    returnInt = 0
+            except DatetimeError:
                 # Invalid date error
                 displayValue = ""
                 state = QtGui.QValidator.Invalid
                 returnInt = 4
-                return state, displayValue, returnInt
-            if date > datetime.datetime.now():
-                # Future date error
-                state = QtGui.QValidator.Invalid
-                returnInt = 3
-            else:
-                state = QtGui.QValidator.Acceptable
-                returnInt = 0
-        except DatetimeError:
-            # Invalid date error
-            displayValue = ""
-            state = QtGui.QValidator.Invalid
-            returnInt = 4
 
         return state, displayValue, returnInt
 
@@ -736,7 +749,7 @@ class ListValidator(QtGui.QValidator):
                 value = self.fixup(testValue)
                 returnInt = 0
             elif testValue == "":
-                state = QtGui.QValidator.Intermediate
+                state = QtGui.QValidator.Acceptable
                 value = testValue
                 returnInt = 0
             else:
@@ -758,22 +771,27 @@ class TimeValidator(QtGui.QValidator):
         super(TimeValidator, self).__init__()
 
     def validate(self, testValue, col):
-        try:
-            time = functions.parse_datetime_from_string('01/01/1900', str(testValue))
+        if testValue == "":
+            displayValue = ""
+            state = QtGui.QValidator.Acceptable
+            returnInt = 0
+        else:
             try:
-                displayValue = time.strftime(app_config['datetime_formats']['time']['display'])
-                state = QtGui.QValidator.Acceptable
-                returnInt = 0
-            except ValueError:
+                time = functions.parse_datetime_from_string('01/01/1900', str(testValue))
+                try:
+                    displayValue = time.strftime(app_config['datetime_formats']['time']['display'])
+                    state = QtGui.QValidator.Acceptable
+                    returnInt = 0
+                except ValueError:
+                    # Invalid time error
+                    displayValue = testValue
+                    state = QtGui.QValidator.Invalid
+                    returnInt = 4
+            except DatetimeError:
                 # Invalid time error
                 displayValue = testValue
                 state = QtGui.QValidator.Invalid
                 returnInt = 4
-        except DatetimeError:
-            # Invalid time error
-            displayValue = testValue
-            state = QtGui.QValidator.Invalid
-            returnInt = 4
 
         return state, displayValue, returnInt
 
