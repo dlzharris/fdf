@@ -36,12 +36,13 @@
   display_name: Time
   allow_zero: yes
   required: yes
-  required_if_not_sampled: yes
+  required_if_not_sampled: no
 4:
   name: sampling_number
   display_name: Sampling ID
   allow_zero: yes
   required: no
+  required_if_not_sampled: yes
 5:
   name: location_id
   display_name: Location#
@@ -80,6 +81,7 @@
   display_name: Calibration record
   allow_zero: yes
   required: no
+  required_if_not_sampled: no
 11:
   name: sampling_instrument
   display_name: Instrument
@@ -133,12 +135,14 @@
   display_name: Station visited
   allow_zero: yes
   required: no
+  required_if_not_sampled: yes
   list_items: ['Yes', 'No']
 15:
   name: sample_collected
   display_name: Sample collected
   allow_zero: yes
   required: no
+  required_if_not_sampled: yes
   list_items: ['Yes', 'No']
 16:
   name: depth_upper
