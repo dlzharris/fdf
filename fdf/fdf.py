@@ -341,13 +341,10 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         tableData = []
         for i in range(0, self.tableWidgetData.rowCount()):
             rowData = []
-            try:
-                for j in range(0, self.tableWidgetData.columnCount()):
-                    value = self.tableWidgetData.item(i, j).text()
-                    rowData.append(str(value))
-                tableData.append(rowData)
-            except AttributeError:
-                pass
+            for j in range(0, self.tableWidgetData.columnCount()):
+                value = self.tableWidgetData.item(i, j).text()
+                rowData.append(str(value))
+            tableData.append(rowData)
         # Transform the list to a dictionary for dictWriter
         tableData = functions.lorl2lord(tableData, app_config['column_order'])
         # Reformat the data in parameter-oriented format
@@ -392,6 +389,9 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             rowCount = 1
         for i in range(0, rowCount):
             table.insertRow(rowPosition)
+            colCount = table.columnCount()
+            for j in range(0, colCount):
+                table.setItem(rowPosition, j, QtGui.QTableWidgetItem(""))
 
         table.blockSignals(False)
 
@@ -509,8 +509,8 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         """Validates the table data for completeness and for fitting to business rules"""
         table = self.tableWidgetData
         dataValid = True
-        rows = table.rowCount() - 1
-        columns = table.columnCount() - 1
+        rows = table.rowCount()
+        columns = table.columnCount()
         sampleMeasProgColumn = functions.get_column_number('mp_number')
         sampleMatrixColumn = functions.get_column_number('sample_matrix')
         samplingNumberColumn = functions.get_column_number('sampling_number')
@@ -535,15 +535,16 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         # Test for incomplete required fields
         incompleteColumns = []
         for i in range(0, columns):
-            if column_config[i]['required']:
-                for j in range(0, rows):
+            for j in range(0, rows):
+                if table.item(j, i).text() == "":
                     if table.item(j, sampleCollectedColumn).text() == "No":
                         if column_config[i]['required_if_not_sampled']:
                             incompleteColumns.append(i)
-                        break
-                    if table.item(j, i).text() == "":
-                        incompleteColumns.append(i)
-                    break
+                            break
+                    else:
+                        if column_config[i]['required']:
+                            incompleteColumns.append(i)
+                            break
 
         # Test matrix consistency
         matrixConsistent = functions.check_matrix_consistency(
@@ -561,15 +562,17 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         msg = u""
         if invalidColumns:
             dataValid = False
-            listOfColumnNames = u'\n'.join(column_config[k]['name'] for k in invalidColumns)
+            listOfColumnNames = u'\n'.join(column_config[k]['display_name'] for k in invalidColumns)
             msg += u"The following columns have invalid values:\n" + listOfColumnNames
 
         if incompleteColumns:
             dataValid = False
-            listOfColumnNames = u'\n'.join(column_config[k]['name'] for k in incompleteColumns)
+            listOfColumnNames = u'\n'.join(column_config[k]['display_name'] for k in incompleteColumns)
             if not msg:
                 msg += u"\n\n"
             msg += u"The following required columns have one or more empty values:\n" + listOfColumnNames
+            if 'Comments' in listOfColumnNames:
+                msg += u"\n\nA comment must be included for all samples tagged as not sampled."
 
         if not matrixConsistent:
             dataValid = False
@@ -619,7 +622,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             return
         elif state == QtGui.QValidator.Invalid:
             # Prepare message to inform user of invalid value.
-            paramName = column_config[col]['name']
+            paramName = column_config[col]['display_name']
             item.setText(displayValue)
             item.setBackgroundColor(QtCore.Qt.red)
             if returnInt == 0:  # Zero-error
@@ -633,11 +636,11 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 txt = "%s value out of range.\n Acceptable range is between %s and %s" % (paramName, lowerLimit, upperLimit)
                 windowTitleTxt = "Value range error!"
             elif returnInt == 2:  # List error
-                txt = "%s value is not a valid value from the drop down list." \
+                txt = "%s value is not a valid value from the drop down list.\n" \
                       "Please select a valid value from the list." % paramName
                 windowTitleTxt = "Invalid selection error!"
             elif returnInt == 3:  # Future Date error
-                txt = "The entered date is in the future. Sampling dates must be in the past." \
+                txt = "The entered date is in the future. Sampling dates must be in the past.\n" \
                       "Please enter a different date."
                 windowTitleTxt = "Invalid date error!"
             else:  # returnInt == 4  # Date/time format error
@@ -817,7 +820,7 @@ class ListColumnItemDelegate(QtGui.QStyledItemDelegate):
         if index.column() == samplingNumberCol:
             editor.setReadOnly(True)
 
-        editor.returnPressed.connect(self.commitAndCloseEditor)
+        editor.returnPressed.connect(self.commitAndCloseEditor())
 
         return editor
 
@@ -825,7 +828,7 @@ class ListColumnItemDelegate(QtGui.QStyledItemDelegate):
         editor = self.sender()
         self.commitData.emit(editor)
         self.closeEditor.emit(editor, QtGui.QAbstractItemDelegate.NoHint)
-
+        
 
 ##############################################################################
 # Widgets

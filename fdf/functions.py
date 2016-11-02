@@ -28,7 +28,6 @@ get_column_number: get the column number for the table instance of a
 get_column_title: get the display name for a required field
 get_fraction_number: generate the field fraction number for a sample
 get_new_dict_key: update the dictionary key to a friendlier version
-get_parameter_unit: get the parameter code for a variable
 get_replicate_number: get the replicate number corresponding to the sample type
 get_sampling_number: generate the sampling number for a sample
 get_sampling_time: get the sampling time for a group of samples
