@@ -49,6 +49,7 @@ import sys
 
 # Related third party imports
 from dateutil.parser import parse
+from utm import from_latlon
 
 # Local application imports
 from configuration import app_config, column_config, station_list
@@ -441,6 +442,11 @@ def load_instrument_file(instrument_file, file_source):
                 sampling_officer = ""
             new_line['sampling_officer'] = sampling_officer
 
+            # Update sample location coordinates
+            location_coords = from_latlon(new_line['latitude'], new_line['longitude'])
+            new_line['latitude'] = location_coords[0]
+            new_line['longitude'] = location_coords[1]
+
             # Add the extra items we'll need access to later on
             new_line['event_time'] = ""
             new_line['sampling_number'] = ""
@@ -466,6 +472,10 @@ def load_instrument_file(instrument_file, file_source):
                 new_line['conductivity_comp'] = ""
             if 'conductivity_uncomp' not in new_line:
                 new_line['conductivity_uncomp'] = ""
+            if 'latitude' not in new_line:
+                new_line['latitude'] = ""
+            if 'longitude' not in new_line:
+                new_line['longitude'] = ""
 
             # Add the new updated dictionary to our list
             data.append(new_line)
@@ -584,12 +594,14 @@ def get_new_dict_key(key):
         "ORP": "orp",  # YSI
         "Depth": "depth_upper",  # YSI
         "Baro": "barometric_pressure",  # YSI
-        "Site": "station_number",
-        "User ID": "sampling_officer",
-        "SPC-uS/cm": "conductivity_comp",
-        "C-uS/cm": "conductivity_uncomp",
-        "DEP m": "depth_upper",
-        "mmHg": "barometric_pressure"
+        "Site": "station_number",  # YSI
+        "User ID": "sampling_officer",  # YSI
+        "SPC-uS/cm": "conductivity_comp",  # YSI
+        "C-uS/cm": "conductivity_uncomp",  # YSI
+        "DEP m": "depth_upper",  # YSI
+        "mmHg": "barometric_pressure",  # YSI
+        "Lat": "latitude",  # YSI
+        "Lon": "longitude"  # YSI
     }
     return new_keys[key]
 
