@@ -67,6 +67,11 @@ column_order:
   - turbidity
   - water_depth
   - gauge_height
+  - easting
+  - northing
+  - map_zone
+  - latitude
+  - longitude
   - sampling_comment
 
 
@@ -83,6 +88,12 @@ csv_fieldnames:
   - sampling_officer
   - sampling_comment
   - location_id
+  - easting
+  - northing
+  - map_zone
+  - latitude
+  - longitude
+  - positioning_method
   - sample_cid
   - replicate_number
   - sample_time

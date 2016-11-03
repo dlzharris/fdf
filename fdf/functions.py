@@ -256,7 +256,7 @@ def load_instrument_file(instrument_file, file_source):
         # Read the file into a list for initial interrogation and processing. We will
         # read the data portion into a dictionary further below.
         in_list = list(f.readlines())
-        parameters = in_list[header_start_row].replace('"', '').split(',')
+        parameters = in_list[header_start_row].replace('"', '').replace('\r\n', '').split(',')
 
         if file_source in app_config['sources']['hydrolab']:
             # The hydrolab data headers are made up of two rows: one for the parameter and one
@@ -379,7 +379,6 @@ def load_instrument_file(instrument_file, file_source):
         # Initialise the data container
         data = []
         # Change the keys to our standard key values and remove items that are not relevant
-        # TODO: Ignore coordinates if they use degrees minutes and seconds
         for line in reader:
             try:
                 sample_dt = parse_datetime_from_string(line['Date'], line['Time'])
@@ -444,8 +443,9 @@ def load_instrument_file(instrument_file, file_source):
 
             # Update sample location coordinates
             location_coords = from_latlon(new_line['latitude'], new_line['longitude'])
-            new_line['latitude'] = location_coords[0]
-            new_line['longitude'] = location_coords[1]
+            new_line['easting'] = location_coords[0]
+            new_line['northing'] = location_coords[1]
+            new_line['map_zone'] = location_coords[2]
 
             # Add the extra items we'll need access to later on
             new_line['event_time'] = ""
@@ -472,6 +472,12 @@ def load_instrument_file(instrument_file, file_source):
                 new_line['conductivity_comp'] = ""
             if 'conductivity_uncomp' not in new_line:
                 new_line['conductivity_uncomp'] = ""
+            if 'easting' not in new_line:
+                new_line['easting'] = ""
+            if 'northing' not in new_line:
+                new_line['northing'] = ""
+            if 'map_zone' not in new_line:
+                new_line['map_zone'] = ""
             if 'latitude' not in new_line:
                 new_line['latitude'] = ""
             if 'longitude' not in new_line:
@@ -742,6 +748,10 @@ def prepare_dictionary(data_list):
             sorted(reps_in_sampling, key=lambda x: x[0])
             sample_idx = reps_in_sampling.index(sample['sample_time'])
             sample['replicate_number'] += sample_idx
+
+        # Format the map zone and positioning method
+        sample['map_zone'] = "MGA 94 - Zone %s" % sample['map_zone']
+        sample['positioning_method'] = "GPS - Global Positioning System"
 
         # Transform the data to parameter-oriented
         for param in app_config['parameters']:

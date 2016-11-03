@@ -265,6 +265,48 @@
   precision: 3
   unit_code: M
 28:
+  name: easting
+  display_name: Easting (m)
+  allow_zero: no
+  required: no
+  required_if_not_sampled: no
+  lower_limit: 171172
+  upper_limit: 5812135
+  precision: 0
+29:
+  name: northing
+  display_name: Northing (m)
+  allow_zero: no
+  required: no
+  required_if_not_sampled: no
+  lower_limit: 810413
+  upper_limit: 8882021
+  precision: 0
+30:
+  name: map_zone
+  display_name: Map zone
+  allow_zero: no
+  required: no
+  required_if_not_sampled: no
+31:
+  name: latitude
+  display_name: Latitude
+  allow_zero: no
+  required: no
+  required_if_not_sampled: no
+  lower_limit: -44.1
+  upper_limit: 150
+  precision: 5
+32:
+  name: longitude
+  display_name: Longitude
+  allow_zero: no
+  required: no
+  required_if_not_sampled: no
+  lower_limit: -21.7
+  upper_limit: 156
+  precision: 5
+33:
   name: sampling_comment
   display_name: Comments
   allow_zero: yes

@@ -815,12 +815,12 @@ class ListColumnItemDelegate(QtGui.QStyledItemDelegate):
             editor = combo
         except KeyError:
             editor = super(ListColumnItemDelegate, self).createEditor(parent, option, index)
+            samplingNumberCol = functions.get_column_number("sampling_number")
+            if index.column() == samplingNumberCol:
+                editor.setReadOnly(True)
+            return editor
 
-        samplingNumberCol = functions.get_column_number("sampling_number")
-        if index.column() == samplingNumberCol:
-            editor.setReadOnly(True)
-
-        editor.returnPressed.connect(self.commitAndCloseEditor())
+        editor.returnPressed.connect(self.commitAndCloseEditor)
 
         return editor
 
@@ -828,7 +828,7 @@ class ListColumnItemDelegate(QtGui.QStyledItemDelegate):
         editor = self.sender()
         self.commitData.emit(editor)
         self.closeEditor.emit(editor, QtGui.QAbstractItemDelegate.NoHint)
-        
+
 
 ##############################################################################
 # Widgets
