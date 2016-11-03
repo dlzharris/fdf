@@ -818,7 +818,6 @@ class ListColumnItemDelegate(QtGui.QStyledItemDelegate):
             samplingNumberCol = functions.get_column_number("sampling_number")
             if index.column() == samplingNumberCol:
                 editor.setReadOnly(True)
-            return editor
 
         editor.returnPressed.connect(self.commitAndCloseEditor)
 
@@ -865,8 +864,6 @@ class FilteredComboBox(QtGui.QComboBox):
     # On selection of an item from the completer, select the corresponding item from combobox
     def onCompleterActivated(self, text):
         if text:
-            index = self.findText(str(text))
-            self.setCurrentIndex(index)
             self.returnPressed.emit()
 
 
