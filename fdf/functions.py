@@ -750,8 +750,11 @@ def prepare_dictionary(data_list):
             sample['replicate_number'] += sample_idx
 
         # Format the map zone and positioning method
-        sample['map_zone'] = "MGA 94 - Zone %s" % sample['map_zone']
-        sample['positioning_method'] = "GPS - Global Positioning System"
+        if sample['map_zone'] != "":
+            sample['map_zone'] = "MGA 94 - Zone %s" % sample['map_zone']
+        if (sample['easting'] != "" and sample['northing'] != "")\
+                or (sample['latitude'] != "" and sample['longitude'] != ""):
+            sample['positioning_method'] = "GPS - Global Positioning System"
 
         # Transform the data to parameter-oriented
         for param in app_config['parameters']:
