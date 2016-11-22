@@ -112,7 +112,5 @@ csv_fieldnames:
   - device
 
 key_value_settings:
-  turbidity_method: FLD_TURB
-  multiprobe_method: FLD_MULTI_PROBE
   field_fraction_lab_shortname: FLD
   field_fraction_data_source: Field Data

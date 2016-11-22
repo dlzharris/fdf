@@ -174,6 +174,7 @@
   upper_limit: 50
   precision: 2
   unit_code: MGL
+  method: FLD_MULTI_PROBE
 19:
   name: do_sat
   display_name: DO (% sat)
@@ -184,6 +185,7 @@
   upper_limit: 200
   precision: 1
   unit_code: WISKI_PSAT
+  method: FLD_MULTI_PROBE
 20:
   name: ph
   display_name: pH
@@ -194,6 +196,7 @@
   upper_limit: 14
   precision: 2
   unit_code: SCAL
+  method: FLD_MULTI_PROBE
 21:
   name: temp_c
   display_name: Temp (deg C)
@@ -204,6 +207,7 @@
   upper_limit: 50
   precision: 3
   unit_code: DEGC
+  method: FLD_MULTI_PROBE
 22:
   name: conductivity_uncomp
   display_name: EC (uS/cm)
@@ -214,6 +218,7 @@
   upper_limit: 5000000
   precision: 4
   unit_code: MISC
+  method: FLD_MULTI_PROBE
 23:
   name: conductivity_comp
   display_name: EC@25 (uS/cm)
@@ -224,6 +229,7 @@
   upper_limit: 5000000
   precision: 4
   unit_code: MISC
+  method: FLD_MULTI_PROBE
 24:
   name: barometric_pressure
   display_name: BP (Torr)
@@ -234,6 +240,7 @@
   upper_limit: 10000
   precision: 3
   unit_code: MMHG
+  method: FLD_MULTI_PROBE
 25:
   name: turbidity
   display_name: Turbidity (NTU)
@@ -244,6 +251,7 @@
   upper_limit: 5000
   precision: 2
   unit_code: NTU
+  method: FLD_TURB
 26:
   name: water_depth
   display_name: Water depth (m)
@@ -254,6 +262,7 @@
   upper_limit: 200
   precision: 3
   unit_code: M
+  method: FLD_MULTI_PROBE
 27:
   name: gauge_height
   display_name: Gauge height (m)
@@ -264,6 +273,7 @@
   upper_limit: 1000
   precision: 3
   unit_code: M
+  method: 0
 28:
   name: easting
   display_name: Easting (m)
