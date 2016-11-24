@@ -72,7 +72,7 @@ class tableModel(QtCore.QAbstractTableModel):
             flags = QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
         return flags
 
-    def data(self, index, role = QtCore.Qt.DisplayRole):
+    def data(self, index, role=QtCore.Qt.DisplayRole):
         if role == QtCore.Qt.DisplayRole:
             row = index.row()
             column = index.column()
@@ -98,7 +98,7 @@ class tableModel(QtCore.QAbstractTableModel):
             if orientation == QtCore.Qt.Horizontal:
                 return column_config[section]['display_name']
             else:
-                return section
+                return section + 1
 
     def insertRows(self, position, rows, parent=QtCore.QModelIndex()):
         self.beginInsertRows(parent, position, position + rows - 1)
@@ -107,6 +107,13 @@ class tableModel(QtCore.QAbstractTableModel):
             self.__samples.insert(position, defaultValues)
         self.endInsertRows()
         return True
+
+    # TODO: finish removeRows here
+    def removeRows(self, position, rows, parent=QtCore.QModelIndex()):
+        self.beginRemoveRows(parent, position, position + rows - 1)
+        for i in range(rows):
+            self.__samples
+
 
 
 ###############################################################################
@@ -127,6 +134,12 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         self.pushButtonResetData.clicked.connect(self.resetData)
         self.pushButtonExportData.clicked.connect(self.exportData)
 
+        # Set up model
+        # Create empty dicionary to go in as first value
+        sampleModel = tableModel()
+        self.tableViewData.setModel(sampleModel)
+        sampleModel.removeRows()
+
         # Add items to the instrument picker
         instruments = ['']
         instruments.extend(app_config['sources']['hydrolab'])
@@ -134,15 +147,11 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         self.instrumentComboBox.addItems(instruments)
 
         # Set up the table
-        self.headerLabels = [column_config[i]['display_name'] for i in range(0, len(column_config))]
-        table = self.tableViewData
-        table.setColumnCount(len(self.headerLabels))
-        self.setHeaderData(table)
-        table.setItemDelegate(ListColumnItemDelegate())
-        table.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed | QtGui.QAbstractItemView.DoubleClicked)
-        table.itemChanged.connect(self.autoUpdateCols)
-        table.itemChanged.connect(self.validateInput)
-        table.itemChanged.connect(self.setAlignment)
+        #table.setItemDelegate(ListColumnItemDelegate())
+        #table.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed | QtGui.QAbstractItemView.DoubleClicked)
+        #table.itemChanged.connect(self.autoUpdateCols)
+        #table.itemChanged.connect(self.validateInput)
+        #table.itemChanged.connect(self.setAlignment)
 
         # Set up the help documentation
         self.helpBrowser = QtGui.QTextBrowser()
