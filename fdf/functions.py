@@ -442,10 +442,8 @@ def load_instrument_file(instrument_file, file_source):
             new_line['sampling_officer'] = sampling_officer
 
             # Update sample location coordinates
-            location_coords = from_latlon(new_line['latitude'], new_line['longitude'])
-            new_line['easting'] = location_coords[0]
-            new_line['northing'] = location_coords[1]
-            new_line['map_zone'] = location_coords[2]
+            new_line['easting'], new_line['northing'], new_line['map_zone'] = \
+                get_mga_coordinates(new_line['latitude'], new_line['longitude'])
 
             # Add the extra items we'll need access to later on
             new_line['event_time'] = ""
@@ -570,6 +568,19 @@ def get_fraction_number(field_dict):
                       + fraction_delimiter \
                       + "F"
     return fraction_number
+
+
+def get_mga_coordinates(latitude, longitude):
+    """
+    Return the easting, northing and map zone in MGA94 system for
+    a given set of latitude and longitude coordinates. Note that
+    the from_latlon function returns four values - we are only
+    returning three.
+    :param latitude: Latitude as GDA94
+    :param longitude: Longitude as GDA94
+    :return: Tuple as (easting, northing, map_zone)
+    """
+    return from_latlon(latitude, longitude)[:3]
 
 
 def get_new_dict_key(key):
