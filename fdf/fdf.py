@@ -32,9 +32,10 @@ import urllib2
 # Related third party imports
 import yaml
 from PyQt4 import QtGui, QtCore
+from PyQt4.QtCore import pyqtSlot
 
 # Local application imports
-import fdfGui
+import fdfGui2
 import functions
 from functions import DatetimeError, ValidityError
 from configuration import app_config, column_config
@@ -47,9 +48,71 @@ __version__ = '0.9.6'
 
 
 ###############################################################################
+# Models
+###############################################################################
+class tableModel(QtCore.QAbstractTableModel):
+    # table.setItemDelegate(ListColumnItemDelegate())
+    # table.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed | QtGui.QAbstractItemView.DoubleClicked)
+
+    def __init__(self, samples=[[]], headers=[], parent=None):
+        QtCore.QAbstractTableModel.__init__(self, parent)
+        self.__samples = samples
+        self.__headers = headers
+
+    def rowCount(self, parent):
+        return len(self.__samples)
+
+    def columnCount(self, parent):
+        return len(column_config)
+
+    def flags(self, index):
+        if index.column() == functions.get_column_number('sampling_number'):
+            flags = QtCore.Qt.ItemIsEnabled
+        else:
+            flags = QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+        return flags
+
+    def data(self, index, role = QtCore.Qt.DisplayRole):
+        if role == QtCore.Qt.DisplayRole:
+            row = index.row()
+            column = index.column()
+            value = self.__samples[row][column]
+            return value
+
+    def setData(self, index, value, role=QtCore.Qt.EditRole):
+        if role == QtCore.Qt.EditRole:
+            row = index.row()
+            column = index.column()
+            # TODO: validate input here
+            # if value.isValid():
+            #     self.__samples[row][column] = value
+            #     self.dataChanged.emit(index, index)
+            #     return True
+            self.__samples[row][column] = value
+            self.dataChanged.emit(index, index)
+            return True
+        return False
+
+    def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):
+        if role == QtCore.Qt.DisplayRole:
+            if orientation == QtCore.Qt.Horizontal:
+                return column_config[section]['display_name']
+            else:
+                return section
+
+    def insertRows(self, position, rows, parent=QtCore.QModelIndex()):
+        self.beginInsertRows(parent, position, position + rows - 1)
+        for i in range(rows):
+            defaultValues = [QtCore.QString("") for column in range(self.columnCount(None))]
+            self.__samples.insert(position, defaultValues)
+        self.endInsertRows()
+        return True
+
+
+###############################################################################
 # Main app constructor and initialisation
 ###############################################################################
-class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
+class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
     """
     Constructor for the main application
     """
@@ -72,7 +135,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
 
         # Set up the table
         self.headerLabels = [column_config[i]['display_name'] for i in range(0, len(column_config))]
-        table = self.tableWidgetData
+        table = self.tableViewData
         table.setColumnCount(len(self.headerLabels))
         self.setHeaderData(table)
         table.setItemDelegate(ListColumnItemDelegate())
@@ -121,16 +184,16 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
     ##########################################################################
     def addData(self, lists):
         """Takes data provided and add to the table instance."""
-        self.tableWidgetData.blockSignals(True)
+        self.tableViewData.blockSignals(True)
         errorsFound = False
 
         for i in range(0, len(lists)):
-            rowPosition = self.tableWidgetData.rowCount()
-            self.tableWidgetData.insertRow(rowPosition)
+            rowPosition = self.tableViewData.rowCount()
+            self.tableViewData.insertRow(rowPosition)
             for j in range(0, len(lists[i])):
                 value = str(lists[i][j])
-                self.tableWidgetData.setItem(rowPosition, j, QtGui.QTableWidgetItem(value))
-                item = self.tableWidgetData.item(rowPosition, j)
+                self.tableViewData.setItem(rowPosition, j, QtGui.QTableWidgetItem(value))
+                item = self.tableViewData.item(rowPosition, j)
                 try:
                     validator = DoubleFixupValidator(item.column())
                     state, displayValue, returnInt = validator.validate(item.text(), 0)
@@ -143,9 +206,9 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                     pass
 
         # Update alignment for all cells
-        for i in range(0, self.tableWidgetData.rowCount()):
-            for j in range(0, self.tableWidgetData.columnCount()):
-                self.tableWidgetData.item(i, j).setTextAlignment(QtCore.Qt.AlignCenter)
+        for i in range(0, self.tableViewData.rowCount()):
+            for j in range(0, self.tableViewData.columnCount()):
+                self.tableViewData.item(i, j).setTextAlignment(QtCore.Qt.AlignCenter)
 
         if errorsFound:
             txt = u"Errors have been found in the imported data set. " \
@@ -156,7 +219,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             msg.setWindowTitle(u"Data import - errors detected!")
             msg.exec_()
 
-        self.tableWidgetData.blockSignals(False)
+        self.tableViewData.blockSignals(False)
 
     def addFile(self):
         """Loads the file specified in the UI and adds it to the table instance."""
@@ -194,7 +257,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         Updates the sampling number if the station, date or sampling type
         columns are modified
         """
-        table = self.tableWidgetData
+        table = self.tableViewData
         table.blockSignals(True)
 
         row = item.row()
@@ -203,6 +266,11 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         dateCol = functions.get_column_number('date')
         sampleTypeCol = functions.get_column_number('sample_type')
         samplingNumberCol = functions.get_column_number('sampling_number')
+        latCol = functions.get_column_number('latitude')
+        longCol = functions.get_column_number('longitude')
+        eastCol = functions.get_column_number('easting')
+        northCol = functions.get_column_number('northing')
+        mapCol = functions.get_column_number('map_zone')
 
         try:
             if col in [stationCol, dateCol, sampleTypeCol]:
@@ -227,7 +295,21 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 # Set sampling number and correct alignment
                 table.setItem(row, samplingNumberCol, QtGui.QTableWidgetItem(samplingNumber))
                 self.setAlignment(table.item(row, samplingNumberCol))
-        except AttributeError:
+
+            elif col in [latCol, longCol]:
+                # Calculate MGA94 coordinates
+                easting, northing, map_zone = functions.get_mga_coordinates(
+                    float(table.item(row, latCol).text()), float(table.item(row, longCol).text()))
+                # Set MGA94 coordinates
+                table.blockSignals(False)
+                table.setItem(row, eastCol, QtGui.QTableWidgetItem(str(easting)))
+                table.setItem(row, northCol, QtGui.QTableWidgetItem(str(northing)))
+                table.setItem(row, mapCol, QtGui.QTableWidgetItem(str(map_zone)))
+                self.setAlignment(table.item(row, eastCol))
+                self.setAlignment(table.item(row, northCol))
+                self.setAlignment(table.item(row, mapCol))
+
+        except (AttributeError, ValueError):
             pass
         finally:
             table.blockSignals(False)
@@ -269,7 +351,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
     def copy(self):
         """Implements Excel-style copy."""
         # Find the selected cells
-        selection = self.tableWidgetData.selectionModel()
+        selection = self.tableViewData.selectionModel()
         indexes = selection.selectedIndexes()
         if len(indexes) < 1:
             # Nothing selected
@@ -281,7 +363,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         cols = [c.column() for c in indexes]
         for r in range(min(rows), max(rows) + 1):
             for c in range(min(cols), max(cols) + 1):
-                item = self.tableWidgetData.item(r, c)
+                item = self.tableViewData.item(r, c)
                 if item:
                     text += item.text()
                 if c != max(cols):
@@ -297,12 +379,12 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         rows, cols = self.copy()
         for r in range(min(rows), max(rows) + 1):
             for c in range(min(cols), max(cols) + 1):
-                self.tableWidgetData.item(r, c).setText("")
+                self.tableViewData.item(r, c).setText("")
 
     def delete(self):
         """Deletes data from currently selected cells."""
         # Find the selected cells
-        selection = self.tableWidgetData.selectionModel()
+        selection = self.tableViewData.selectionModel()
         indexes = selection.selectedIndexes()
         if len(indexes) < 1:
             # Nothing selected
@@ -313,16 +395,16 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         cols = [c.column() for c in indexes]
         for r in range(min(rows), max(rows) + 1):
             for c in range(min(cols), max(cols) + 1):
-                self.tableWidgetData.item(r, c).setText("")
+                self.tableViewData.item(r, c).setText("")
 
     def delRows(self):
         """Deletes selected rows from the table."""
-        rows = self.tableWidgetData.selectionModel().selectedRows()
+        rows = self.tableViewData.selectionModel().selectedRows()
         # Reverse the order of rows so we delete from the bottom up
         # to avoid errors.
         rows.reverse()
         for r in rows:
-            self.tableWidgetData.removeRow(r.row())
+            self.tableViewData.removeRow(r.row())
 
     def exportData(self):
         """Exports data to csv file."""
@@ -339,10 +421,10 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         fileName = QtGui.QFileDialog.getSaveFileName(caption=u'Save file', selectedFilter=u'*.csv')
         # Take a row and append each item to a list.
         tableData = []
-        for i in range(0, self.tableWidgetData.rowCount()):
+        for i in range(0, self.tableViewData.rowCount()):
             rowData = []
-            for j in range(0, self.tableWidgetData.columnCount()):
-                value = self.tableWidgetData.item(i, j).text()
+            for j in range(0, self.tableViewData.columnCount()):
+                value = self.tableViewData.item(i, j).text()
                 rowData.append(str(value))
             tableData.append(rowData)
         # Transform the list to a dictionary for dictWriter
@@ -377,7 +459,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
 
     def insertRows(self):
         """Inserts additional rows to the table instance."""
-        table = self.tableWidgetData
+        table = self.tableViewData
         table.blockSignals(True)
 
         rows = table.selectionModel().selectedRows()
@@ -397,7 +479,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
 
     def keyPressEnter(self):
         """Sets the action of pressing Enter to move the selection to the next row down."""
-        table = self.tableWidgetData
+        table = self.tableViewData
         item = table.currentItem()
         row = item.row()
         col = item.column()
@@ -417,17 +499,17 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         msg.setText(txt)
         retVal = msg.exec_()
         if retVal == QtGui.QMessageBox.Ok:
-            self.tableWidgetData.setRowCount(0)
+            self.tableViewData.setRowCount(0)
             self.listWidgetCurrentFiles.clear()
         else:
             return None
 
     def paste(self):
         """Creates Excel-style paste into the table instance from the clipboard."""
-        table = self.tableWidgetData
+        table = self.tableViewData
         table.blockSignals(True)
         # Get the selected cell or cells
-        selection = self.tableWidgetData.selectionModel()
+        selection = self.tableViewData.selectionModel()
         indexes = selection.selectedIndexes()
         # Get the location of the top left cell in selection
         pasteStartRow = min(r.row() for r in indexes)
@@ -507,7 +589,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
 
     def validateExport(self):
         """Validates the table data for completeness and for fitting to business rules"""
-        table = self.tableWidgetData
+        table = self.tableViewData
         dataValid = True
         rows = table.rowCount()
         columns = table.columnCount()
@@ -599,7 +681,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
 
     def validateInput(self, item):
         """Validates the input of data to a cell."""
-        self.tableWidgetData.blockSignals(True)
+        self.tableViewData.blockSignals(True)
         col = item.column()
 
         # Select correct validator
@@ -612,13 +694,13 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         elif 'lower_limit' in column_config[col]:
             validator = DoubleFixupValidator(col)
         else:
-            self.tableWidgetData.blockSignals(False)
+            self.tableViewData.blockSignals(False)
             return
 
         # Validate item
         state, displayValue, returnInt = validator.validate(item.text(), col)
         if state == QtGui.QValidator.Intermediate:
-            self.tableWidgetData.blockSignals(False)
+            self.tableViewData.blockSignals(False)
             return
         elif state == QtGui.QValidator.Invalid:
             # Prepare message to inform user of invalid value.
@@ -656,7 +738,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             item.setText(displayValue)
             item.setBackgroundColor(QtCore.Qt.white)
 
-        self.tableWidgetData.blockSignals(False)
+        self.tableViewData.blockSignals(False)
 
 
 ##############################################################################
@@ -855,6 +937,7 @@ class FilteredComboBox(QtGui.QComboBox):
         self.setCompleter(self.completer)
 
         # Connect signals
+        @pyqtSlot()
         def filter(text):
             self.pFilterModel.setFilterFixedString(str(text))
 
