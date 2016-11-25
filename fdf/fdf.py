@@ -59,10 +59,10 @@ class tableModel(QtCore.QAbstractTableModel):
         self.__samples = samples
         self.__headers = headers
 
-    def rowCount(self, parent):
+    def rowCount(self, parent=None):
         return len(self.__samples)
 
-    def columnCount(self, parent):
+    def columnCount(self, parent=None):
         return len(column_config)
 
     def flags(self, index):
@@ -79,6 +79,9 @@ class tableModel(QtCore.QAbstractTableModel):
             value = self.__samples[row][column]
             return value
 
+        if role == QtCore.Qt.TextAlignmentRole:
+            return QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
+
     def setData(self, index, value, role=QtCore.Qt.EditRole):
         if role == QtCore.Qt.EditRole:
             row = index.row()
@@ -91,6 +94,7 @@ class tableModel(QtCore.QAbstractTableModel):
             self.__samples[row][column] = value
             self.dataChanged.emit(index, index)
             return True
+
         return False
 
     def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):
@@ -108,13 +112,16 @@ class tableModel(QtCore.QAbstractTableModel):
         self.endInsertRows()
         return True
 
-    # TODO: finish removeRows here
     def removeRows(self, position, rows, parent=QtCore.QModelIndex()):
         self.beginRemoveRows(parent, position, position + rows - 1)
         for i in range(rows):
-            self.__samples
+            del self.__samples[position + i]
+        self.endRemoveRows()
+        return True
 
-
+    def resetData(self):
+        for i in range(self.rowCount(), 0, -1):
+            self.removeRow(i - 1)
 
 ###############################################################################
 # Main app constructor and initialisation
@@ -136,9 +143,10 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
 
         # Set up model
         # Create empty dicionary to go in as first value
-        sampleModel = tableModel()
-        self.tableViewData.setModel(sampleModel)
-        sampleModel.removeRows()
+        defaultValues = [[QtCore.QString("") for column in range(len(column_config))]]
+        self.sampleModel = tableModel(defaultValues)
+        self.tableViewData.setModel(self.sampleModel)
+        self.sampleModel.removeRows(0, 1)
 
         # Add items to the instrument picker
         instruments = ['']
@@ -191,44 +199,49 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
     ##########################################################################
     # Private methods
     ##########################################################################
-    def addData(self, lists):
-        """Takes data provided and add to the table instance."""
-        self.tableViewData.blockSignals(True)
-        errorsFound = False
+    # def addData(self, lists):
+    #     """Takes data provided and add to the table instance."""
+    #     self.tableViewData.blockSignals(True)
+    #     errorsFound = False
+    #
+    #     self.sampleModel.insertRows(self.sampleModel.rowCount(), len(lists))
+    #     for i in range(len(lists)):
+    #         for j in range(len(lists[i])):
+    #             self.sampleModel.setData(self.sampleModel.index(i, j), lists[i][j])
 
-        for i in range(0, len(lists)):
-            rowPosition = self.tableViewData.rowCount()
-            self.tableViewData.insertRow(rowPosition)
-            for j in range(0, len(lists[i])):
-                value = str(lists[i][j])
-                self.tableViewData.setItem(rowPosition, j, QtGui.QTableWidgetItem(value))
-                item = self.tableViewData.item(rowPosition, j)
-                try:
-                    validator = DoubleFixupValidator(item.column())
-                    state, displayValue, returnInt = validator.validate(item.text(), 0)
-                    if state == QtGui.QValidator.Invalid:
-                        item.setBackgroundColor(QtCore.Qt.red)
-                        errorsFound = True
-                    else:
-                        item.setText(displayValue)
-                except KeyError:
-                    pass
+        # for i in range(0, len(lists)):
+        #     rowPosition = self.tableViewData.rowCount()
+        #     self.tableViewData.insertRow(rowPosition)
+        #     for j in range(0, len(lists[i])):
+        #         value = str(lists[i][j])
+        #         self.tableViewData.setItem(rowPosition, j, QtGui.QTableWidgetItem(value))
+        #         item = self.tableViewData.item(rowPosition, j)
+        #         try:
+        #             validator = DoubleFixupValidator(item.column())
+        #             state, displayValue, returnInt = validator.validate(item.text(), 0)
+        #             if state == QtGui.QValidator.Invalid:
+        #                 item.setBackgroundColor(QtCore.Qt.red)
+        #                 errorsFound = True
+        #             else:
+        #                 item.setText(displayValue)
+        #         except KeyError:
+        #             pass
+        #
+        # # Update alignment for all cells
+        # for i in range(0, self.tableViewData.rowCount()):
+        #     for j in range(0, self.tableViewData.columnCount()):
+        #         self.tableViewData.item(i, j).setTextAlignment(QtCore.Qt.AlignCenter)
+        #
+        # if errorsFound:
+        #     txt = u"Errors have been found in the imported data set. " \
+        #           u"Please check items highlighted in red before exporting."
+        #     msg = QtGui.QMessageBox()
+        #     msg.setIcon(QtGui.QMessageBox.Warning)
+        #     msg.setText(txt)
+        #     msg.setWindowTitle(u"Data import - errors detected!")
+        #     msg.exec_()
 
-        # Update alignment for all cells
-        for i in range(0, self.tableViewData.rowCount()):
-            for j in range(0, self.tableViewData.columnCount()):
-                self.tableViewData.item(i, j).setTextAlignment(QtCore.Qt.AlignCenter)
-
-        if errorsFound:
-            txt = u"Errors have been found in the imported data set. " \
-                  u"Please check items highlighted in red before exporting."
-            msg = QtGui.QMessageBox()
-            msg.setIcon(QtGui.QMessageBox.Warning)
-            msg.setText(txt)
-            msg.setWindowTitle(u"Data import - errors detected!")
-            msg.exec_()
-
-        self.tableViewData.blockSignals(False)
+        # self.tableViewData.blockSignals(False)
 
     def addFile(self):
         """Loads the file specified in the UI and adds it to the table instance."""
@@ -248,7 +261,13 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
                     pass
 
             # Add data to table
-            self.addData(functions.lord2lorl(dicts, app_config['column_order']))
+            lists = functions.lord2lorl(dicts, app_config['column_order'])
+
+            self.sampleModel.insertRows(self.sampleModel.rowCount(), len(lists))
+            for i in range(len(lists)):
+                for j in range(len(lists[i])):
+                    self.sampleModel.setData(self.sampleModel.index(i, j), lists[i][j])
+
             # Add file name to listbox
             self.listWidgetCurrentFiles.addItem(QtGui.QListWidgetItem(self.fileLineEdit.text()))
 
@@ -303,7 +322,7 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
 
                 # Set sampling number and correct alignment
                 table.setItem(row, samplingNumberCol, QtGui.QTableWidgetItem(samplingNumber))
-                self.setAlignment(table.item(row, samplingNumberCol))
+                # self.setAlignment(table.item(row, samplingNumberCol))
 
             elif col in [latCol, longCol]:
                 # Calculate MGA94 coordinates
@@ -314,9 +333,9 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
                 table.setItem(row, eastCol, QtGui.QTableWidgetItem(str(easting)))
                 table.setItem(row, northCol, QtGui.QTableWidgetItem(str(northing)))
                 table.setItem(row, mapCol, QtGui.QTableWidgetItem(str(map_zone)))
-                self.setAlignment(table.item(row, eastCol))
-                self.setAlignment(table.item(row, northCol))
-                self.setAlignment(table.item(row, mapCol))
+                # self.setAlignment(table.item(row, eastCol))
+                # self.setAlignment(table.item(row, northCol))
+                # self.setAlignment(table.item(row, mapCol))
 
         except (AttributeError, ValueError):
             pass
@@ -412,8 +431,8 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         # Reverse the order of rows so we delete from the bottom up
         # to avoid errors.
         rows.reverse()
-        for r in rows:
-            self.tableViewData.removeRow(r.row())
+        for row in rows:
+            self.sampleModel.removeRow(row.row())
 
     def exportData(self):
         """Exports data to csv file."""
@@ -508,7 +527,7 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         msg.setText(txt)
         retVal = msg.exec_()
         if retVal == QtGui.QMessageBox.Ok:
-            self.tableViewData.setRowCount(0)
+            self.sampleModel.resetData()
             self.listWidgetCurrentFiles.clear()
         else:
             return None
@@ -576,9 +595,9 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
             item = table.horizontalHeaderItem(i)
             item.setText(self.headerLabels[i])
 
-    def setAlignment(self, item):
-        """Sets alignment for an item."""
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
+    # def setAlignment(self, item):
+    #     """Sets alignment for an item."""
+    #     item.setTextAlignment(QtCore.Qt.AlignCenter)
 
     def showAbout(self):
         """Displays the about box from the help menu."""
