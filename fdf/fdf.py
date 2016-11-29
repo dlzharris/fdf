@@ -55,10 +55,13 @@ class tableModel(QtCore.QAbstractTableModel):
     # table.setItemDelegate(ListColumnItemDelegate())
     # table.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed | QtGui.QAbstractItemView.DoubleClicked)
 
-    def __init__(self, samples=[[]], headers=[], parent=None):
+    def __init__(self, samples=[], headers=[], parent=None):
         QtCore.QAbstractTableModel.__init__(self, parent)
         self.__samples = samples
         self.__headers = headers
+
+        if not self.__samples:
+            self.__samples.append(self.defaultData())
 
     def rowCount(self, parent=None):
         return len(self.__samples)
@@ -119,6 +122,10 @@ class tableModel(QtCore.QAbstractTableModel):
                 except ValueError:
                     pass
 
+            # Change parameters to floating point values
+            # if 'lower_limit' in column_config[column]:
+            #     value = float(value)
+
             # if value.isValid():
             #     self.__samples[row][column] = value
             #     self.dataChanged.emit(index, index)
@@ -139,8 +146,7 @@ class tableModel(QtCore.QAbstractTableModel):
     def insertRows(self, position, rows, parent=QtCore.QModelIndex()):
         self.beginInsertRows(parent, position, position + rows - 1)
         for i in range(rows):
-            defaultValues = [QtCore.QString("") for column in range(self.columnCount(None))]
-            self.__samples.insert(position, defaultValues)
+            self.__samples.insert(position, self.defaultData())
         self.endInsertRows()
         return True
 
@@ -154,6 +160,12 @@ class tableModel(QtCore.QAbstractTableModel):
     def resetData(self):
         for i in range(self.rowCount(), 0, -1):
             self.removeRow(i - 1)
+
+    def defaultData(self):
+        defaultValues = [QtCore.QString("") for column in range(len(column_config))]
+        defaultValues[functions.get_column_number('date')] = QtCore.QDate()
+        defaultValues[functions.get_column_number('time')] = QtCore.QTime()
+        return defaultValues
 
 ###############################################################################
 # Main app constructor and initialisation
@@ -175,10 +187,7 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
 
         # Set up model
         # Create empty dicionary to go in as first value
-        defaultValues = [[QtCore.QString("") for column in range(len(column_config))]]
-        defaultValues[0][functions.get_column_number('date')] = QtCore.QDate()
-        defaultValues[0][functions.get_column_number('time')] = QtCore.QTime()
-        self.sampleModel = tableModel(defaultValues)
+        self.sampleModel = tableModel()
         self.tableViewData.setModel(self.sampleModel)
         self.tableViewData.setItemDelegate(tableDelegate())
         self.sampleModel.removeRows(0, 1)

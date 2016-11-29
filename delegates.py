@@ -26,7 +26,7 @@ class tableDelegate(QtGui.QStyledItemDelegate):
 
         elif 'date' in column_config[index.column()]['name']:
             editor = QtGui.QDateTimeEdit(parent)
-            #editor.setDateRange(QtCore.QDate(1970, 1, 1), QtCore.QDate.currentDate())
+            editor.setDateRange(QtCore.QDate(2014, 1, 1), QtCore.QDate.currentDate())
             editor.setDisplayFormat("dd/MM/yyyy")
             #editor.calendarPopup()
             return editor
@@ -34,6 +34,12 @@ class tableDelegate(QtGui.QStyledItemDelegate):
         elif 'time' in column_config[index.column()]['name']:
             editor = QtGui.QDateTimeEdit(parent)
             editor.setDisplayFormat("hh:mm:ss")
+            return editor
+
+        elif 'lower_limit' in column_config[index.column()]:
+            editor = super(tableDelegate, self).createEditor(parent, option, index)
+            validator = DoubleFixupValidator(index.column(), editor)
+            editor.setValidator(validator)
             return editor
 
         else:
@@ -99,7 +105,6 @@ class FilteredComboBox(QtGui.QComboBox):
         self.lineEdit().textEdited[unicode].connect(self.pFilterModel.setFilterFixedString)
         self.completer.activated.connect(self.onCompleterActivated)
 
-
     # on selection of an item from the completer, select the corresponding item from combobox
     def onCompleterActivated(self, text):
         if text:
@@ -110,83 +115,34 @@ class FilteredComboBox(QtGui.QComboBox):
 ##############################################################################
 # Validator classes
 ##############################################################################
-class DateValidator(QtGui.QValidator):
-    def __init__(self):
-        super(DateValidator, self).__init__()
-
-    def validate(self, testValue, col):
-
-        if len(testValue) < 6:
-            state = QtGui.QValidator.Intermediate
-
-        else:
-            try:
-                date = functions.parse_datetime_from_string(str(testValue), '00:00:00')
-
-                if date.year() < 1900:
-                    state = QtGui.QValidator.Invalid
-
-                if date > datetime.datetime.now():
-                    # Future date error
-                    state = QtGui.QValidator.Invalid
-                    returnInt = 3
-
-                else:
-                    state = QtGui.QValidator.Acceptable
-                    displayValue = date.strftime(app_config['datetime_formats']['date']['display'])
-                    returnInt = 0
-
-            except (DatetimeError, ValueError):
-                # Invalid date error
-                displayValue = ""
-                state = QtGui.QValidator.Invalid
-                returnInt = 4
-
-
-
-
-        return state, displayValue, returnInt
-
-
 class DoubleFixupValidator(QtGui.QDoubleValidator):
-    def __init__(self, column):
+    def __init__(self, column, parent):
         self.column = column
         self.bottom = column_config[self.column]['lower_limit']
         self.top = column_config[self.column]['upper_limit']
         self.decimals = column_config[self.column]['precision']
-        super(DoubleFixupValidator, self).__init__(self.bottom, self.top, self.decimals)
+        super(DoubleFixupValidator, self).__init__(self.bottom, self.top, self.decimals, parent)
 
-    def validate(self, testValue, p_int):
-        (state, returnInt) = super(DoubleFixupValidator, self).validate(testValue, p_int)
+    def validate(self, value, pos):
+
+        state, pos = QtGui.QDoubleValidator.validate(self, value, pos)
+
+        if value == 0 and column_config[self.column]['allow_zero'] is False:
+            return QtGui.QValidator.Invalid, pos
+
+        if value.isEmpty() or value == '.':
+            return QtGui.QValidator.Intermediate, pos
+
         if state != QtGui.QValidator.Acceptable:
-            # Try to fix the value if possible
-            try:
-                value = self.fixup(testValue)
-                returnInt = 1
-                if self.bottom <= value <= self.top:
-                    state = QtGui.QValidator.Acceptable
-                elif testValue == "":
-                    state = QtGui.QValidator.Intermediate
-                    value = testValue
-                    returnInt = 0
-                else:
-                    state = QtGui.QValidator.Invalid
-            except ValueError:
-                value = testValue
-                returnInt = 1
-        # Test if column can accept zeroes
-        elif all([column_config[self.column]['allow_zero'] is False, float(testValue) == 0]):
-            state = QtGui.QValidator.Invalid
-            value = testValue
-            returnInt = 0
-        else:
-            value = testValue
-            returnInt = 1
-        return state, str(value), returnInt
+            value = QtCore.QString(self.fixup(value))
+            if QtGui.QDoubleValidator.validate(self, value, pos)[0] != QtGui.QValidator.Acceptable:
+                return QtGui.QValidator.Invalid, pos
 
-    def fixup(self, input):
+        return QtGui.QValidator.Acceptable, pos
+
+    def fixup(self, value):
         """Rounds value to precision specified in column_config."""
-        return round(float(input), self.decimals)
+        return round(float(value), self.decimals)
 
 
 class ListValidator(QtGui.QValidator):
@@ -217,33 +173,3 @@ class ListValidator(QtGui.QValidator):
 
     def fixup(self, input):
         return str(input).upper()
-
-
-class TimeValidator(QtGui.QValidator):
-    def __init__(self):
-        super(TimeValidator, self).__init__()
-
-    def validate(self, testValue, col):
-        if testValue == "":
-            displayValue = ""
-            state = QtGui.QValidator.Acceptable
-            returnInt = 0
-        else:
-            try:
-                time = functions.parse_datetime_from_string('01/01/1900', str(testValue))
-                try:
-                    displayValue = time.strftime(app_config['datetime_formats']['time']['display'])
-                    state = QtGui.QValidator.Acceptable
-                    returnInt = 0
-                except ValueError:
-                    # Invalid time error
-                    displayValue = testValue
-                    state = QtGui.QValidator.Invalid
-                    returnInt = 4
-            except DatetimeError:
-                # Invalid time error
-                displayValue = testValue
-                state = QtGui.QValidator.Invalid
-                returnInt = 4
-
-        return state, displayValue, returnInt
