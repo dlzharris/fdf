@@ -39,6 +39,7 @@ import fdfGui2
 import functions
 from functions import DatetimeError, ValidityError
 from configuration import app_config, column_config
+from delegates import tableDelegate
 
 __author__ = 'Daniel Harris'
 __date__ = '4 November 2016'
@@ -83,10 +84,41 @@ class tableModel(QtCore.QAbstractTableModel):
             return QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
 
     def setData(self, index, value, role=QtCore.Qt.EditRole):
-        if role == QtCore.Qt.EditRole:
+        if index.isValid() and role == QtCore.Qt.EditRole:
             row = index.row()
             column = index.column()
-            # TODO: validate input here
+
+            # Update sampling number
+            if column == functions.get_column_number('date'):
+                try:
+                    sampling_number = functions.get_sampling_number(
+                        station_number=self.__samples[row][functions.get_column_number('station_number')],
+                        date=value.toString(),
+                        sample_type=self.__samples[row][functions.get_column_number('sample_type')]
+                    )
+                    self.__samples[row][functions.get_column_number('sampling_number')] = sampling_number
+                    idxChanged = self.createIndex(
+                        row, functions.get_column_number('sampling_number')
+                    )
+                    self.dataChanged.emit(idxChanged, idxChanged)
+                except ValueError:
+                    pass
+
+            if column == functions.get_column_number('sample_type'):
+                try:
+                    sampling_number = functions.get_sampling_number(
+                        station_number=self.__samples[row][functions.get_column_number('station_number')],
+                        date=self.__samples[row][functions.get_column_number('date')].toString(),
+                        sample_type=value
+                    )
+                    self.__samples[row][functions.get_column_number('sampling_number')] = sampling_number
+                    idxChanged = self.createIndex(
+                        row, functions.get_column_number('sampling_number')
+                    )
+                    self.dataChanged.emit(idxChanged, idxChanged)
+                except ValueError:
+                    pass
+
             # if value.isValid():
             #     self.__samples[row][column] = value
             #     self.dataChanged.emit(index, index)
@@ -144,8 +176,11 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         # Set up model
         # Create empty dicionary to go in as first value
         defaultValues = [[QtCore.QString("") for column in range(len(column_config))]]
+        defaultValues[0][functions.get_column_number('date')] = QtCore.QDate()
+        defaultValues[0][functions.get_column_number('time')] = QtCore.QTime()
         self.sampleModel = tableModel(defaultValues)
         self.tableViewData.setModel(self.sampleModel)
+        self.tableViewData.setItemDelegate(tableDelegate())
         self.sampleModel.removeRows(0, 1)
 
         # Add items to the instrument picker
@@ -250,22 +285,19 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
             dicts = functions.load_instrument_file(self.fileLineEdit.text(),
                                                    str(self.instrumentComboBox.currentText()))
 
-            # Update sampling number if enough information is in file
-            for i in dicts:
-                try:
-                    i['sampling_number'] = functions.get_sampling_number(
-                        station_number=i['station_number'],
-                        date=i['date'],
-                        sample_type=i['sample_type'])
-                except ValueError:
-                    pass
-
             # Add data to table
             lists = functions.lord2lorl(dicts, app_config['column_order'])
 
             self.sampleModel.insertRows(self.sampleModel.rowCount(), len(lists))
             for i in range(len(lists)):
+                date = lists[i][functions.get_column_number('date')]
+                time = lists[i][functions.get_column_number('time')]
+                dt = functions.parse_datetime_from_string(date, time)
                 for j in range(len(lists[i])):
+                    if j == functions.get_column_number('date'):
+                        lists[i][j] = QtCore.QDate(dt.year, dt.month, dt.day)
+                    if j == functions.get_column_number('time'):
+                        lists[i][j] = QtCore.QTime(dt.hour, dt.minute, dt.second)
                     self.sampleModel.setData(self.sampleModel.index(i, j), lists[i][j])
 
             # Add file name to listbox
@@ -487,23 +519,15 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
 
     def insertRows(self):
         """Inserts additional rows to the table instance."""
-        table = self.tableViewData
-        table.blockSignals(True)
-
-        rows = table.selectionModel().selectedRows()
-        rowCount = len(rows)
         try:
-            rowPosition = rows[0].row()
+            rows = self.tableViewData.selectionModel().selectedRows()
+            position = rows[0].row()
+            rowCount = len(rows)
         except IndexError:
-            rowPosition = table.rowCount()
+            position = self.sampleModel.rowCount()
             rowCount = 1
-        for i in range(0, rowCount):
-            table.insertRow(rowPosition)
-            colCount = table.columnCount()
-            for j in range(0, colCount):
-                table.setItem(rowPosition, j, QtGui.QTableWidgetItem(""))
 
-        table.blockSignals(False)
+        self.sampleModel.insertRows(position, rowCount)
 
     def keyPressEnter(self):
         """Sets the action of pressing Enter to move the selection to the next row down."""
@@ -586,18 +610,6 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
                         table.item(pasteStartRow + i, pasteStartCol + j).setTextAlignment(QtCore.Qt.AlignCenter)
                     except AttributeError:
                         pass
-
-    def setHeaderData(self, table):
-        """Sets the header labels based on column_config settings."""
-        for i in range(0, len(self.headerLabels)):
-            item = QtGui.QTableWidgetItem()
-            table.setHorizontalHeaderItem(i, item)
-            item = table.horizontalHeaderItem(i)
-            item.setText(self.headerLabels[i])
-
-    # def setAlignment(self, item):
-    #     """Sets alignment for an item."""
-    #     item.setTextAlignment(QtCore.Qt.AlignCenter)
 
     def showAbout(self):
         """Displays the about box from the help menu."""
