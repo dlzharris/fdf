@@ -1,10 +1,6 @@
 from PyQt4 import QtGui, QtCore
-from PyQt4.QtCore import pyqtSlot
-import datetime
 import functions
-from functions import DatetimeError, ValidityError
 from configuration import app_config, column_config
-from dateutil.parser import parse
 
 
 ##############################################################################
@@ -22,13 +18,14 @@ class tableDelegate(QtGui.QStyledItemDelegate):
             editor = FilteredComboBox(parent)
             items.extend(column_config[index.column()]['list_items'])
             editor.addItems(items)
+            validator = ListValidator(index.column())
+            editor.setValidator(validator)
             return editor
 
         elif 'date' in column_config[index.column()]['name']:
             editor = QtGui.QDateTimeEdit(parent)
             editor.setDateRange(QtCore.QDate(2014, 1, 1), QtCore.QDate.currentDate())
             editor.setDisplayFormat("dd/MM/yyyy")
-            #editor.calendarPopup()
             return editor
 
         elif 'time' in column_config[index.column()]['name']:
@@ -44,8 +41,6 @@ class tableDelegate(QtGui.QStyledItemDelegate):
 
         else:
             return super(tableDelegate, self).createEditor(parent, option, index)
-
-        # TODO: setValidator
 
     def setEditorData(self, editor, index):
         value = index.model().data(index)
@@ -127,14 +122,11 @@ class DoubleFixupValidator(QtGui.QDoubleValidator):
 
         state, pos = QtGui.QDoubleValidator.validate(self, value, pos)
 
-        if value == 0 and column_config[self.column]['allow_zero'] is False:
-            return QtGui.QValidator.Invalid, pos
-
         if value.isEmpty() or value == '.':
             return QtGui.QValidator.Intermediate, pos
 
         if state != QtGui.QValidator.Acceptable:
-            value = QtCore.QString(self.fixup(value))
+            self.fixup(value)
             if QtGui.QDoubleValidator.validate(self, value, pos)[0] != QtGui.QValidator.Acceptable:
                 return QtGui.QValidator.Invalid, pos
 
@@ -142,34 +134,82 @@ class DoubleFixupValidator(QtGui.QDoubleValidator):
 
     def fixup(self, value):
         """Rounds value to precision specified in column_config."""
-        return round(float(value), self.decimals)
+
+        rounded = round(float(value), self.decimals)
+        value.clear()
+        value.append(QtCore.QString(rounded))
+
+        return None
 
 
-class ListValidator(QtGui.QValidator):
+class ListValidator(QtGui.QRegExpValidator):
     def __init__(self, column):
         self.column = column
         self.list = column_config[self.column]['list_items']
-        super(ListValidator, self).__init__()
 
-    def validate(self, testValue, p_int):
-        if testValue not in self.list:
-            if self.fixup(testValue) in self.list:
-                state = QtGui.QValidator.Acceptable
-                value = self.fixup(testValue)
-                returnInt = 0
-            elif testValue == "":
-                state = QtGui.QValidator.Acceptable
-                value = testValue
-                returnInt = 0
-            else:
-                state = QtGui.QValidator.Invalid
-                value = testValue
-                returnInt = 2
-        else:
-            state = QtGui.QValidator.Acceptable
-            value = testValue
-            returnInt = 0
-        return state, value, returnInt
+        # if self.column == functions.get_column_number('mp_number'):
+        #     additional_items = [s[2:] for s in column_config[self.column]['list_items']]
+        #     self.list.extend(additional_items)
 
-    def fixup(self, input):
-        return str(input).upper()
+        self.pattern = '|'.join(self.list)
+
+        super(ListValidator, self).__init__(QtCore.QRegExp(self.pattern))
+
+    def validate(self, value, pos):
+        state, pos = QtGui.QRegExpValidator.validate(self, value, pos)
+
+        if state == QtGui.QValidator.Invalid:
+            self.fixup(value)
+            pos = value.length()
+            state, pos = QtGui.QRegExpValidator.validate(self, value, pos)
+
+        return state, pos
+
+    def fixup(self, value):
+        if self.column == functions.get_column_number('mp_number') and value.toInt()[1]:
+            value.insert(0, 'MP')
+
+        upper = value.toUpper()
+        value.clear()
+        value.append(upper)
+
+        return None
+
+
+
+
+
+# class ListlessValidator(QtGui.QValidator):
+#     def __init__(self, column):
+#         self.column = column
+#         self.list = column_config[self.column]['list_items']
+#         super(ListValidator, self).__init__()
+#
+#     def validate(self, value, pos):
+#
+#         if value.isEmpty():
+#             return QtGui.QValidator.Intermediate, pos
+#
+#         if value
+#
+#         if testValue not in self.list:
+#             if self.fixup(testValue) in self.list:
+#                 state = QtGui.QValidator.Acceptable
+#                 value = self.fixup(testValue)
+#                 returnInt = 0
+#             elif testValue == "":
+#                 state = QtGui.QValidator.Acceptable
+#                 value = testValue
+#                 returnInt = 0
+#             else:
+#                 state = QtGui.QValidator.Invalid
+#                 value = testValue
+#                 returnInt = 2
+#         else:
+#             state = QtGui.QValidator.Acceptable
+#             value = testValue
+#             returnInt = 0
+#         return state, value, returnInt
+#
+#     def fixup(self, input):
+#         return str(input).upper()
