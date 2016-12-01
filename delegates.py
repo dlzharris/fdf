@@ -34,8 +34,10 @@ class tableDelegate(QtGui.QStyledItemDelegate):
             return editor
 
         elif 'lower_limit' in column_config[index.column()]:
-            editor = super(tableDelegate, self).createEditor(parent, option, index)
+            editor = QtGui.QLineEdit(parent)
+            #editor = super(tableDelegate, self).createEditor(parent, option, index)
             validator = DoubleFixupValidator(index.column(), editor)
+            validator.setNotation(QtGui.QDoubleValidator.StandardNotation)
             editor.setValidator(validator)
             return editor
 
@@ -64,6 +66,8 @@ class tableDelegate(QtGui.QStyledItemDelegate):
             value = editor.date()
         elif index.column() == functions.get_column_number('time'):
             value = editor.time()
+        elif 'lower_limit' in column_config[index.column()]:
+            value = editor.text()
         else:
             value = editor.text()
 
@@ -122,22 +126,21 @@ class DoubleFixupValidator(QtGui.QDoubleValidator):
 
         state, pos = QtGui.QDoubleValidator.validate(self, value, pos)
 
-        if value.isEmpty() or value == '.':
+        if value.isEmpty() or value == '.' or value == '-':
             return QtGui.QValidator.Intermediate, pos
 
         if state != QtGui.QValidator.Acceptable:
             self.fixup(value)
-            if QtGui.QDoubleValidator.validate(self, value, pos)[0] != QtGui.QValidator.Acceptable:
+            if value.toFloat() > self.top or value.toFloat < self.bottom:
                 return QtGui.QValidator.Invalid, pos
 
-        return QtGui.QValidator.Acceptable, pos
+        return QtGui.QDoubleValidator.validate(self, value, pos)
 
     def fixup(self, value):
         """Rounds value to precision specified in column_config."""
-
-        rounded = round(float(value), self.decimals)
-        value.clear()
-        value.append(QtCore.QString(rounded))
+        if value:
+            rounded = round(float(value), self.decimals)
+            value.setNum(rounded)
 
         return None
 
@@ -146,11 +149,6 @@ class ListValidator(QtGui.QRegExpValidator):
     def __init__(self, column):
         self.column = column
         self.list = column_config[self.column]['list_items']
-
-        # if self.column == functions.get_column_number('mp_number'):
-        #     additional_items = [s[2:] for s in column_config[self.column]['list_items']]
-        #     self.list.extend(additional_items)
-
         self.pattern = '|'.join(self.list)
 
         super(ListValidator, self).__init__(QtCore.QRegExp(self.pattern))

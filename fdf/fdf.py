@@ -57,14 +57,14 @@ class tableModel(QtCore.QAbstractTableModel):
 
     def __init__(self, samples=[], headers=[], parent=None):
         QtCore.QAbstractTableModel.__init__(self, parent)
-        self.__samples = samples
+        self._samples = samples
         self.__headers = headers
 
-        if not self.__samples:
-            self.__samples.append(self.defaultData())
+        if not self._samples:
+            self._samples.append(self.defaultData())
 
     def rowCount(self, parent=None):
-        return len(self.__samples)
+        return len(self._samples)
 
     def columnCount(self, parent=None):
         return len(column_config)
@@ -77,10 +77,16 @@ class tableModel(QtCore.QAbstractTableModel):
         return flags
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
+        row = index.row()
+        column = index.column()
+        value = self._samples[row][column]
+
         if role == QtCore.Qt.DisplayRole:
-            row = index.row()
-            column = index.column()
-            value = self.__samples[row][column]
+            if value and 'lower_limit' in column_config[column]:
+                value = QtCore.QString.number(value, 'f', column_config[column]['precision'])
+            return value
+
+        if role == QtCore.Qt.EditRole:
             return value
 
         if role == QtCore.Qt.TextAlignmentRole:
@@ -95,11 +101,11 @@ class tableModel(QtCore.QAbstractTableModel):
             if column == functions.get_column_number('date'):
                 try:
                     sampling_number = functions.get_sampling_number(
-                        station_number=self.__samples[row][functions.get_column_number('station_number')],
+                        station_number=self._samples[row][functions.get_column_number('station_number')],
                         date=value.toString(),
-                        sample_type=self.__samples[row][functions.get_column_number('sample_type')]
+                        sample_type=self._samples[row][functions.get_column_number('sample_type')]
                     )
-                    self.__samples[row][functions.get_column_number('sampling_number')] = sampling_number
+                    self._samples[row][functions.get_column_number('sampling_number')] = sampling_number
                     idxChanged = self.createIndex(
                         row, functions.get_column_number('sampling_number')
                     )
@@ -110,11 +116,11 @@ class tableModel(QtCore.QAbstractTableModel):
             if column == functions.get_column_number('sample_type'):
                 try:
                     sampling_number = functions.get_sampling_number(
-                        station_number=self.__samples[row][functions.get_column_number('station_number')],
-                        date=self.__samples[row][functions.get_column_number('date')].toString(),
+                        station_number=self._samples[row][functions.get_column_number('station_number')],
+                        date=self._samples[row][functions.get_column_number('date')].toString(),
                         sample_type=value
                     )
-                    self.__samples[row][functions.get_column_number('sampling_number')] = sampling_number
+                    self._samples[row][functions.get_column_number('sampling_number')] = sampling_number
                     idxChanged = self.createIndex(
                         row, functions.get_column_number('sampling_number')
                     )
@@ -122,21 +128,40 @@ class tableModel(QtCore.QAbstractTableModel):
                 except ValueError:
                     pass
 
+            # TODO: can probably get rid of this bit
+            if value and 'lower_limit' in column_config[column]:
+                value = float(value)
+
             if column in [functions.get_column_number('latitude'), functions.get_column_number('longitude')]:
-                # Calculate MGA94 coordinates
-                easting, northing, map_zone = functions.get_mga_coordinates(
-                    float(table.item(row, latCol).text()), float(table.item(row, longCol).text()))
-                # Set MGA94 coordinates
-                table.blockSignals(False)
-                table.setItem(row, eastCol, QtGui.QTableWidgetItem(str(easting)))
-                table.setItem(row, northCol, QtGui.QTableWidgetItem(str(northing)))
-                table.setItem(row, mapCol, QtGui.QTableWidgetItem(str(map_zone)))
-                # self.setAlignment(table.item(row, eastCol))
+                try:
+                    if column == functions.get_column_number('latitude'):
+                        if value > 0:
+                            value *= -1
+                        latitude = value
+                        longitude = self.data(self.createIndex(row, functions.get_column_number('longitude')), QtCore.Qt.EditRole)
+                    else:
+                        latitude = self.data(self.createIndex(row, functions.get_column_number('latitude')), QtCore.Qt.EditRole)
+                        longitude = value
 
+                    # Calculate MGA94 coordinates
+                    easting, northing, map_zone = functions.get_mga_coordinates(latitude, longitude)
 
+                    # Set MGA94 coordinates
+                    self._samples[row][functions.get_column_number('easting')] = easting
+                    idxChanged = self.createIndex(row, functions.get_column_number('easting'))
+                    self.dataChanged.emit(idxChanged, idxChanged)
 
+                    self._samples[row][functions.get_column_number('northing')] = northing
+                    idxChanged = self.createIndex(row, functions.get_column_number('northing'))
+                    self.dataChanged.emit(idxChanged, idxChanged)
 
-            self.__samples[row][column] = value
+                    self._samples[row][functions.get_column_number('map_zone')] = map_zone
+                    idxChanged = self.createIndex(row, functions.get_column_number('map_zone'))
+                    self.dataChanged.emit(idxChanged, idxChanged)
+                except ValueError:
+                    pass
+
+            self._samples[row][column] = value
             self.dataChanged.emit(index, index)
             return True
 
@@ -152,14 +177,14 @@ class tableModel(QtCore.QAbstractTableModel):
     def insertRows(self, position, rows, parent=QtCore.QModelIndex()):
         self.beginInsertRows(parent, position, position + rows - 1)
         for i in range(rows):
-            self.__samples.insert(position, self.defaultData())
+            self._samples.insert(position, self.defaultData())
         self.endInsertRows()
         return True
 
     def removeRows(self, position, rows, parent=QtCore.QModelIndex()):
         self.beginRemoveRows(parent, position, position + rows - 1)
         for i in range(rows):
-            del self.__samples[position + i]
+            del self._samples[position + i]
         self.endRemoveRows()
         return True
 
@@ -744,215 +769,6 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
             item.setBackgroundColor(QtCore.Qt.white)
 
         self.tableViewData.blockSignals(False)
-
-
-##############################################################################
-# Validator classes
-##############################################################################
-class DateValidator(QtGui.QValidator):
-    def __init__(self):
-        super(DateValidator, self).__init__()
-
-    def validate(self, testValue, col):
-        if testValue == "":
-            displayValue = ""
-            state = QtGui.QValidator.Acceptable
-            returnInt = 0
-        else:
-            try:
-                date = functions.parse_datetime_from_string(str(testValue), '00:00:00')
-                try:
-                    displayValue = date.strftime(app_config['datetime_formats']['date']['display'])
-                except ValueError:
-                    # Invalid date error
-                    displayValue = ""
-                    state = QtGui.QValidator.Invalid
-                    returnInt = 4
-                    return state, displayValue, returnInt
-                if date > datetime.datetime.now():
-                    # Future date error
-                    state = QtGui.QValidator.Invalid
-                    returnInt = 3
-                else:
-                    state = QtGui.QValidator.Acceptable
-                    returnInt = 0
-            except DatetimeError:
-                # Invalid date error
-                displayValue = ""
-                state = QtGui.QValidator.Invalid
-                returnInt = 4
-
-        return state, displayValue, returnInt
-
-
-class DoubleFixupValidator(QtGui.QDoubleValidator):
-    def __init__(self, column):
-        self.column = column
-        self.bottom = column_config[self.column]['lower_limit']
-        self.top = column_config[self.column]['upper_limit']
-        self.decimals = column_config[self.column]['precision']
-        super(DoubleFixupValidator, self).__init__(self.bottom, self.top, self.decimals)
-
-    def validate(self, testValue, p_int):
-        (state, returnInt) = super(DoubleFixupValidator, self).validate(testValue, p_int)
-        if state != QtGui.QValidator.Acceptable:
-            # Try to fix the value if possible
-            try:
-                value = self.fixup(testValue)
-                returnInt = 1
-                if self.bottom <= value <= self.top:
-                    state = QtGui.QValidator.Acceptable
-                elif testValue == "":
-                    state = QtGui.QValidator.Intermediate
-                    value = testValue
-                    returnInt = 0
-                else:
-                    state = QtGui.QValidator.Invalid
-            except ValueError:
-                value = testValue
-                returnInt = 1
-        # Test if column can accept zeroes
-        elif all([column_config[self.column]['allow_zero'] is False, float(testValue) == 0]):
-            state = QtGui.QValidator.Invalid
-            value = testValue
-            returnInt = 0
-        else:
-            value = testValue
-            returnInt = 1
-        return state, str(value), returnInt
-
-    def fixup(self, input):
-        """Rounds value to precision specified in column_config."""
-        return round(float(input), self.decimals)
-
-
-class ListValidator(QtGui.QValidator):
-    def __init__(self, column):
-        self.column = column
-        self.list = column_config[self.column]['list_items']
-        super(ListValidator, self).__init__()
-
-    def validate(self, testValue, p_int):
-        if testValue not in self.list:
-            if self.fixup(testValue) in self.list:
-                state = QtGui.QValidator.Acceptable
-                value = self.fixup(testValue)
-                returnInt = 0
-            elif testValue == "":
-                state = QtGui.QValidator.Acceptable
-                value = testValue
-                returnInt = 0
-            else:
-                state = QtGui.QValidator.Invalid
-                value = testValue
-                returnInt = 2
-        else:
-            state = QtGui.QValidator.Acceptable
-            value = testValue
-            returnInt = 0
-        return state, value, returnInt
-
-    def fixup(self, input):
-        return str(input).upper()
-
-
-class TimeValidator(QtGui.QValidator):
-    def __init__(self):
-        super(TimeValidator, self).__init__()
-
-    def validate(self, testValue, col):
-        if testValue == "":
-            displayValue = ""
-            state = QtGui.QValidator.Acceptable
-            returnInt = 0
-        else:
-            try:
-                time = functions.parse_datetime_from_string('01/01/1900', str(testValue))
-                try:
-                    displayValue = time.strftime(app_config['datetime_formats']['time']['display'])
-                    state = QtGui.QValidator.Acceptable
-                    returnInt = 0
-                except ValueError:
-                    # Invalid time error
-                    displayValue = testValue
-                    state = QtGui.QValidator.Invalid
-                    returnInt = 4
-            except DatetimeError:
-                # Invalid time error
-                displayValue = testValue
-                state = QtGui.QValidator.Invalid
-                returnInt = 4
-
-        return state, displayValue, returnInt
-
-
-##############################################################################
-# Style delegates
-##############################################################################
-class ListColumnItemDelegate(QtGui.QStyledItemDelegate):
-    def __init__(self):
-        super(ListColumnItemDelegate, self).__init__()
-
-    def createEditor(self, parent, option, index):
-        combo = FilteredComboBox(parent)
-        try:
-            items = ['']
-            items.extend(column_config[index.column()]['list_items'])
-            combo.addItems(items)
-            editor = combo
-        except KeyError:
-            editor = super(ListColumnItemDelegate, self).createEditor(parent, option, index)
-            samplingNumberCol = functions.get_column_number("sampling_number")
-            if index.column() == samplingNumberCol:
-                editor.setReadOnly(True)
-
-        editor.returnPressed.connect(self.commitAndCloseEditor)
-
-        return editor
-
-    def commitAndCloseEditor(self):
-        editor = self.sender()
-        self.commitData.emit(editor)
-        self.closeEditor.emit(editor, QtGui.QAbstractItemDelegate.NoHint)
-
-
-##############################################################################
-# Widgets
-##############################################################################
-class FilteredComboBox(QtGui.QComboBox):
-    """
-    Creates a combo box that filters the available options based on user
-    input, in a similar way to jQuery.
-    """
-    # create returnPressed signal
-    returnPressed = QtCore.pyqtSignal()
-
-    def __init__(self, parent):
-        super(FilteredComboBox, self).__init__(parent)
-        self.setFocusPolicy(QtCore.Qt.StrongFocus)
-        self.setEditable(True)
-        # Add a filter model to filter matching items
-        self.pFilterModel = QtGui.QSortFilterProxyModel(self)
-        self.pFilterModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
-        self.pFilterModel.setSourceModel(self.model())
-        # Add a completer, which uses the filter model
-        self.completer = QtGui.QCompleter(self.pFilterModel, self)
-        # Always show all (filtered) completions
-        self.completer.setCompletionMode(QtGui.QCompleter.UnfilteredPopupCompletion)
-        self.setCompleter(self.completer)
-
-        # Connect signals
-        @pyqtSlot()
-        def filter(text):
-            self.pFilterModel.setFilterFixedString(str(text))
-
-        self.lineEdit().textEdited[unicode].connect(filter)
-        self.completer.activated.connect(self.onCompleterActivated)
-
-    # On selection of an item from the completer, select the corresponding item from combobox
-    def onCompleterActivated(self, text):
-        if text:
-            self.returnPressed.emit()
 
 
 ##############################################################################
