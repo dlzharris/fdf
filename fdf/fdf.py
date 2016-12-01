@@ -350,9 +350,7 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         cols = [c.column() for c in indexes]
         for r in range(min(rows), max(rows) + 1):
             for c in range(min(cols), max(cols) + 1):
-                item = self.tableViewData.item(r, c)
-                if item:
-                    text += item.text()
+                item = self.sampleModel.data(self.sampleModel.createIndex(r, c))
                 if c != max(cols):
                     text += '\t'
             if r != max(rows):
