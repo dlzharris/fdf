@@ -301,68 +301,6 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
             msg.setWindowTitle(u"File validity error!")
             msg.exec_()
 
-    def autoUpdateCols(self, item):
-        """
-        Updates the sampling number if the station, date or sampling type
-        columns are modified
-        """
-        table = self.tableViewData
-        table.blockSignals(True)
-
-        row = item.row()
-        col = item.column()
-        stationCol = functions.get_column_number('station_number')
-        dateCol = functions.get_column_number('date')
-        sampleTypeCol = functions.get_column_number('sample_type')
-        samplingNumberCol = functions.get_column_number('sampling_number')
-        latCol = functions.get_column_number('latitude')
-        longCol = functions.get_column_number('longitude')
-        eastCol = functions.get_column_number('easting')
-        northCol = functions.get_column_number('northing')
-        mapCol = functions.get_column_number('map_zone')
-
-        try:
-            if col in [stationCol, dateCol, sampleTypeCol]:
-                # Get information required for generating the sampling number
-                stationNumber = str(table.item(row, stationCol).text())
-                date = str(table.item(row, dateCol).text())
-                try:
-                    sampleType = str(table.item(row, sampleTypeCol).text())
-                except AttributeError:
-                    sampleType = None
-
-                # Generate the sampling number
-                try:
-                    samplingNumber = functions.get_sampling_number(
-                        station_number=stationNumber,
-                        date=date,
-                        sample_type=sampleType
-                    )
-                except ValueError:
-                    samplingNumber = ""
-
-                # Set sampling number and correct alignment
-                table.setItem(row, samplingNumberCol, QtGui.QTableWidgetItem(samplingNumber))
-                # self.setAlignment(table.item(row, samplingNumberCol))
-
-            elif col in [latCol, longCol]:
-                # Calculate MGA94 coordinates
-                easting, northing, map_zone = functions.get_mga_coordinates(
-                    float(table.item(row, latCol).text()), float(table.item(row, longCol).text()))
-                # Set MGA94 coordinates
-                table.blockSignals(False)
-                table.setItem(row, eastCol, QtGui.QTableWidgetItem(str(easting)))
-                table.setItem(row, northCol, QtGui.QTableWidgetItem(str(northing)))
-                table.setItem(row, mapCol, QtGui.QTableWidgetItem(str(map_zone)))
-                # self.setAlignment(table.item(row, eastCol))
-                # self.setAlignment(table.item(row, northCol))
-                # self.setAlignment(table.item(row, mapCol))
-
-        except (AttributeError, ValueError):
-            pass
-        finally:
-            table.blockSignals(False)
-
     def checkVersion(self):
         """
         Checks the version of FDF utility to ensure it is up-to-date.
@@ -548,8 +486,6 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
 
     def paste(self):
         """Creates Excel-style paste into the table instance from the clipboard."""
-        table = self.tableViewData
-        table.blockSignals(True)
         # Get the selected cell or cells
         selection = self.tableViewData.selectionModel()
         indexes = selection.selectedIndexes()
@@ -560,7 +496,7 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         pasteEndCol = max(c.column() for c in indexes)
         if len(indexes) < 1:
             # Nothing selected
-            return
+            return None
 
         # Excel places an extra newline at the end of everything copied to the
         # clipboard. To ensure we do not lose data, and to ensure consistency
@@ -576,30 +512,18 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
             return
 
         # Paste data
-        table.blockSignals(False)
         # Special case - only one value selected
         if len(copyDataRows) == 1 and '\t' not in copyDataRows[0]:
             copyData = copyDataRows[0]
-            for i in range(0, pasteEndRow - pasteStartRow + 1):
-                for j in range(0, pasteEndCol - pasteStartCol + 1):
-                    table.setItem(pasteStartRow + i,
-                                  pasteStartCol + j,
-                                  QtGui.QTableWidgetItem(copyData))
-                    table.item(pasteStartRow + i, pasteStartCol + j).setTextAlignment(QtCore.Qt.AlignCenter)
-                    item = table.item(pasteStartRow + i, pasteStartCol + j)
-                    self.autoUpdateCols(item)
+            for i in range(pasteEndRow - pasteStartRow + 1):
+                for j in range(pasteEndCol - pasteStartCol + 1):
+                    self.sampleModel.setData(self.sampleModel.createIndex(pasteStartRow + i, pasteStartCol + j), copyData)
         else:
             # Paste data in rows, starting from top and moving left to right
-            for i in range(0, len(copyDataRows)):
+            for i in range(len(copyDataRows)):
                 copyDataCols = copyDataRows[i].split('\t')
-                for j in range(0, len(copyDataCols)):
-                    table.setItem(pasteStartRow + i,
-                                  pasteStartCol + j,
-                                  QtGui.QTableWidgetItem(copyDataCols[j]))
-                    try:
-                        table.item(pasteStartRow + i, pasteStartCol + j).setTextAlignment(QtCore.Qt.AlignCenter)
-                    except AttributeError:
-                        pass
+                for j in range(len(copyDataCols)):
+                    self.sampleModel.setData(self.sampleModel.createIndex(pasteStartRow + i, pasteStartCol + j), copyDataCols[j])
 
     def showAbout(self):
         """Displays the about box from the help menu."""
