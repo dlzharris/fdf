@@ -350,7 +350,8 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         cols = [c.column() for c in indexes]
         for r in range(min(rows), max(rows) + 1):
             for c in range(min(cols), max(cols) + 1):
-                item = self.sampleModel.data(self.sampleModel.createIndex(r, c))
+                item = str(self.sampleModel.data(self.sampleModel.createIndex(r, c)))
+                text += item
                 if c != max(cols):
                     text += '\t'
             if r != max(rows):
