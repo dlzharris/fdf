@@ -241,6 +241,7 @@ class tableModel(QtCore.QAbstractTableModel):
 
         return QtGui.QBrush(QtCore.Qt.white), None
 
+
 ###############################################################################
 # Main app constructor and initialisation
 ###############################################################################
@@ -322,6 +323,9 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
             lists = functions.lord2lorl(dicts, app_config['column_order'])
 
             self.sampleModel.insertRows(self.sampleModel.rowCount(), len(lists))
+
+            fileValid = True
+
             for i in range(len(lists)):
                 date = lists[i][functions.get_column_number('date')]
                 time = lists[i][functions.get_column_number('time')]
@@ -333,8 +337,21 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
                         lists[i][j] = QtCore.QTime(dt.hour, dt.minute, dt.second)
                     self.sampleModel.setData(self.sampleModel.index(i, j), lists[i][j])
 
+                    if self.sampleModel.data(self.sampleModel.index(i, j),
+                                             role=QtCore.Qt.BackgroundRole) == QtGui.QBrush(QtCore.Qt.red):
+                        fileValid = False
+
             # Add file name to listbox
             self.listWidgetCurrentFiles.addItem(QtGui.QListWidgetItem(self.fileLineEdit.text()))
+
+            if not fileValid:
+                txt = u"The chosen file has invalid values.\n\n" \
+                      u"Please review the cells in red highlight before exporting."
+                msg = QtGui.QMessageBox()
+                msg.setIcon(QtGui.QMessageBox.Warning)
+                msg.setText(txt)
+                msg.setWindowTitle(u"Errors detected!")
+                msg.exec_()
 
         except ValidityError:
             txt = u"The chosen file is not valid for the specified instrument.\n\n" \
