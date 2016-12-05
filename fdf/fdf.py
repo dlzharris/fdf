@@ -82,6 +82,8 @@ class tableModel(QtCore.QAbstractTableModel):
         value = self._samples[row][column]
 
         if role == QtCore.Qt.DisplayRole:
+            if type(value) in (QtCore.QDate, QtCore.QTime):
+                value = value.toString(QtCore.Qt.ISODate)
             if value and 'lower_limit' in column_config[column]:
                 value = QtCore.QString.number(value, 'f', column_config[column]['precision'])
             return value
@@ -350,7 +352,7 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         cols = [c.column() for c in indexes]
         for r in range(min(rows), max(rows) + 1):
             for c in range(min(cols), max(cols) + 1):
-                item = str(self.sampleModel.data(self.sampleModel.createIndex(r, c)))
+                item = self.sampleModel.data(self.sampleModel.createIndex(r, c))
                 text += item
                 if c != max(cols):
                     text += '\t'
@@ -365,7 +367,7 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         rows, cols = self.copy()
         for r in range(min(rows), max(rows) + 1):
             for c in range(min(cols), max(cols) + 1):
-                self.tableViewData.item(r, c).setText("")
+                self.sampleModel.setData(self.sampleModel.createIndex(r, c), QtCore.QString(""))
 
     def delete(self):
         """Deletes data from currently selected cells."""
