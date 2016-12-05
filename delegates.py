@@ -30,7 +30,7 @@ class tableDelegate(QtGui.QStyledItemDelegate):
 
         elif 'time' in column_config[index.column()]['name']:
             editor = QtGui.QDateTimeEdit(parent)
-            editor.setDisplayFormat("hh:mm:ss")
+            editor.setDisplayFormat(QtCore.Qt.ISODate)
             return editor
 
         elif 'lower_limit' in column_config[index.column()]:
@@ -49,10 +49,11 @@ class tableDelegate(QtGui.QStyledItemDelegate):
 
         if type(editor) is FilteredComboBox:
             editor.setCurrentIndex(editor.findText(value))
+        #TODO: Change date format to dd/mm/yyyy here if required
         elif index.column() == functions.get_column_number('date'):
-            editor.setDate(value)
+            editor.setDate(QtCore.QDate.fromString(value, QtCore.Qt.ISODate))
         elif index.column() == functions.get_column_number('time'):
-            editor.setTime(value)
+            editor.setTime(QtCore.QTime.fromString(value, QtCore.Qt.ISODate))
         else:
             editor.setText(value)
 
