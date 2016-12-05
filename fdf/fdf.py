@@ -379,11 +379,8 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
             return
 
         # Start deleting
-        rows = [r.row() for r in indexes]
-        cols = [c.column() for c in indexes]
-        for r in range(min(rows), max(rows) + 1):
-            for c in range(min(cols), max(cols) + 1):
-                self.tableViewData.item(r, c).setText("")
+        for i in indexes:
+            self.sampleModel.setData(i, QtCore.QString(""))
 
     def delRows(self):
         """Deletes selected rows from the table."""
