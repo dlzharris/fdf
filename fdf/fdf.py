@@ -97,6 +97,9 @@ class tableModel(QtCore.QAbstractTableModel):
         if role == QtCore.Qt.BackgroundRole:
             return self.validateData(value, index)[0]
 
+        if role == QtCore.Qt.ToolTipRole:
+            return self.validateData(value, index)[1]
+
     def setData(self, index, value, role=QtCore.Qt.EditRole):
         if index.isValid() and role == QtCore.Qt.EditRole:
             row = index.row()
@@ -223,7 +226,7 @@ class tableModel(QtCore.QAbstractTableModel):
                 if value < column_config[index.column()]['lower_limit'] or value > column_config[index.column()]['upper_limit']:
                     lowerLimit = column_config[index.column()]['lower_limit']
                     upperLimit = column_config[index.column()]['upper_limit']
-                    text = "Value out of range.\n Acceptable range is between %s and %s" % (lowerLimit, upperLimit)
+                    text = "Value out of range.\nAcceptable range is between %s and %s" % (lowerLimit, upperLimit)
                     return QtGui.QBrush(QtCore.Qt.red), text
 
                 if value == 0:
@@ -666,69 +669,6 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
                    u"on the same date."
 
         return dataValid, msg
-
-    # TODO: Incorporate error messages to validators and/or file import
-    def validateInput(self, item):
-        """Validates the input of data to a cell."""
-        self.tableViewData.blockSignals(True)
-        col = item.column()
-
-        # Select correct validator
-        if column_config[col]['name'] == 'date':
-            validator = DateValidator()
-        elif column_config[col]['name'] == 'time':
-            validator = TimeValidator()
-        elif 'list_items' in column_config[col]:
-            validator = ListValidator(col)
-        elif 'lower_limit' in column_config[col]:
-            validator = DoubleFixupValidator(col)
-        else:
-            self.tableViewData.blockSignals(False)
-            return
-
-        # Validate item
-        state, displayValue, returnInt = validator.validate(item.text(), col)
-        if state == QtGui.QValidator.Intermediate:
-            self.tableViewData.blockSignals(False)
-            return
-        elif state == QtGui.QValidator.Invalid:
-            # Prepare message to inform user of invalid value.
-            paramName = column_config[col]['display_name']
-            item.setText(displayValue)
-            item.setBackgroundColor(QtCore.Qt.red)
-            if returnInt == 0:  # Zero-error
-                txt = "%s value has a value of zero (0).\n" \
-                      "A value of zero generally indicates a sensor failure, or a non-measured parameter.\n" \
-                      "Please review and adjust before continuing." % paramName
-                windowTitleTxt = "Data quality error!"
-            elif returnInt == 1:  # Data range error
-                lowerLimit = column_config[col]['lower_limit']
-                upperLimit = column_config[col]['upper_limit']
-                txt = "%s value out of range.\n Acceptable range is between %s and %s" % (
-                paramName, lowerLimit, upperLimit)
-                windowTitleTxt = "Value range error!"
-            elif returnInt == 2:  # List error
-                txt = "%s value is not a valid value from the drop down list.\n" \
-                      "Please select a valid value from the list." % paramName
-                windowTitleTxt = "Invalid selection error!"
-            elif returnInt == 3:  # Future Date error
-                txt = "The entered date is in the future. Sampling dates must be in the past.\n" \
-                      "Please enter a different date."
-                windowTitleTxt = "Invalid date error!"
-            else:  # returnInt == 4  # Date/time format error
-                txt = "The entered time or date is invalid. Please enter a valid date/time."
-                windowTitleTxt = "Invalid date/time error!"
-
-            msg = QtGui.QMessageBox()
-            msg.setIcon(QtGui.QMessageBox.Warning)
-            msg.setText(txt)
-            msg.setWindowTitle(windowTitleTxt)
-            msg.exec_()
-        else:  # Valid value
-            item.setText(displayValue)
-            item.setBackgroundColor(QtCore.Qt.white)
-
-        self.tableViewData.blockSignals(False)
 
 
 ##############################################################################
