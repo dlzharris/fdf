@@ -94,6 +94,9 @@ class tableModel(QtCore.QAbstractTableModel):
         if role == QtCore.Qt.TextAlignmentRole:
             return QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter
 
+        if role == QtCore.Qt.BackgroundRole:
+            return self.validateData(value, index)[0]
+
     def setData(self, index, value, role=QtCore.Qt.EditRole):
         if index.isValid() and role == QtCore.Qt.EditRole:
             row = index.row()
@@ -104,7 +107,7 @@ class tableModel(QtCore.QAbstractTableModel):
                 try:
                     sampling_number = functions.get_sampling_number(
                         station_number=self._samples[row][functions.get_column_number('station_number')],
-                        date=value.toString(),
+                        date=value.toString(QtCore.Qt.ISODate),
                         sample_type=self._samples[row][functions.get_column_number('sample_type')]
                     )
                     self._samples[row][functions.get_column_number('sampling_number')] = sampling_number
@@ -119,7 +122,7 @@ class tableModel(QtCore.QAbstractTableModel):
                 try:
                     sampling_number = functions.get_sampling_number(
                         station_number=self._samples[row][functions.get_column_number('station_number')],
-                        date=self._samples[row][functions.get_column_number('date')].toString(),
+                        date=self._samples[row][functions.get_column_number('date')].toString(QtCore.Qt.ISODate),
                         sample_type=value
                     )
                     self._samples[row][functions.get_column_number('sampling_number')] = sampling_number
@@ -130,7 +133,6 @@ class tableModel(QtCore.QAbstractTableModel):
                 except ValueError:
                     pass
 
-            # TODO: can probably get rid of this bit
             if value and 'lower_limit' in column_config[column]:
                 value = float(value)
 
@@ -140,9 +142,11 @@ class tableModel(QtCore.QAbstractTableModel):
                         if value > 0:
                             value *= -1
                         latitude = value
-                        longitude = self.data(self.createIndex(row, functions.get_column_number('longitude')), QtCore.Qt.EditRole)
+                        longitude = self.data(self.createIndex(row, functions.get_column_number('longitude')),
+                                              QtCore.Qt.EditRole)
                     else:
-                        latitude = self.data(self.createIndex(row, functions.get_column_number('latitude')), QtCore.Qt.EditRole)
+                        latitude = self.data(self.createIndex(row, functions.get_column_number('latitude')),
+                                             QtCore.Qt.EditRole)
                         longitude = value
 
                     # Calculate MGA94 coordinates
@@ -200,6 +204,40 @@ class tableModel(QtCore.QAbstractTableModel):
         defaultValues[functions.get_column_number('time')] = QtCore.QTime()
         return defaultValues
 
+    def validateData(self, value, index):
+        if value:
+            if index.column() == functions.get_column_number('date') and value > QtCore.QDate.currentDate():
+                text = "The entered date is in the future. Sampling dates must be in the past.\n" \
+                          "Please enter a different date."
+                return QtGui.QBrush(QtCore.Qt.red), text
+
+            if index.column() == functions.get_column_number('date') and not value.isValid():
+                text = "The entered date is invalid. Please enter a valid date."
+                return QtGui.QBrush(QtCore.Qt.red), text
+
+            if index.column() == functions.get_column_number('time') and not value.isValid():
+                text = "The entered time is invalid. Please enter a valid time."
+                return QtGui.QBrush(QtCore.Qt.red), text
+
+            if 'lower_limit' in column_config[index.column()]:
+                if value < column_config[index.column()]['lower_limit'] or value > column_config[index.column()]['upper_limit']:
+                    lowerLimit = column_config[index.column()]['lower_limit']
+                    upperLimit = column_config[index.column()]['upper_limit']
+                    text = "Value out of range.\n Acceptable range is between %s and %s" % (lowerLimit, upperLimit)
+                    return QtGui.QBrush(QtCore.Qt.red), text
+
+                if value == 0:
+                    text = "Given value is zero (0). A value of zero generally indicates a sensor failure, " \
+                           "or a non-measured parameter. Please review and adjust before continuing."
+                    return QtGui.QBrush(QtCore.Qt.red), text
+
+            if 'list_items' in column_config[index.column()] and value not in column_config[index.column()]['list_items']:
+                text = "Value is not a valid value from the drop down list.\n" \
+                      "Please select a valid value from the list."
+                return QtGui.QBrush(QtCore.Qt.red), text
+
+        return QtGui.QBrush(QtCore.Qt.white), None
+
 ###############################################################################
 # Main app constructor and initialisation
 ###############################################################################
@@ -207,6 +245,7 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
     """
     Constructor for the main application
     """
+
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
         self.checkVersion()
@@ -509,30 +548,33 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
             copyData = copyDataRows[0]
             for i in range(pasteEndRow - pasteStartRow + 1):
                 for j in range(pasteEndCol - pasteStartCol + 1):
-                    self.sampleModel.setData(self.sampleModel.createIndex(pasteStartRow + i, pasteStartCol + j), copyData)
+                    self.sampleModel.setData(self.sampleModel.createIndex(pasteStartRow + i, pasteStartCol + j),
+                                             copyData)
         else:
             # Paste data in rows, starting from top and moving left to right
             for i in range(len(copyDataRows)):
                 copyDataCols = copyDataRows[i].split('\t')
                 for j in range(len(copyDataCols)):
-                    self.sampleModel.setData(self.sampleModel.createIndex(pasteStartRow + i, pasteStartCol + j), copyDataCols[j])
+                    self.sampleModel.setData(self.sampleModel.createIndex(pasteStartRow + i, pasteStartCol + j),
+                                             copyDataCols[j])
 
     def showAbout(self):
         """Displays the about box from the help menu."""
         aboutMsgBox = QtGui.QMessageBox()
         title = u"FDF Utility v%s" % __version__
         text = u"FDF Utility - an application to format water quality field data " \
-            u"for import to KISTERS Water Quality Module (KiWQM) water quality database.\n\n" \
-            u"Author: %s\n\nVersion: %s\n\n" \
-            u"(C) 2016 New South Wales Department of Industry\n\n" \
-            u"For further information, contact the Data & Procedures Officer at DPI Water." \
-            % (__author__, __version__)
+               u"for import to KISTERS Water Quality Module (KiWQM) water quality database.\n\n" \
+               u"Author: %s\n\nVersion: %s\n\n" \
+               u"(C) 2016 New South Wales Department of Industry\n\n" \
+               u"For further information, contact the Data & Procedures Officer at DPI Water." \
+               % (__author__, __version__)
         aboutMsgBox.about(self, title, text)
 
     def showHelp(self):
         """Displays the HTML help documentation."""
         self.helpBrowser.show()
 
+    # TODO: Update for MVC
     def validateExport(self):
         """Validates the table data for completeness and for fitting to business rules"""
         table = self.tableViewData
@@ -625,6 +667,7 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
 
         return dataValid, msg
 
+    # TODO: Incorporate error messages to validators and/or file import
     def validateInput(self, item):
         """Validates the input of data to a cell."""
         self.tableViewData.blockSignals(True)
@@ -661,7 +704,8 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
             elif returnInt == 1:  # Data range error
                 lowerLimit = column_config[col]['lower_limit']
                 upperLimit = column_config[col]['upper_limit']
-                txt = "%s value out of range.\n Acceptable range is between %s and %s" % (paramName, lowerLimit, upperLimit)
+                txt = "%s value out of range.\n Acceptable range is between %s and %s" % (
+                paramName, lowerLimit, upperLimit)
                 windowTitleTxt = "Value range error!"
             elif returnInt == 2:  # List error
                 txt = "%s value is not a valid value from the drop down list.\n" \
