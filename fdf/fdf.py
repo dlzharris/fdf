@@ -457,14 +457,8 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
 
     def keyPressEnter(self):
         """Sets the action of pressing Enter to move the selection to the next row down."""
-        table = self.tableViewData
-        item = table.currentItem()
-        row = item.row()
-        col = item.column()
-        # Deselect current item
-        table.setItemSelected(table.item(row, col), False)
-        # Select next item
-        table.setCurrentCell(row + 1, col)
+        currentIndex = self.tableViewData.currentIndex()
+        self.tableViewData.setCurrentIndex(self.sampleModel.createIndex(currentIndex.row() + 1, currentIndex.column()))
 
     def resetData(self):
         """Resets all data in the table instance after confirming with the user."""
