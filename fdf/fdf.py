@@ -107,12 +107,14 @@ class tableModel(QtCore.QAbstractTableModel):
             row = index.row()
             column = index.column()
 
-            if column == functions.get_column_number('date') and type(value) is QtCore.QString:
-                dt = functions.parse_datetime_from_string(str(value), "")
+            if column == functions.get_column_number('date'):
+                date = str(value)
+                dt = functions.parse_datetime_from_string(date, "")
                 value = QtCore.QDate(dt.year, dt.month, dt.day)
 
-            if column == functions.get_column_number('time') and type(value) is QtCore.QString:
-                dt = functions.parse_datetime_from_string("", str(value))
+            if column == functions.get_column_number('time'):
+                time = str(value)
+                dt = functions.parse_datetime_from_string("", time)
                 value = QtCore.QTime(dt.hour, dt.minute, dt.second)
 
             # Update sampling number
@@ -305,7 +307,7 @@ class tableModel(QtCore.QAbstractTableModel):
         """
         row = index.row()
         column = index.column()
-
+        # TODO: Find out why sampling number is returning 010123 as date when date is empty
         if column == functions.get_column_number('station_number'):
             station_number = value
             date = self._samples[row][functions.get_column_number('date')].toPyDate() \
@@ -419,23 +421,14 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
             # Add data to table
             lists = functions.lord2lorl(dicts, app_config['column_order'])
 
-            self.sampleModel.insertRows(self.sampleModel.rowCount(), len(lists))
-
             fileValid = True
 
             for i in range(len(lists)):
-                date = lists[i][functions.get_column_number('date')]
-                time = lists[i][functions.get_column_number('time')]
-                dt = functions.parse_datetime_from_string(date, time)
+                self.sampleModel.insertRows(self.sampleModel.rowCount(), 1)
                 for j in range(len(lists[i])):
-                    if j == functions.get_column_number('date'):
-                        lists[i][j] = QtCore.QDate(dt.year, dt.month, dt.day)
-                    if j == functions.get_column_number('time'):
-                        lists[i][j] = QtCore.QTime(dt.hour, dt.minute, dt.second)
-                    self.sampleModel.setData(self.sampleModel.index(i, j), lists[i][j])
-
-                    if self.sampleModel.data(self.sampleModel.index(i, j),
-                                             role=QtCore.Qt.BackgroundRole) == QtGui.QBrush(QtCore.Qt.red):
+                    index = self.sampleModel.index(self.sampleModel.rowCount() - 1, j)
+                    self.sampleModel.setData(index, lists[i][j])
+                    if self.sampleModel.data(index, role=QtCore.Qt.BackgroundRole) == QtGui.QBrush(QtCore.Qt.red):
                         fileValid = False
 
             # Add file name to listbox
