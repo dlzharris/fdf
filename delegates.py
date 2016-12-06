@@ -2,7 +2,8 @@ from PyQt4 import QtGui, QtCore
 import functions
 from configuration import app_config, column_config
 
-
+# TODO: Move to next item on completion of editing
+# TODO: Single return press to exit editing and commit data
 ##############################################################################
 # Style delegates
 ##############################################################################
@@ -30,12 +31,11 @@ class tableDelegate(QtGui.QStyledItemDelegate):
 
         elif 'time' in column_config[index.column()]['name']:
             editor = QtGui.QDateTimeEdit(parent)
-            editor.setDisplayFormat(QtCore.Qt.ISODate)
+            editor.setDisplayFormat("HH:mm:ss")
             return editor
 
         elif 'lower_limit' in column_config[index.column()]:
             editor = QtGui.QLineEdit(parent)
-            #editor = super(tableDelegate, self).createEditor(parent, option, index)
             validator = DoubleFixupValidator(index.column(), editor)
             validator.setNotation(QtGui.QDoubleValidator.StandardNotation)
             editor.setValidator(validator)

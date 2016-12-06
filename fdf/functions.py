@@ -141,82 +141,6 @@ def check_file_validity(instrument_file, file_source):
         return file_valid
 
 
-def check_matrix_consistency(table, col_mp_number, col_sample_matrix, col_sampling_number):
-    """
-    Checks that all samples in a single sampling use the same matrix.
-    This is a requirement for KiWQM.
-    :param table: Instance of QTableWidget
-    :param col_mp_number: Measuring program column number in table
-    :param col_sample_matrix: Matrix details column number in table
-    :param col_sampling_number: Sampling number column number in table
-    :return: Boolean indicating if matrix is consistent or not
-    """
-    matrix_consistent = True
-    matrix_list = []
-
-    for row in range(0, table.rowCount()):
-        matrix_list.append(
-            (table.item(row, col_mp_number).text(),
-             table.item(row, col_sample_matrix).text(),
-             table.item(row, col_sampling_number).text())
-        )
-
-    for sample in matrix_list:
-        sampling_matrix = [x for (m, x, s) in matrix_list if m == sample[0] and s == sample[2]]
-        if len(set(sampling_matrix)) > 1:
-            matrix_consistent = False
-            break
-
-    return matrix_consistent
-
-
-def check_sequence_numbers(table, col_mp_number, col_sample_cid, col_sampling_number,
-                           col_location_number, col_sample_collected):
-    """
-    Checks that all samples in a single sampling use distinct sequence
-    numbers and that they start at 1 and increment sequentially.
-    :param table: Instance of QTableWidget
-    :param col_mp_number: Measuring program column number in table
-    :param col_sample_cid: Sample consecutive ID number column number in table
-    :param col_sampling_number: Sampling number column number in table
-    :param col_location_number: Location number column number in table
-    :return: Boolean indicating if sequence numbers are acceptable
-    """
-    sequence_correct = True
-    sequence_list = []
-
-    try:
-        for row in range(0, table.rowCount()):
-            sequence_list.append(
-                (table.item(row, col_mp_number).text(),
-                 table.item(row, col_sample_cid).text(),
-                 table.item(row, col_sampling_number).text(),
-                 table.item(row, col_location_number).text(),
-                 table.item(row, col_sample_collected).text())
-            )
-
-        for sample in sequence_list:
-            # Get a list of all sequence numbers at a single location in a
-            # single sampling.
-            sequence_numbers = [
-                int(s) for (m, s, n, l, c) in sequence_list if
-                m == sample[0] and
-                n == sample[2] and
-                l == sample[3] and
-                c != "No"
-            ]
-            # Check that sequence numbers in a single sampling are distinct,
-            # start at 1, and increment sequentially
-            if not all(a == b for a, b in list(enumerate(sorted(sequence_numbers), start=1))):
-                sequence_correct = False
-
-    # If we are missing sampling numbers or location IDs then we will get a ValueError
-    except ValueError:
-        sequence_correct = False
-
-    return sequence_correct
-
-
 def load_instrument_file(instrument_file, file_source):
     """
     Read the provided csv file, parses and loads the file to memory
@@ -638,31 +562,6 @@ def get_replicate_number(rep_code):
     return replicate_numbers[rep_code]
 
 
-def get_sampling_number(station_number, date, sample_type):
-    """
-    Returns a new sampling number
-    :param station_number: String representing the station number
-    :param date: String with date (in any format)
-    :param sample_type: String representing the sample type code
-    :return: String of well-formatted sampling identification number
-    """
-    # Set the date format and delimiter for the sampling number
-    sampling_delimiter = "-"
-    # Get the required parts of the sampling number from the field_dict
-    try:
-        date = parse_datetime_from_string(date, "").strftime(app_config['datetime_formats']['date']['sampling_number'])
-    except DatetimeError:
-        date = ""
-    # Create the sampling number in format STATION#-DDMMYY[-SAMPLE_TYPE]
-    if (not station_number) or (not date):
-        sampling_number = ""
-    elif sample_type in ["QR", "QB", "QT"]:
-        sampling_number = sampling_delimiter.join([station_number, date, sample_type])
-    else:
-        sampling_number = sampling_delimiter.join([station_number, date])
-    return sampling_number
-
-
 def get_sampling_time(sample_set, station, sample_date):
     """
     Find the sampling time for a set of samples collected at the same station
@@ -682,7 +581,7 @@ def get_sampling_time(sample_set, station, sample_date):
     return sampling_time
 
 
-def parse_datetime_from_string(date_string, time_string):
+def parse_datetime_from_string(date, time):
     """
     Wrapper function for dateutil.parser.parse.
     Takes a date string and time string (in any format) and parses it into a
@@ -692,7 +591,7 @@ def parse_datetime_from_string(date_string, time_string):
     :return: Datetime object containing date and time information
     """
     try:
-        datetime_concat = " ".join([date_string, time_string])
+        datetime_concat = " ".join([str(date), str(time)])
         dt = parse(datetime_concat, dayfirst=True, yearfirst=False, default=None)
     except (ValueError, TypeError):
         raise DatetimeError
@@ -725,7 +624,7 @@ def prepare_dictionary(data_list):
         sample['event_time'] = get_sampling_time(data_list, sample['station_number'], sample['date'])
 
         # If no sample or data was collected, prepare a shortened dictionary
-        if sample['sample_collected'] == 'No':
+        if sample['sample_collected'] == 'NO':
             sample_param_oriented = copy.deepcopy(sample)
             sample_param_oriented["parameter"] = 'no_results_available'
             sample_param_oriented["value"] = True

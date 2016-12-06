@@ -107,15 +107,22 @@ class tableModel(QtCore.QAbstractTableModel):
             row = index.row()
             column = index.column()
 
+            if column == functions.get_column_number('date') and type(value) is QtCore.QString:
+                dt = functions.parse_datetime_from_string(str(value), "")
+                value = QtCore.QDate(dt.year, dt.month, dt.day)
+
+            if column == functions.get_column_number('time') and type(value) is QtCore.QString:
+                dt = functions.parse_datetime_from_string("", str(value))
+                value = QtCore.QTime(dt.hour, dt.minute, dt.second)
+
             # Update sampling number
-            if column in (functions.get_column_number('date'), functions.get_column_number('sample_type')):
-                try:
-                    sampling_number = self.get_sampling_number(value, index)
-                    self._samples[row][functions.get_column_number('sampling_number')] = sampling_number
-                    idxChanged = self.createIndex(row, functions.get_column_number('sampling_number'))
-                    self.dataChanged.emit(idxChanged, idxChanged)
-                except ValueError:
-                    pass
+            if column in (functions.get_column_number('station_number'),
+                          functions.get_column_number('date'),
+                          functions.get_column_number('sample_type')):
+                sampling_number = self.get_sampling_number(value, index)
+                self._samples[row][functions.get_column_number('sampling_number')] = sampling_number
+                idxChanged = self.index(row, functions.get_column_number('sampling_number'))
+                self.dataChanged.emit(idxChanged, idxChanged)
 
             if value and 'lower_limit' in column_config[column]:
                 value = float(value)
@@ -126,10 +133,10 @@ class tableModel(QtCore.QAbstractTableModel):
                         if value > 0:
                             value *= -1
                         latitude = value
-                        longitude = self.data(self.createIndex(row, functions.get_column_number('longitude')),
+                        longitude = self.data(self.index(row, functions.get_column_number('longitude')),
                                               QtCore.Qt.EditRole)
                     else:
-                        latitude = self.data(self.createIndex(row, functions.get_column_number('latitude')),
+                        latitude = self.data(self.index(row, functions.get_column_number('latitude')),
                                              QtCore.Qt.EditRole)
                         longitude = value
 
@@ -138,15 +145,15 @@ class tableModel(QtCore.QAbstractTableModel):
 
                     # Set MGA94 coordinates
                     self._samples[row][functions.get_column_number('easting')] = easting
-                    idxChanged = self.createIndex(row, functions.get_column_number('easting'))
+                    idxChanged = self.index(row, functions.get_column_number('easting'))
                     self.dataChanged.emit(idxChanged, idxChanged)
 
                     self._samples[row][functions.get_column_number('northing')] = northing
-                    idxChanged = self.createIndex(row, functions.get_column_number('northing'))
+                    idxChanged = self.index(row, functions.get_column_number('northing'))
                     self.dataChanged.emit(idxChanged, idxChanged)
 
                     self._samples[row][functions.get_column_number('map_zone')] = map_zone
-                    idxChanged = self.createIndex(row, functions.get_column_number('map_zone'))
+                    idxChanged = self.index(row, functions.get_column_number('map_zone'))
                     self.dataChanged.emit(idxChanged, idxChanged)
                 except ValueError:
                     pass
@@ -299,16 +306,25 @@ class tableModel(QtCore.QAbstractTableModel):
         row = index.row()
         column = index.column()
 
-        station_number = self._samples[row][functions.get_column_number('station_number')]
+        if column == functions.get_column_number('station_number'):
+            station_number = value
+            date = self._samples[row][functions.get_column_number('date')].toPyDate() \
+                .strftime(app_config['datetime_formats']['date']['sampling_number'])
+            sample_type = self._samples[row][functions.get_column_number('sample_type')]
 
-        if column == functions.get_column_number('date'):
+        elif column == functions.get_column_number('date'):
+            station_number = self._samples[row][functions.get_column_number('station_number')]
             date = value.toPyDate().strftime(app_config['datetime_formats']['date']['sampling_number'])
             sample_type = self._samples[row][functions.get_column_number('sample_type')]
+
         elif column == functions.get_column_number('sample_type'):
+            station_number = self._samples[row][functions.get_column_number('station_number')]
             date = self._samples[row][functions.get_column_number('date')].toPyDate()\
                 .strftime(app_config['datetime_formats']['date']['sampling_number'])
             sample_type = value
+
         else:
+            station_number = self._samples[row][functions.get_column_number('station_number')]
             date = self._samples[row][functions.get_column_number('date')].toPyDate()\
                 .strftime(app_config['datetime_formats']['date']['sampling_number'])
             sample_type = self._samples[row][functions.get_column_number('sample_type')]
@@ -492,7 +508,7 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         cols = [c.column() for c in indexes]
         for r in range(min(rows), max(rows) + 1):
             for c in range(min(cols), max(cols) + 1):
-                item = self.sampleModel.data(self.sampleModel.createIndex(r, c))
+                item = self.sampleModel.data(self.sampleModel.index(r, c))
                 text += item
                 if c != max(cols):
                     text += '\t'
@@ -507,7 +523,7 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         rows, cols = self.copy()
         for r in range(min(rows), max(rows) + 1):
             for c in range(min(cols), max(cols) + 1):
-                self.sampleModel.setData(self.sampleModel.createIndex(r, c), QtCore.QString(""))
+                self.sampleModel.setData(self.sampleModel.index(r, c), QtCore.QString(""))
 
     def delete(self):
         """Deletes data from currently selected cells."""
@@ -598,7 +614,7 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
     def keyPressEnter(self):
         """Sets the action of pressing Enter to move the selection to the next row down."""
         currentIndex = self.tableViewData.currentIndex()
-        self.tableViewData.setCurrentIndex(self.sampleModel.createIndex(currentIndex.row() + 1, currentIndex.column()))
+        self.tableViewData.setCurrentIndex(self.sampleModel.index(currentIndex.row() + 1, currentIndex.column()))
 
     def resetData(self):
         """Resets all data in the table instance after confirming with the user."""
@@ -649,14 +665,14 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
             copyData = copyDataRows[0]
             for i in range(pasteEndRow - pasteStartRow + 1):
                 for j in range(pasteEndCol - pasteStartCol + 1):
-                    self.sampleModel.setData(self.sampleModel.createIndex(pasteStartRow + i, pasteStartCol + j),
+                    self.sampleModel.setData(self.sampleModel.index(pasteStartRow + i, pasteStartCol + j),
                                              copyData)
         else:
             # Paste data in rows, starting from top and moving left to right
             for i in range(len(copyDataRows)):
                 copyDataCols = copyDataRows[i].split('\t')
                 for j in range(len(copyDataCols)):
-                    self.sampleModel.setData(self.sampleModel.createIndex(pasteStartRow + i, pasteStartCol + j),
+                    self.sampleModel.setData(self.sampleModel.index(pasteStartRow + i, pasteStartCol + j),
                                              copyDataCols[j])
 
     def showAbout(self):
@@ -675,7 +691,6 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         """Displays the HTML help documentation."""
         self.helpBrowser.show()
 
-    # TODO: Update for MVC
     def validateExport(self):
         """Validates the table data for completeness and for fitting to business rules"""
         dataValid = True
@@ -693,7 +708,7 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         invalidColumns = []
         for i in range(columns):
             for j in range(rows):
-                index = model.createIndex(j, i)
+                index = model.index(j, i)
                 if model.data(index, role=QtCore.Qt.BackgroundRole) == QtGui.QBrush(QtCore.Qt.red):
                     invalidColumns.append(i)
                     break
@@ -702,9 +717,9 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         incompleteColumns = []
         for i in range(columns):
             for j in range(rows):
-                index = model.createIndex(j, i)
+                index = model.index(j, i)
                 if model.data(index) == "":
-                    if model.data(model.createIndex(j, functions.get_column_number('sample_collected'))) == "NO":
+                    if model.data(model.index(j, functions.get_column_number('sample_collected'))) == "NO":
                         if column_config[i]['required_if_not_sampled']:
                             incompleteColumns.append(i)
                             break
