@@ -48,6 +48,8 @@ __status__ = 'Development'
 __version__ = '0.9.6'
 
 
+# TODO: Selection box for date format
+# TODO: Freeze panes implementation
 ###############################################################################
 # Models
 ###############################################################################
@@ -106,32 +108,11 @@ class tableModel(QtCore.QAbstractTableModel):
             column = index.column()
 
             # Update sampling number
-            if column == functions.get_column_number('date'):
+            if column in (functions.get_column_number('date'), functions.get_column_number('sample_type')):
                 try:
-                    sampling_number = functions.get_sampling_number(
-                        station_number=self._samples[row][functions.get_column_number('station_number')],
-                        date=value.toString(QtCore.Qt.ISODate),
-                        sample_type=self._samples[row][functions.get_column_number('sample_type')]
-                    )
+                    sampling_number = self.get_sampling_number(value, index)
                     self._samples[row][functions.get_column_number('sampling_number')] = sampling_number
-                    idxChanged = self.createIndex(
-                        row, functions.get_column_number('sampling_number')
-                    )
-                    self.dataChanged.emit(idxChanged, idxChanged)
-                except ValueError:
-                    pass
-
-            if column == functions.get_column_number('sample_type'):
-                try:
-                    sampling_number = functions.get_sampling_number(
-                        station_number=self._samples[row][functions.get_column_number('station_number')],
-                        date=self._samples[row][functions.get_column_number('date')].toString(QtCore.Qt.ISODate),
-                        sample_type=value
-                    )
-                    self._samples[row][functions.get_column_number('sampling_number')] = sampling_number
-                    idxChanged = self.createIndex(
-                        row, functions.get_column_number('sampling_number')
-                    )
+                    idxChanged = self.createIndex(row, functions.get_column_number('sampling_number'))
                     self.dataChanged.emit(idxChanged, idxChanged)
                 except ValueError:
                     pass
@@ -240,6 +221,106 @@ class tableModel(QtCore.QAbstractTableModel):
                 return QtGui.QBrush(QtCore.Qt.red), text
 
         return QtGui.QBrush(QtCore.Qt.white), None
+
+    def check_matrix_consistency(self):
+        """
+        Checks that all samples in a single sampling use the same matrix.
+        This is a requirement for KiWQM.
+        :param table: Instance of QTableWidget
+        :return: Boolean indicating if matrix is consistent or not
+        """
+        matrix_consistent = True
+        matrix_list = []
+
+        for row in range(self.rowCount()):
+            matrix_list.append(
+                (self._samples[row][functions.get_column_number('mp_number')],
+                 self._samples[row][functions.get_column_number('sample_matrix')],
+                 self._samples[row][functions.get_column_number('sampling_number')])
+            )
+
+        for sample in matrix_list:
+            sampling_matrix = [x for (m, x, s) in matrix_list if m == sample[0] and s == sample[2]]
+            if len(set(sampling_matrix)) > 1:
+                matrix_consistent = False
+                break
+
+        return matrix_consistent
+
+    def check_sequence_numbers(self):
+        """
+        Checks that all samples in a single sampling use distinct sequence
+        numbers and that they start at 1 and increment sequentially.
+        :param table: Instance of QTableWidget
+        :return: Boolean indicating if sequence numbers are acceptable
+        """
+        sequence_correct = True
+        sequence_list = []
+
+        try:
+            for row in range(self.rowCount()):
+                sequence_list.append(
+                    (self._samples[row][functions.get_column_number('mp_number')],
+                     self._samples[row][functions.get_column_number('sample_cid')],
+                     self._samples[row][functions.get_column_number('sampling_number')],
+                     self._samples[row][functions.get_column_number('location_id')],
+                     self._samples[row][functions.get_column_number('sample_collected')])
+                )
+
+            for sample in sequence_list:
+                # Get a list of all sequence numbers at a single location in a
+                # single sampling.
+                sequence_numbers = [
+                    int(s) for (m, s, n, l, c) in sequence_list if
+                    m == sample[0] and
+                    n == sample[2] and
+                    l == sample[3] and
+                    c != "NO"
+                    ]
+                # Check that sequence numbers in a single sampling are distinct,
+                # start at 1, and increment sequentially
+                if not all(a == b for a, b in list(enumerate(sorted(sequence_numbers), start=1))):
+                    sequence_correct = False
+
+        # If we are missing sampling numbers or location IDs then we will get a ValueError
+        except ValueError:
+            sequence_correct = False
+
+        return sequence_correct
+
+    def get_sampling_number(self, value, index):
+        """
+        Returns a new sampling number
+        :param station_number: String representing the station number
+        :param date: String with date (in any format)
+        :param sample_type: String representing the sample type code
+        :return: String of well-formatted sampling identification number
+        """
+        row = index.row()
+        column = index.column()
+
+        station_number = self._samples[row][functions.get_column_number('station_number')]
+
+        if column == functions.get_column_number('date'):
+            date = value.toPyDate().strftime(app_config['datetime_formats']['date']['sampling_number'])
+            sample_type = self._samples[row][functions.get_column_number('sample_type')]
+        elif column == functions.get_column_number('sample_type'):
+            date = self._samples[row][functions.get_column_number('date')].toPyDate()\
+                .strftime(app_config['datetime_formats']['date']['sampling_number'])
+            sample_type = value
+        else:
+            date = self._samples[row][functions.get_column_number('date')].toPyDate()\
+                .strftime(app_config['datetime_formats']['date']['sampling_number'])
+            sample_type = self._samples[row][functions.get_column_number('sample_type')]
+
+        # Create the sampling number in format STATION#-DDMMYY[-SAMPLE_TYPE]
+        if (not station_number) or (not date):
+            sampling_number = ""
+        elif sample_type in ["QR", "QB", "QT"]:
+            sampling_number = QtCore.QString("%1-%2-%3").arg(station_number).arg(date).arg(sample_type)
+        else:
+            sampling_number = QtCore.QString("%1-%2").arg(station_number).arg(date)
+        return QtCore.QString(sampling_number)
 
 
 ###############################################################################
@@ -597,37 +678,33 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
     # TODO: Update for MVC
     def validateExport(self):
         """Validates the table data for completeness and for fitting to business rules"""
-        table = self.tableViewData
         dataValid = True
-        rows = table.rowCount()
-        columns = table.columnCount()
-        sampleMeasProgColumn = functions.get_column_number('mp_number')
-        sampleMatrixColumn = functions.get_column_number('sample_matrix')
-        samplingNumberColumn = functions.get_column_number('sampling_number')
-        sampleCIDColumn = functions.get_column_number('sample_cid')
-        locationNumberColumn = functions.get_column_number('location_id')
-        sampleCollectedColumn = functions.get_column_number('sample_collected')
+        model = self.sampleModel
+        rows = model.rowCount()
+        columns = model.columnCount()
 
         # Test for presence of data
-        if rows <= 0:
+        if rows == 0:
             dataValid = False
             msg = u"There is no data to export! Please add data and try again."
             return dataValid, msg
 
         # Test for red cells (previously validated)
         invalidColumns = []
-        for i in range(0, columns):
-            for j in range(0, rows):
-                if table.item(j, i).backgroundColor() == QtCore.Qt.red:
+        for i in range(columns):
+            for j in range(rows):
+                index = model.createIndex(j, i)
+                if model.data(index, role=QtCore.Qt.BackgroundRole) == QtGui.QBrush(QtCore.Qt.red):
                     invalidColumns.append(i)
                     break
 
         # Test for incomplete required fields
         incompleteColumns = []
-        for i in range(0, columns):
-            for j in range(0, rows):
-                if table.item(j, i).text() == "":
-                    if table.item(j, sampleCollectedColumn).text() == "No":
+        for i in range(columns):
+            for j in range(rows):
+                index = model.createIndex(j, i)
+                if model.data(index) == "":
+                    if model.data(model.createIndex(j, functions.get_column_number('sample_collected'))) == "NO":
                         if column_config[i]['required_if_not_sampled']:
                             incompleteColumns.append(i)
                             break
@@ -637,16 +714,10 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
                             break
 
         # Test matrix consistency
-        matrixConsistent = functions.check_matrix_consistency(
-            table, sampleMeasProgColumn, sampleMatrixColumn, samplingNumberColumn
-        )
+        matrixConsistent = model.check_matrix_consistency()
 
         # Test sequence number validity
-        sequenceCorrect = functions.check_sequence_numbers(
-            table, sampleMeasProgColumn, sampleCIDColumn,
-            samplingNumberColumn, locationNumberColumn,
-            sampleCollectedColumn
-        )
+        sequenceCorrect = model.check_sequence_numbers()
 
         # Prepare message for user
         msg = u""
@@ -658,7 +729,7 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         if incompleteColumns:
             dataValid = False
             listOfColumnNames = u'\n'.join(column_config[k]['display_name'] for k in incompleteColumns)
-            if not msg:
+            if msg:
                 msg += u"\n\n"
             msg += u"The following required columns have one or more empty values:\n" + listOfColumnNames
             if 'Comments' in listOfColumnNames:
@@ -666,7 +737,7 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
 
         if not matrixConsistent:
             dataValid = False
-            if not msg:
+            if msg:
                 msg += u"\n\n"
             msg += u"Matrix errors detected:\n" \
                    u"More than one matrix has been defined for a single sampling event.\n" \
@@ -675,7 +746,7 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
 
         if not sequenceCorrect:
             dataValid = False
-            if not msg:
+            if msg:
                 msg += u"\n\n"
             msg += u"Sequence number errors detected:\nOne or more problems have been " \
                    u"detected with the provided sequence numbers. Please ensure that:\n" \
