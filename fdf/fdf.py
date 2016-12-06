@@ -307,7 +307,7 @@ class tableModel(QtCore.QAbstractTableModel):
         """
         row = index.row()
         column = index.column()
-        # TODO: Find out why sampling number is returning 010123 as date when date is empty
+
         if column == functions.get_column_number('station_number'):
             station_number = value
             date = self._samples[row][functions.get_column_number('date')].toPyDate() \
@@ -332,7 +332,7 @@ class tableModel(QtCore.QAbstractTableModel):
             sample_type = self._samples[row][functions.get_column_number('sample_type')]
 
         # Create the sampling number in format STATION#-DDMMYY[-SAMPLE_TYPE]
-        if (not station_number) or (not date):
+        if (not station_number) or (not date) or date == '010123':
             sampling_number = ""
         elif sample_type in ["QR", "QB", "QT"]:
             sampling_number = QtCore.QString("%1-%2-%3").arg(station_number).arg(date).arg(sample_type)
