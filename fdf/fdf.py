@@ -40,6 +40,7 @@ import functions
 from functions import DatetimeError, ValidityError
 from configuration import app_config, column_config
 from delegates import tableDelegate
+from freezer import FreezeTableWidget
 
 __author__ = 'Daniel Harris'
 __date__ = '4 November 2016'
@@ -108,14 +109,20 @@ class tableModel(QtCore.QAbstractTableModel):
             column = index.column()
 
             if column == functions.get_column_number('date'):
-                date = str(value)
-                dt = functions.parse_datetime_from_string(date, "")
-                value = QtCore.QDate(dt.year, dt.month, dt.day)
+                if type(value) is QtCore.QDate:
+                    pass
+                else:
+                    date = str(value)
+                    dt = functions.parse_datetime_from_string(date, "")
+                    value = QtCore.QDate(dt.year, dt.month, dt.day)
 
             if column == functions.get_column_number('time'):
-                time = str(value)
-                dt = functions.parse_datetime_from_string("", time)
-                value = QtCore.QTime(dt.hour, dt.minute, dt.second)
+                if type(value) is QtCore.QTime:
+                    pass
+                else:
+                    time = str(value)
+                    dt = functions.parse_datetime_from_string("", time)
+                    value = QtCore.QTime(dt.hour, dt.minute, dt.second)
 
             # Update sampling number
             if column in (functions.get_column_number('station_number'),
@@ -351,21 +358,24 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
 
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
+
+        # Set up model
+        # Create empty dicionary to go in as first value
+        self.sampleModel = tableModel()
+        #self.tableViewData.setModel(self.sampleModel)
+        self.sampleModel.removeRows(0, 1)
+
         self.checkVersion()
-        self.setupUi(self)
+        self.setupUi(self.sampleModel, self)
+
+        self.tableViewData.setItemDelegate(tableDelegate())
+
         self.filePickerBtn.clicked.connect(self.filePicker)
         self.addFileBtn.clicked.connect(self.addFile)
         self.pushButtonDeleteLines.clicked.connect(self.delRows)
         self.pushButtonAddLines.clicked.connect(self.insertRows)
         self.pushButtonResetData.clicked.connect(self.resetData)
         self.pushButtonExportData.clicked.connect(self.exportData)
-
-        # Set up model
-        # Create empty dicionary to go in as first value
-        self.sampleModel = tableModel()
-        self.tableViewData.setModel(self.sampleModel)
-        self.tableViewData.setItemDelegate(tableDelegate())
-        self.sampleModel.removeRows(0, 1)
 
         # Add items to the instrument picker
         instruments = ['']
