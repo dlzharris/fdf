@@ -1,33 +1,14 @@
-#!python3
-#http://python.su/forum/viewtopic.php?id=7346
-import sys
 from PyQt4 import QtGui, QtCore
 
 
-class MyWindow(QtGui.QWidget):
-    def __init__(self, *args):
-        QtGui.QWidget.__init__(self, *args)
-
-        # create table
-        table = FreezeTableWidget(self)
-
-        # layout
-        layout = QtGui.QVBoxLayout()
-        layout.addWidget(table)
-        self.setLayout(layout)
-
-# TODO: Align frozen column and thawed column on add data
-# TODO: Let frozen column accept focus (or editor to accept focus) when editing - this must happen through the viewport
 class FreezeTableWidget(QtGui.QTableView):
     def __init__(self, model, parent=None):
         QtGui.QTableView.__init__(self, parent)
 
         # Assign a data model for TableView
         self.setModel(model)
-
         # Set the number of frozen columns
-        self.frozenColumns = 2
-
+        self.frozenColumns = 3
         # *** WIDGET recorded COLUMN ***
         # (To be located on top of the ground)
         self.frozenTableView = QtGui.QTableView(self)
@@ -64,32 +45,8 @@ class FreezeTableWidget(QtGui.QTableView):
         self.setVerticalScrollMode(QtGui.QAbstractItemView.ScrollPerPixel)
         self.frozenTableView.setVerticalScrollMode(QtGui.QAbstractItemView.ScrollPerPixel)
 
-        # TODO: may need to comment this - see how it goes
-        # Log in to edit mode - even with one click
-        #self.setEditTriggers(QtGui.QAbstractItemView.SelectedClicked)
-        # Set the font
-        #self.setStyleSheet('font: 10pt "Courier New"')
-        # Set the properties of the column headings
-        #hh = self.horizontalHeader()
-        # Text alignment centered
-        #hh.setDefaultAlignment(QtCore.Qt.AlignCenter)
-        # Include stretching the last column
-        #hh.setStretchLastSection(True)
-
-
-
         # Turn the alternating illumination lines
-        #self.setAlternatingRowColors(True)
-
-        # TODO: When adding data, vertical header (line numbers) become visible and push bottom table out
-        # TODO: Therefore, need to ensure vertical headers are in sync
-        # Set properties header lines
-        #vh = self.verticalHeader()
-        #vh.setDefaultSectionSize(25)  # Row heights
-        #vh.setDefaultAlignment(QtCore.Qt.AlignCenter)  # Text alignment centered
-        #vh.setVisible(True)
-        # Height of rows - as in the main widget
-        #self.frozenTableView.verticalHeader().setDefaultSectionSize(vh.defaultSectionSize())
+        # self.setAlternatingRowColors(True)
 
         # Show our optional widget
         self.frozenTableView.show()
@@ -139,3 +96,14 @@ class FreezeTableWidget(QtGui.QTableView):
             self.horizontalScrollBar().setValue(newValue)
 
         return current
+
+    def selectionChanged(self, selected, deselected):
+        #print selected.indexes
+
+        columns = set(index.column() for index in selected.indexes())
+
+        if columns and all(i < self.frozenColumns for i in columns):
+            self.frozenTableView.setFocus()
+        else:
+            self.setFocus()
+

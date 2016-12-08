@@ -49,7 +49,6 @@ __version__ = '0.9.6'
 
 
 # TODO: Selection box for date format
-# TODO: Freeze panes implementation
 ###############################################################################
 # Models
 ###############################################################################
@@ -371,6 +370,7 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         self.setupUi(self.sampleModel, self)
 
         self.tableViewData.setItemDelegate(tableDelegate())
+        self.tableViewData.frozenTableView.setItemDelegate(tableDelegate())
 
         self.filePickerBtn.clicked.connect(self.filePicker)
         self.addFileBtn.clicked.connect(self.addFile)
