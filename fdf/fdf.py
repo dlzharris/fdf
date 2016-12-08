@@ -40,7 +40,6 @@ import functions
 from functions import DatetimeError, ValidityError
 from configuration import app_config, column_config
 from delegates import tableDelegate
-from freezer import FreezeTableWidget
 
 __author__ = 'Daniel Harris'
 __date__ = '4 November 2016'
@@ -58,10 +57,12 @@ class tableModel(QtCore.QAbstractTableModel):
     # table.setItemDelegate(ListColumnItemDelegate())
     # table.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed | QtGui.QAbstractItemView.DoubleClicked)
 
+    verticalHeaderChanged = QtCore.pyqtSignal()
+
     def __init__(self, samples=[], headers=[], parent=None):
         QtCore.QAbstractTableModel.__init__(self, parent)
         self._samples = samples
-        self.__headers = headers
+        self._headers = headers
 
         if not self._samples:
             self._samples.append(self.defaultData())
@@ -178,6 +179,7 @@ class tableModel(QtCore.QAbstractTableModel):
             if orientation == QtCore.Qt.Horizontal:
                 return column_config[section]['display_name']
             else:
+                self.verticalHeaderChanged.emit()
                 return section + 1
 
     def insertRows(self, position, rows, parent=QtCore.QModelIndex()):
@@ -425,8 +427,9 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         """Loads the file specified in the UI and adds it to the table instance."""
         try:
             # Validate file type
-            dicts = functions.load_instrument_file(self.fileLineEdit.text(),
-                                                   str(self.instrumentComboBox.currentText()))
+            dicts = functions.load_instrument_file(
+                self.fileLineEdit.text(), str(self.instrumentComboBox.currentText())
+            )
 
             # Add data to table
             lists = functions.lord2lorl(dicts, app_config['column_order'])
