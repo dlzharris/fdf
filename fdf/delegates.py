@@ -21,6 +21,7 @@ class tableDelegate(QtGui.QStyledItemDelegate):
             editor.addItems(items)
             validator = ListValidator(index.column())
             editor.setValidator(validator)
+            editor.activated.connect(self.commitAndCloseEditor)
             return editor
 
         elif 'date' in column_config[index.column()]['name']:
@@ -73,6 +74,11 @@ class tableDelegate(QtGui.QStyledItemDelegate):
             value = editor.text()
 
         model.setData(index, value)
+
+    def commitAndCloseEditor(self):
+        editor = self.sender()
+        self.commitData.emit(editor)
+        self.closeEditor.emit(editor, QtGui.QAbstractItemDelegate.EditNextItem)
 
 
 ##############################################################################
