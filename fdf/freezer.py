@@ -4,16 +4,17 @@ from PyQt4 import QtGui, QtCore
 class FreezeTableWidget(QtGui.QTableView):
     def __init__(self, model, parent=None):
         QtGui.QTableView.__init__(self, parent)
-
+        # Set the model
+        self.model = model
         # Assign a data model for TableView
-        self.setModel(model)
+        self.setModel(self.model)
         # Set the number of frozen columns
         self.frozenColumns = 3
         # *** WIDGET recorded COLUMN ***
         # (To be located on top of the ground)
         self.frozenTableView = QtGui.QTableView(self)
         # Set the model for the widget, fixed column
-        self.frozenTableView.setModel(model)
+        self.frozenTableView.setModel(self.model)
         # Hide row headers
         self.frozenTableView.verticalHeader().hide()
         # Widget does not accept focus
@@ -29,9 +30,7 @@ class FreezeTableWidget(QtGui.QTableView):
         self.frozenTableView.setSelectionModel(self.selectionModel())
 
         # Set the width of columns
-        for column in range(self.frozenColumns, model.columnCount()):
-            self.frozenTableView.setColumnHidden(column, True)
-            self.frozenTableView.setColumnWidth(column, self.columnWidth(column))
+        self.setHiddenColumns(self.frozenColumns)
 
         # Remove the scroll bar
         self.frozenTableView.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
@@ -57,8 +56,18 @@ class FreezeTableWidget(QtGui.QTableView):
         self.verticalHeader().sectionResized.connect(self.updateSectionHeight)
         self.frozenTableView.verticalScrollBar().valueChanged.connect(self.verticalScrollBar().setValue)
         self.verticalScrollBar().valueChanged.connect(self.frozenTableView.verticalScrollBar().setValue)
-        model.verticalHeaderChanged.connect(self.updateFrozenTableGeometry)
+        self.model.verticalHeaderChanged.connect(self.updateFrozenTableGeometry)
 
+    def setHiddenColumns(self, frozenColumns):
+        for column in range(self.frozenColumns, self.model.columnCount()):
+            self.frozenTableView.setColumnHidden(column, True)
+            self.frozenTableView.setColumnWidth(column, self.columnWidth(column))
+        self.updateFrozenTableGeometry()
+
+    def updateFrozenColumns(self, frozenColumns):
+        self.frozenColumns = frozenColumns
+        self.setHiddenColumns(frozenColumns)
+    
     def updateSectionWidth(self, logicalIndex, oldSize, newSize):
         if logicalIndex < self.frozenColumns:
             self.frozenTableView.setColumnWidth(logicalIndex, newSize)
