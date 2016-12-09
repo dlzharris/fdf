@@ -35,7 +35,7 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import pyqtSlot
 
 # Local application imports
-import fdfGui2
+import fdfGui3
 import functions
 from functions import DatetimeError, ValidityError
 from configuration import app_config, column_config
@@ -352,7 +352,7 @@ class tableModel(QtCore.QAbstractTableModel):
 ###############################################################################
 # Main app constructor and initialisation
 ###############################################################################
-class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
+class MainApp(fdfGui3.Ui_MainWindow, QtGui.QMainWindow):
     """
     Constructor for the main application
     """
