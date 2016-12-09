@@ -369,8 +369,8 @@ class MainApp(fdfGui2.Ui_MainWindow, QtGui.QMainWindow):
         self.checkVersion()
         self.setupUi(self.sampleModel, self)
 
-        self.tableViewData.setItemDelegate(tableDelegate())
-        self.tableViewData.frozenTableView.setItemDelegate(tableDelegate())
+        self.tableViewData.setItemDelegate(tableDelegate(3, False))
+        self.tableViewData.frozenTableView.setItemDelegate(tableDelegate(3, True))
 
         self.filePickerBtn.clicked.connect(self.filePicker)
         self.addFileBtn.clicked.connect(self.addFile)

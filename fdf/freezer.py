@@ -98,8 +98,6 @@ class FreezeTableWidget(QtGui.QTableView):
         return current
 
     def selectionChanged(self, selected, deselected):
-        #print selected.indexes
-
         columns = set(index.column() for index in selected.indexes())
 
         if columns and all(i < self.frozenColumns for i in columns):

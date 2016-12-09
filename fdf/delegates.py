@@ -3,19 +3,32 @@ import functions
 from configuration import app_config, column_config
 
 # TODO: Move to next item on completion of editing
-# TODO: Single return press to exit editing and commit data
 ##############################################################################
 # Style delegates
 ##############################################################################
 class tableDelegate(QtGui.QStyledItemDelegate):
-    def __init__(self):
+    def __init__(self, frozenColumns, tableFrozen=False):
         super(tableDelegate, self).__init__()
+        self.frozenColumns = frozenColumns
+        self.tableFrozen = tableFrozen
 
     def createEditor(self, parent, option, index):
 
         items = [""]
 
-        if 'list_items' in column_config[index.column()]:
+        if 'list_items' in column_config[index.column()] and index.column() < self.frozenColumns:
+            if self.tableFrozen:
+                editor = FilteredComboBox(parent)
+                items.extend(column_config[index.column()]['list_items'])
+                editor.addItems(items)
+                validator = ListValidator(index.column())
+                editor.setValidator(validator)
+                editor.activated.connect(self.commitAndCloseEditor)
+                return editor
+            else:
+                return None
+
+        if 'list_items' in column_config[index.column()] and index.column() >= self.frozenColumns:
             editor = FilteredComboBox(parent)
             items.extend(column_config[index.column()]['list_items'])
             editor.addItems(items)
@@ -179,42 +192,3 @@ class ListValidator(QtGui.QRegExpValidator):
         value.append(upper)
 
         return None
-
-
-
-
-
-# class ListlessValidator(QtGui.QValidator):
-#     def __init__(self, column):
-#         self.column = column
-#         self.list = column_config[self.column]['list_items']
-#         super(ListValidator, self).__init__()
-#
-#     def validate(self, value, pos):
-#
-#         if value.isEmpty():
-#             return QtGui.QValidator.Intermediate, pos
-#
-#         if value
-#
-#         if testValue not in self.list:
-#             if self.fixup(testValue) in self.list:
-#                 state = QtGui.QValidator.Acceptable
-#                 value = self.fixup(testValue)
-#                 returnInt = 0
-#             elif testValue == "":
-#                 state = QtGui.QValidator.Acceptable
-#                 value = testValue
-#                 returnInt = 0
-#             else:
-#                 state = QtGui.QValidator.Invalid
-#                 value = testValue
-#                 returnInt = 2
-#         else:
-#             state = QtGui.QValidator.Acceptable
-#             value = testValue
-#             returnInt = 0
-#         return state, value, returnInt
-#
-#     def fixup(self, input):
-#         return str(input).upper()
