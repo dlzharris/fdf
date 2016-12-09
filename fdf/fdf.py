@@ -369,8 +369,10 @@ class MainApp(fdfGui3.Ui_MainWindow, QtGui.QMainWindow):
         self.checkVersion()
         self.setupUi(self.sampleModel, self)
 
-        self.tableViewData.setItemDelegate(tableDelegate(3, False))
-        self.tableViewData.frozenTableView.setItemDelegate(tableDelegate(3, True))
+        frozenColumns = self.spinBoxFrozenColumns.value()
+
+        self.tableViewData.setItemDelegate(tableDelegate(frozenColumns, False))
+        self.tableViewData.frozenTableView.setItemDelegate(tableDelegate(frozenColumns, True))
 
         self.filePickerBtn.clicked.connect(self.filePicker)
         self.addFileBtn.clicked.connect(self.addFile)
@@ -378,6 +380,7 @@ class MainApp(fdfGui3.Ui_MainWindow, QtGui.QMainWindow):
         self.pushButtonAddLines.clicked.connect(self.insertRows)
         self.pushButtonResetData.clicked.connect(self.resetData)
         self.pushButtonExportData.clicked.connect(self.exportData)
+        self.spinBoxFrozenColumns.valueChanged.connect(self.tableViewData.updateFrozenColumns)
 
         # Add items to the instrument picker
         instruments = ['']

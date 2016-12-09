@@ -65,6 +65,9 @@ class FreezeTableWidget(QtGui.QTableView):
         self.updateFrozenTableGeometry()
 
     def updateFrozenColumns(self, frozenColumns):
+        for column in range(self.model.columnCount()):
+            self.frozenTableView.setColumnHidden(column, False)
+            self.frozenTableView.setColumnWidth(column, self.columnWidth(column))
         self.frozenColumns = frozenColumns
         self.setHiddenColumns(frozenColumns)
     
