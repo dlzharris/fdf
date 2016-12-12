@@ -141,7 +141,7 @@ def check_file_validity(instrument_file, file_source):
         return file_valid
 
 
-def load_instrument_file(instrument_file, file_source):
+def load_instrument_file(instrument_file, file_source, date_format):
     """
     Read the provided csv file, parses and loads the file to memory
     :param instrument_file: The csv file to be loaded
@@ -302,10 +302,13 @@ def load_instrument_file(instrument_file, file_source):
         )
         # Initialise the data container
         data = []
+        # Grab the date format
+        dt_dayfirst = True if date_format[:2] == 'dd' else False
+        dt_yearfirst = True if date_format[:2] == 'YY' else False
         # Change the keys to our standard key values and remove items that are not relevant
         for line in reader:
             try:
-                sample_dt = parse_datetime_from_string(line['Date'], line['Time'])
+                sample_dt = parse_datetime_from_string(line['Date'], line['Time'], dt_dayfirst, dt_yearfirst)
             except DatetimeError:
                 continue
 
@@ -562,7 +565,7 @@ def get_replicate_number(rep_code):
     return replicate_numbers[rep_code]
 
 
-def get_sampling_time(sample_set, station, sample_date):
+def get_sampling_time(sample_set, station, sample_date, date_format):
     """
     Find the sampling time for a set of samples collected at the same station
     on a given date. The sampling time is different from the sample time and
@@ -574,14 +577,16 @@ def get_sampling_time(sample_set, station, sample_date):
     :param sample_date: String of the date used for the query
     :return: The sampling time used to identify samplings in KiWQM.
     """
-    sample_times = [parse_datetime_from_string(s['date'], s['sample_time'])
+    dt_dayfirst = True if date_format[:2] == 'dd' else False
+    dt_yearfirst = True if date_format[:2] == 'YY' else False
+    sample_times = [parse_datetime_from_string(s['date'], s['sample_time'], dt_dayfirst, dt_yearfirst)
                     for s in sample_set if s['station_number'] == station and s['date'] == sample_date]
     # Find the earliest time and convert it to a string
     sampling_time = min(sample_times).strftime(app_config['datetime_formats']['time']['export_event'])
     return sampling_time
 
 
-def parse_datetime_from_string(date, time):
+def parse_datetime_from_string(date, time, dayfirst=True, yearfirst=False):
     """
     Wrapper function for dateutil.parser.parse.
     Takes a date string and time string (in any format) and parses it into a
@@ -592,13 +597,13 @@ def parse_datetime_from_string(date, time):
     """
     try:
         datetime_concat = " ".join([str(date), str(time)])
-        dt = parse(datetime_concat, dayfirst=True, yearfirst=False, default=None)
+        dt = parse(datetime_concat, dayfirst=dayfirst, yearfirst=yearfirst, default=None)
     except (ValueError, TypeError):
         raise DatetimeError
     return dt
 
 
-def prepare_dictionary(data_list):
+def prepare_dictionary(data_list, date_format):
     """
     Transform the orientation of the field data to "parameter oriented"
     as used in KiWQM. The original dictionary orientation is one sample
@@ -613,7 +618,9 @@ def prepare_dictionary(data_list):
     # Parse the sample date and time
     for sample in data_list:
         try:
-            sample_dt = parse_datetime_from_string(sample['date'], sample['sample_time'])
+            dt_dayfirst = True if date_format[:2] == 'dd' else False
+            dt_yearfirst = True if date_format[:2] == 'YY' else False
+            sample_dt = parse_datetime_from_string(sample['date'], sample['sample_time'], dt_dayfirst, dt_yearfirst)
             sample['date'] = sample_dt.strftime(app_config['datetime_formats']['date']['export'])
             sample['sample_time'] = sample_dt.strftime(app_config['datetime_formats']['time']['export_sample'])
         except DatetimeError:

@@ -48,7 +48,6 @@ __status__ = 'Development'
 __version__ = '0.9.6'
 
 
-# TODO: Selection box for date format
 ###############################################################################
 # Models
 ###############################################################################
@@ -103,17 +102,27 @@ class tableModel(QtCore.QAbstractTableModel):
         if role == QtCore.Qt.ToolTipRole:
             return self.validateData(value, index)[1]
 
-    def setData(self, index, value, role=QtCore.Qt.EditRole):
+    def setData(self, index, value, role=QtCore.Qt.EditRole, *args, **kwargs):
         if index.isValid() and role == QtCore.Qt.EditRole:
             row = index.row()
             column = index.column()
+
+            dateFormat = kwargs.get('dateFormat')
 
             if column == functions.get_column_number('date'):
                 if type(value) is QtCore.QDate:
                     pass
                 else:
                     date = str(value)
-                    dt = functions.parse_datetime_from_string(date, "")
+                    try:
+                        dt_dayfirst = True if dateFormat[:2] == 'dd' else False
+                    except TypeError:
+                        dt_dayfirst = False
+                    try:
+                        dt_yearfirst = True if dateFormat[:2] == 'YY' else False
+                    except TypeError:
+                        dt_yearfirst = False
+                    dt = functions.parse_datetime_from_string(date, "", dayfirst=dt_dayfirst, yearfirst=dt_yearfirst)
                     value = QtCore.QDate(dt.year, dt.month, dt.day)
 
             if column == functions.get_column_number('time'):
@@ -348,6 +357,19 @@ class tableModel(QtCore.QAbstractTableModel):
             sampling_number = QtCore.QString("%1-%2").arg(station_number).arg(date)
         return QtCore.QString(sampling_number)
 
+    def swapMonthDay(self, listOfIndexes):
+        for index in listOfIndexes:
+            if index.column() == functions.get_column_number('date'):
+                # Get current settings
+                day = self.data(index, QtCore.Qt.EditRole).day
+                month = self.data(index, QtCore.Qt.EditRole).month
+                year = self.data(index, QtCore.Qt.EditRole).year
+                # Swap day and month
+                date = QtCore.QDate(year, day, month)
+                self.setData(index, date)
+            else:
+                pass
+
 
 ###############################################################################
 # Main app constructor and initialisation
@@ -369,6 +391,8 @@ class MainApp(fdfGui3.Ui_MainWindow, QtGui.QMainWindow):
         self.checkVersion()
         self.setupUi(self.sampleModel, self)
 
+        # TODO: Implement date format selection
+
         frozenColumns = self.spinBoxFrozenColumns.value()
 
         self.tableViewData.setItemDelegate(tableDelegate(frozenColumns, False))
@@ -387,6 +411,10 @@ class MainApp(fdfGui3.Ui_MainWindow, QtGui.QMainWindow):
         instruments.extend(app_config['sources']['hydrolab'])
         instruments.extend(app_config['sources']['ysi'])
         self.instrumentComboBox.addItems(instruments)
+
+        # Set up the date format picker
+        dateFormats = ['dd/MM/yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd']
+        self.dateFormatComboBox.addItems(dateFormats)
 
         # Set up the help documentation
         self.helpBrowser = QtGui.QTextBrowser()
@@ -431,7 +459,9 @@ class MainApp(fdfGui3.Ui_MainWindow, QtGui.QMainWindow):
         try:
             # Validate file type
             dicts = functions.load_instrument_file(
-                self.fileLineEdit.text(), str(self.instrumentComboBox.currentText())
+                self.fileLineEdit.text(),
+                str(self.instrumentComboBox.currentText()),
+                str(self.dateFormatComboBox.currentText())
             )
 
             # Add data to table
@@ -581,7 +611,7 @@ class MainApp(fdfGui3.Ui_MainWindow, QtGui.QMainWindow):
         # Transform the list to a dictionary for dictWriter
         tableData = functions.lorl2lord(tableData, app_config['column_order'])
         # Reformat the data in parameter-oriented format
-        data_reformatted = functions.prepare_dictionary(tableData)
+        data_reformatted = functions.prepare_dictionary(tableData, 'YYYY-MM-DD')
         # Prepare the message box for confirmation after export
         msg = QtGui.QMessageBox()
         # Write the data to csv
@@ -675,14 +705,14 @@ class MainApp(fdfGui3.Ui_MainWindow, QtGui.QMainWindow):
             for i in range(pasteEndRow - pasteStartRow + 1):
                 for j in range(pasteEndCol - pasteStartCol + 1):
                     self.sampleModel.setData(self.sampleModel.index(pasteStartRow + i, pasteStartCol + j),
-                                             copyData)
+                                             copyData, dateFormat=self.dateFormatComboBox.currentText())
         else:
             # Paste data in rows, starting from top and moving left to right
             for i in range(len(copyDataRows)):
                 copyDataCols = copyDataRows[i].split('\t')
                 for j in range(len(copyDataCols)):
                     self.sampleModel.setData(self.sampleModel.index(pasteStartRow + i, pasteStartCol + j),
-                                             copyDataCols[j])
+                                             copyDataCols[j], dateFormat=self.dateFormatComboBox.currentText())
 
     def showAbout(self):
         """Displays the about box from the help menu."""

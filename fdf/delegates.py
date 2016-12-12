@@ -2,7 +2,6 @@ from PyQt4 import QtGui, QtCore
 import functions
 from configuration import app_config, column_config
 
-# TODO: Move to next item on completion of editing
 ##############################################################################
 # Style delegates
 ##############################################################################
@@ -40,7 +39,7 @@ class tableDelegate(QtGui.QStyledItemDelegate):
         elif 'date' in column_config[index.column()]['name']:
             editor = QtGui.QDateTimeEdit(parent)
             editor.setDateRange(QtCore.QDate(2014, 1, 1), QtCore.QDate.currentDate())
-            editor.setDisplayFormat("dd/MM/yyyy")
+            editor.setDisplayFormat("yyyy-MM-dd")
             return editor
 
         elif 'time' in column_config[index.column()]['name']:
@@ -63,7 +62,6 @@ class tableDelegate(QtGui.QStyledItemDelegate):
 
         if type(editor) is FilteredComboBox:
             editor.setCurrentIndex(editor.findText(value))
-        #TODO: Change date format to dd/mm/yyyy here if required
         elif index.column() == functions.get_column_number('date'):
             editor.setDate(QtCore.QDate.fromString(value, QtCore.Qt.ISODate))
         elif index.column() == functions.get_column_number('time'):
