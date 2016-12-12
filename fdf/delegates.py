@@ -72,7 +72,7 @@ class tableDelegate(QtGui.QStyledItemDelegate):
         elif index.column() == functions.get_column_number('time'):
             editor.setTime(QtCore.QTime.fromString(value, QtCore.Qt.ISODate))
         else:
-            editor.setText(value)
+            editor.setText(QtCore.QString(value))
 
     def updateEditorGeometry(self, editor, option, index):
         editor.setGeometry(option.rect)

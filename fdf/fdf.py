@@ -216,7 +216,12 @@ class tableModel(QtCore.QAbstractTableModel):
         return defaultValues
 
     def validateData(self, value, index):
-        if value:
+        if value == 0 and 'lower_limit' in column_config[index.column()]:
+            text = "Given value is zero (0). A value of zero generally indicates a sensor failure, " \
+                   "or a non-measured parameter. Please review and adjust before continuing."
+            return QtGui.QBrush(QtCore.Qt.red), text
+
+        elif value:
             if index.column() == functions.get_column_number('date') and value > QtCore.QDate.currentDate():
                 text = "The entered date is in the future. Sampling dates must be in the past.\n" \
                           "Please enter a different date."
@@ -231,15 +236,10 @@ class tableModel(QtCore.QAbstractTableModel):
                 return QtGui.QBrush(QtCore.Qt.red), text
 
             if 'lower_limit' in column_config[index.column()]:
-                if value < column_config[index.column()]['lower_limit'] or value > column_config[index.column()]['upper_limit']:
+                 if value < column_config[index.column()]['lower_limit'] or value > column_config[index.column()]['upper_limit']:
                     lowerLimit = column_config[index.column()]['lower_limit']
                     upperLimit = column_config[index.column()]['upper_limit']
                     text = "Value out of range.\nAcceptable range is between %s and %s" % (lowerLimit, upperLimit)
-                    return QtGui.QBrush(QtCore.Qt.red), text
-
-                if value == 0:
-                    text = "Given value is zero (0). A value of zero generally indicates a sensor failure, " \
-                           "or a non-measured parameter. Please review and adjust before continuing."
                     return QtGui.QBrush(QtCore.Qt.red), text
 
             if 'list_items' in column_config[index.column()] and value not in column_config[index.column()]['list_items']:
