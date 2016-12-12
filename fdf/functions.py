@@ -628,7 +628,7 @@ def prepare_dictionary(data_list, date_format):
     # Each item in the list is a single dictionary representing a single sample
     for sample in data_list:
         # Get the sampling event time
-        sample['event_time'] = get_sampling_time(data_list, sample['station_number'], sample['date'])
+        sample['event_time'] = get_sampling_time(data_list, sample['station_number'], sample['date'], date_format)
 
         # If no sample or data was collected, prepare a shortened dictionary
         if sample['sample_collected'] == 'NO':
