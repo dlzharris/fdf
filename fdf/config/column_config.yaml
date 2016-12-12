@@ -136,14 +136,14 @@
   allow_zero: yes
   required: no
   required_if_not_sampled: yes
-  list_items: ['Yes', 'No']
+  list_items: ['YES', 'NO']
 15:
   name: sample_collected
   display_name: Sample collected
   allow_zero: yes
   required: no
   required_if_not_sampled: yes
-  list_items: ['Yes', 'No']
+  list_items: ['YES', 'NO']
 16:
   name: depth_upper
   display_name: Depth upper (m)
@@ -304,8 +304,8 @@
   allow_zero: no
   required: no
   required_if_not_sampled: no
-  lower_limit: -44.1
-  upper_limit: 150
+  lower_limit: -37
+  upper_limit: -20
   precision: 5
 32:
   name: longitude
@@ -313,7 +313,7 @@
   allow_zero: no
   required: no
   required_if_not_sampled: no
-  lower_limit: -21.7
+  lower_limit: 140
   upper_limit: 156
   precision: 5
 33:
