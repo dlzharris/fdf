@@ -18,7 +18,7 @@ class FreezeTableWidget(QtGui.QTableView):
         # Hide row headers
         self.frozenTableView.verticalHeader().hide()
         # Widget does not accept focus
-        self.frozenTableView.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.frozenTableView.setFocusPolicy(QtCore.Qt.StrongFocus)
         # The user can not resize columns
         self.frozenTableView.horizontalHeader().setResizeMode(QtGui.QHeaderView.Fixed)
         # Puts more widgets to the foreground

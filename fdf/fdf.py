@@ -37,8 +37,9 @@ from PyQt4.QtCore import pyqtSlot
 # Local application imports
 import fdfGui4
 import functions
+import settings
 from functions import DatetimeError, ValidityError
-from configuration import app_config, column_config
+from settings import app_config, column_config
 from delegates import tableDelegate
 
 __author__ = 'Daniel Harris'
@@ -390,10 +391,10 @@ class MainApp(fdfGui4.Ui_MainWindow, QtGui.QMainWindow):
         self.checkVersion()
         self.setupUi(self.sampleModel, self)
 
-        frozenColumns = self.spinBoxFrozenColumns.value()
+        settings.FROZEN_COLUMNS = self.spinBoxFrozenColumns.value()
 
-        self.tableViewData.setItemDelegate(tableDelegate(frozenColumns, False))
-        self.tableViewData.frozenTableView.setItemDelegate(tableDelegate(frozenColumns, True))
+        self.tableViewData.setItemDelegate(tableDelegate(False))
+        self.tableViewData.frozenTableView.setItemDelegate(tableDelegate(True))
 
         self.filePickerBtn.clicked.connect(self.filePicker)
         self.addFileBtn.clicked.connect(self.addFile)
@@ -403,6 +404,7 @@ class MainApp(fdfGui4.Ui_MainWindow, QtGui.QMainWindow):
         self.pushButtonExportData.clicked.connect(self.exportData)
         self.pushButtonSwapDayMonth.clicked.connect(self.swapDayMonth)
         self.spinBoxFrozenColumns.valueChanged.connect(self.tableViewData.updateFrozenColumns)
+        self.spinBoxFrozenColumns.valueChanged.connect(self.updateGlobalFrozenColumns)
 
         # Add items to the instrument picker
         instruments = ['']
@@ -730,6 +732,9 @@ class MainApp(fdfGui4.Ui_MainWindow, QtGui.QMainWindow):
 
     def swapDayMonth(self):
         self.sampleModel.swapMonthDay(self.tableViewData.selectedIndexes())
+
+    def updateGlobalFrozenColumns(self, frozenColumns):
+        settings.FROZEN_COLUMNS = frozenColumns
 
     def validateExport(self):
         """Validates the table data for completeness and for fitting to business rules"""

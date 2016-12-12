@@ -1,21 +1,20 @@
 from PyQt4 import QtGui, QtCore
 import functions
-from configuration import app_config, column_config
+import settings
+from settings import column_config
 
 ##############################################################################
 # Style delegates
 ##############################################################################
 class tableDelegate(QtGui.QStyledItemDelegate):
-    def __init__(self, frozenColumns, tableFrozen=False):
+    def __init__(self, tableFrozen=False):
         super(tableDelegate, self).__init__()
-        self.frozenColumns = frozenColumns
         self.tableFrozen = tableFrozen
 
     def createEditor(self, parent, option, index):
-
         items = [""]
 
-        if 'list_items' in column_config[index.column()] and index.column() < self.frozenColumns:
+        if 'list_items' in column_config[index.column()] and index.column() < settings.FROZEN_COLUMNS:
             if self.tableFrozen:
                 editor = FilteredComboBox(parent)
                 items.extend(column_config[index.column()]['list_items'])
@@ -27,7 +26,7 @@ class tableDelegate(QtGui.QStyledItemDelegate):
             else:
                 return None
 
-        if 'list_items' in column_config[index.column()] and index.column() >= self.frozenColumns:
+        if 'list_items' in column_config[index.column()] and index.column() >= settings.FROZEN_COLUMNS:
             editor = FilteredComboBox(parent)
             items.extend(column_config[index.column()]['list_items'])
             editor.addItems(items)
@@ -53,6 +52,12 @@ class tableDelegate(QtGui.QStyledItemDelegate):
             validator.setNotation(QtGui.QDoubleValidator.StandardNotation)
             editor.setValidator(validator)
             return editor
+
+        elif index.column() < settings.FROZEN_COLUMNS:
+            if self.tableFrozen:
+                return super(tableDelegate, self).createEditor(parent, option, index)
+            else:
+                return None
 
         else:
             return super(tableDelegate, self).createEditor(parent, option, index)

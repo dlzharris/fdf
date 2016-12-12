@@ -52,7 +52,7 @@ from dateutil.parser import parse
 from utm import from_latlon
 
 # Local application imports
-from configuration import app_config, column_config, station_list
+from settings import app_config, column_config, station_list
 
 __author__ = 'Daniel Harris'
 __date__ = '27 October 2016'
