@@ -35,7 +35,7 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import pyqtSlot
 
 # Local application imports
-import fdfGui3
+import fdfGui4
 import functions
 from functions import DatetimeError, ValidityError
 from configuration import app_config, column_config
@@ -361,20 +361,19 @@ class tableModel(QtCore.QAbstractTableModel):
         for index in listOfIndexes:
             if index.column() == functions.get_column_number('date'):
                 # Get current settings
-                day = self.data(index, QtCore.Qt.EditRole).day
-                month = self.data(index, QtCore.Qt.EditRole).month
-                year = self.data(index, QtCore.Qt.EditRole).year
+                day = self.data(index, QtCore.Qt.EditRole).day()
+                month = self.data(index, QtCore.Qt.EditRole).month()
+                year = self.data(index, QtCore.Qt.EditRole).year()
                 # Swap day and month
-                date = QtCore.QDate(year, day, month)
-                self.setData(index, date)
-            else:
-                pass
+                if day <= 12:
+                    date = QtCore.QDate(year, day, month)
+                    self.setData(index, date)
 
 
 ###############################################################################
 # Main app constructor and initialisation
 ###############################################################################
-class MainApp(fdfGui3.Ui_MainWindow, QtGui.QMainWindow):
+class MainApp(fdfGui4.Ui_MainWindow, QtGui.QMainWindow):
     """
     Constructor for the main application
     """
@@ -391,8 +390,6 @@ class MainApp(fdfGui3.Ui_MainWindow, QtGui.QMainWindow):
         self.checkVersion()
         self.setupUi(self.sampleModel, self)
 
-        # TODO: Implement date format selection
-
         frozenColumns = self.spinBoxFrozenColumns.value()
 
         self.tableViewData.setItemDelegate(tableDelegate(frozenColumns, False))
@@ -404,6 +401,7 @@ class MainApp(fdfGui3.Ui_MainWindow, QtGui.QMainWindow):
         self.pushButtonAddLines.clicked.connect(self.insertRows)
         self.pushButtonResetData.clicked.connect(self.resetData)
         self.pushButtonExportData.clicked.connect(self.exportData)
+        self.pushButtonSwapDayMonth.clicked.connect(self.swapDayMonth)
         self.spinBoxFrozenColumns.valueChanged.connect(self.tableViewData.updateFrozenColumns)
 
         # Add items to the instrument picker
@@ -729,6 +727,9 @@ class MainApp(fdfGui3.Ui_MainWindow, QtGui.QMainWindow):
     def showHelp(self):
         """Displays the HTML help documentation."""
         self.helpBrowser.show()
+
+    def swapDayMonth(self):
+        self.sampleModel.swapMonthDay(self.tableViewData.selectedIndexes())
 
     def validateExport(self):
         """Validates the table data for completeness and for fitting to business rules"""
