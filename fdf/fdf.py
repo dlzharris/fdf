@@ -455,6 +455,9 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         # Set up the about documentation
         self.actionAbout.triggered.connect(self.showAbout)
 
+        # Ensure the window is deleted on close to prevent threading errors
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+
     ##########################################################################
     # Reimplemented methods
     ##########################################################################
