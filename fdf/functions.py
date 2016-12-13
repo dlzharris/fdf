@@ -7,7 +7,7 @@ import file for KiWQM.
 Author: Daniel Harris
 Title: Data & Procedures Officer
 Organisation: DPI Water
-Date modified: 27/09/2016
+Date modified: 13/12/2016
 
 External dependencies: dateutil
 
@@ -16,21 +16,17 @@ DatetimeError: Custom exception for date and time format errors
 ValidityError: Custom exception for file format errors
 
 Functions:
-check_date_validity
 check_file_validity: check the validity of the instrument file
-check_matrix_consistency: check that each sampling only uses a single matrix
-check_sequence_numbers: check validitiy of sequence numbers in a sampling
+get_column_number: get the column number for the table instance of a
+    parameter or metadata field
+get_fraction_number: generate the field fraction number for a sample
+get_mga_coordinates: get the MGA94 easting and northing from lat/lon coordinates
+get_new_dict_key: update the dictionary key to a friendlier version
+get_replicate_number: get the replicate number corresponding to the sample type
+get_sampling_time: get the sampling time for a group of samples
 load_instrument_file: load the instrument file to memory
 lord2lorl: transform data from a list of dictionaries to a list of lists
 lorl2lord: transform data from a list of lists to a list of dictionaries
-get_column_number: get the column number for the table instance of a
-    parameter or metadata field
-get_column_title: get the display name for a required field
-get_fraction_number: generate the field fraction number for a sample
-get_new_dict_key: update the dictionary key to a friendlier version
-get_replicate_number: get the replicate number corresponding to the sample type
-get_sampling_number: generate the sampling number for a sample
-get_sampling_time: get the sampling time for a group of samples
 parse_datetime_from_string: parse a datetime object from a string representation
 prepare_dictionary: transform the data set to a list of dictionaries
 resource_path: get absolute path to resource for PyInstaller
@@ -55,7 +51,7 @@ from utm import from_latlon
 from settings import app_config, column_config, station_list
 
 __author__ = 'Daniel Harris'
-__date__ = '27 October 2016'
+__date__ = '13 December 2016'
 __email__ = 'daniel.harris@dpi.nsw.gov.au'
 __status__ = 'Production'
 __version__ = '1.0.0'
@@ -81,23 +77,6 @@ class ValidityError(Exception):
 ###############################################################################
 # Helper functions
 ###############################################################################
-def check_date_validity(data_list):
-    """
-    Checks that all samples use dates that are in the past.
-    :param data_list: The list of dictionaries to be checked
-    :return: Boolean indicating if the dates are valid or not.
-    """
-    dates_valid = True
-    try:
-        for sample in data_list:
-            sample_dt = parse_datetime_from_string(sample['date'], sample['sample_time'])
-            if sample_dt > datetime.datetime.now():
-                dates_valid = False
-    except ValueError:
-        dates_valid = False
-    return dates_valid
-
-
 def check_file_validity(instrument_file, file_source):
     """
     Checks the validity of the user-selected input file for the selected instrument
@@ -448,27 +427,6 @@ def get_column_number(column_name):
     it appears in the table instance.
     """
     return [k for k, v in column_config.iteritems() if v['name'] == column_name][0]
-
-
-def get_column_title(key):
-    """
-    Get the column title used in the GUI ObjectListView based on the
-    original dictionary key. Used in check_data_completeness to
-    tell the user which required columns have been left empty.
-    """
-    titles = {
-        'mp_number': "MP#",
-        'station_number': "Station#",
-        'date': "Date",
-        'sample_matrix': "Matrix",
-        'sample_type': "Sample type",
-        # 'sampling_reason',
-        'sampling_officer': "Sampling officer",
-        'location_id': "Loc#",
-        'sample_cid': "Seq#",
-        'sample_time': "Time",
-        'depth_upper': "Depth (upper)"}
-    return titles[key]
 
 
 def get_fraction_number(field_dict):

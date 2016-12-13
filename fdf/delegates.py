@@ -1,19 +1,51 @@
+"""
+Module: delegates.py
+Defines delegates and validators for the table views
+
+Author: Daniel Harris
+Title: Data & Procedures Officer
+Organisation: DPI Water
+Date modified: 13/12/2016
+
+External dependencies: PyQt4
+TableDelegate: Delegate for table view that defines editors and validators
+DoubleFixupValidator: Validator for doubles
+FilteredComboBox: Drop-down jQuery-style filtered combo-box
+ListValidator: Validator for list items
+"""
+
+# Related third party imports
 from PyQt4 import QtGui, QtCore
+
+# Local application imports
 import functions
 import settings
 from settings import column_config
 
+__author__ = 'Daniel Harris'
+__date__ = '12 December 2016'
+__email__ = 'daniel.harris@dpi.nsw.gov.au'
+__status__ = 'Development'
+__version__ = '1.0.0'
+
+
 ##############################################################################
 # Style delegates
 ##############################################################################
-class tableDelegate(QtGui.QStyledItemDelegate):
+class TableDelegate(QtGui.QStyledItemDelegate):
     def __init__(self, tableFrozen=False):
-        super(tableDelegate, self).__init__()
+        super(TableDelegate, self).__init__()
         self.tableFrozen = tableFrozen
 
+    ##########################################################################
+    # Reimplemented methods
+    ##########################################################################
     def createEditor(self, parent, option, index):
         items = [""]
 
+        # List editor for frozen columns (if the editor is for a frozen column,
+        # we need to ensure that no editor is returned for the thawed hidden
+        # columns, otherwise we get two comboboxes displayed).
         if 'list_items' in column_config[index.column()] and index.column() < settings.FROZEN_COLUMNS:
             if self.tableFrozen:
                 editor = FilteredComboBox(parent)
@@ -26,6 +58,7 @@ class tableDelegate(QtGui.QStyledItemDelegate):
             else:
                 return None
 
+        # List editor for thawed columns
         if 'list_items' in column_config[index.column()] and index.column() >= settings.FROZEN_COLUMNS:
             editor = FilteredComboBox(parent)
             items.extend(column_config[index.column()]['list_items'])
@@ -53,14 +86,16 @@ class tableDelegate(QtGui.QStyledItemDelegate):
             editor.setValidator(validator)
             return editor
 
+        # Generic editor for frozen columns
         elif index.column() < settings.FROZEN_COLUMNS:
             if self.tableFrozen:
-                return super(tableDelegate, self).createEditor(parent, option, index)
+                return super(TableDelegate, self).createEditor(parent, option, index)
             else:
                 return None
 
+        # Generic editor for thawed columns
         else:
-            return super(tableDelegate, self).createEditor(parent, option, index)
+            return super(TableDelegate, self).createEditor(parent, option, index)
 
     def setEditorData(self, editor, index):
         value = index.model().data(index)
@@ -91,7 +126,11 @@ class tableDelegate(QtGui.QStyledItemDelegate):
 
         model.setData(index, value)
 
+    ##########################################################################
+    # Private methods
+    ##########################################################################
     def commitAndCloseEditor(self):
+        """Commit and close the editor with a single return press."""
         editor = self.sender()
         self.commitData.emit(editor)
         self.closeEditor.emit(editor, QtGui.QAbstractItemDelegate.EditNextItem)
@@ -105,30 +144,31 @@ class FilteredComboBox(QtGui.QComboBox):
     Creates a combo box that filters the available options based on user
     input, in a similar way to jQuery.
     """
-
     def __init__(self, parent=None):
         super(FilteredComboBox, self).__init__(parent)
 
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setEditable(True)
 
-        # add a filter model to filter matching items
+        # Add a filter model to filter matching items
         self.pFilterModel = QtGui.QSortFilterProxyModel(self)
         self.pFilterModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
         self.pFilterModel.setSourceModel(self.model())
 
-        # add a completer, which uses the filter model
+        # Add a completer, which uses the filter model
         self.completer = QtGui.QCompleter(self.pFilterModel, self)
-        # always show all (filtered) completions
+        # Always show all (filtered) completions
         self.completer.setCompletionMode(QtGui.QCompleter.UnfilteredPopupCompletion)
         self.setCompleter(self.completer)
 
-        # connect signals
+        # Connect signals
         self.lineEdit().textEdited[unicode].connect(self.pFilterModel.setFilterFixedString)
         self.completer.activated.connect(self.onCompleterActivated)
 
-    # on selection of an item from the completer, select the corresponding item from combobox
+
     def onCompleterActivated(self, text):
+        """Selects the corresponding item from combobox when the item is
+        selected from the completer."""
         if text:
             index = self.findText(text)
             self.setCurrentIndex(index)
@@ -138,6 +178,7 @@ class FilteredComboBox(QtGui.QComboBox):
 # Validator classes
 ##############################################################################
 class DoubleFixupValidator(QtGui.QDoubleValidator):
+    """Validator for floating point numbers."""
     def __init__(self, column, parent):
         self.column = column
         self.bottom = column_config[self.column]['lower_limit']
@@ -146,7 +187,6 @@ class DoubleFixupValidator(QtGui.QDoubleValidator):
         super(DoubleFixupValidator, self).__init__(self.bottom, self.top, self.decimals, parent)
 
     def validate(self, value, pos):
-
         state, pos = QtGui.QDoubleValidator.validate(self, value, pos)
 
         if value.isEmpty() or value == '.' or value == '-':
@@ -165,12 +205,12 @@ class DoubleFixupValidator(QtGui.QDoubleValidator):
             rounded = round(float(value), self.decimals)
             value.setNum(rounded)
 
-        return None
-
 
 class ListValidator(QtGui.QRegExpValidator):
+    """Validator for lists."""
     def __init__(self, column):
         self.column = column
+        # Create a regex pattern containing the acceptable values
         self.list = column_config[self.column]['list_items']
         self.pattern = '|'.join(self.list)
 
@@ -193,5 +233,3 @@ class ListValidator(QtGui.QRegExpValidator):
         upper = value.toUpper()
         value.clear()
         value.append(upper)
-
-        return None

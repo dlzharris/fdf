@@ -7,7 +7,7 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt4 import QtCore, QtGui
-from freezer import FreezeTableWidget
+from frozentable import FreezeTableWidget  # Changed
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -24,7 +24,7 @@ except AttributeError:
         return QtGui.QApplication.translate(context, text, disambig)
 
 class Ui_MainWindow(object):
-    def setupUi(self, model, MainWindow):
+    def setupUi(self, model, MainWindow):  # Changed
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
         MainWindow.resize(1180, 873)
         self.centralwidget = QtGui.QWidget(MainWindow)
@@ -169,7 +169,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.addLayout(self.verticalLayout)
         spacerItem3 = QtGui.QSpacerItem(20, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
         self.verticalLayout_2.addItem(spacerItem3)
-        self.tableViewData = FreezeTableWidget(model, self.centralwidget)
+        self.tableViewData = FreezeTableWidget(model, self.centralwidget)  # Changed
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)

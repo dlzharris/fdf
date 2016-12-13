@@ -6,18 +6,13 @@ field data import file for KiWQM.
 Author: Daniel Harris
 Title: Data & Procedures Officer
 Organisation: DPI Water
-Date modified: 27/09/2016
+Date modified: 13/12/2016
 
 External dependencies: PyYAML, PyQT4
 
 Classes:
 MainApp: Constructor for the main application.
-DateValidator: Validator for dates
-DoubleFixupValidator: Validator for doubles
-FilteredComboBox: Drop-down jQuery-style filtered combo-box
-ListColumnItemDelegate: Style delegate for list columns
-ListValidator: Validator for list items
-TimeValidator: Validator for times
+TableModel: Model part of PyQT MVC framework for storing the tabular data
 
 Functions:
 Main: Runs the Field Data Formatter app.
@@ -32,15 +27,14 @@ import urllib2
 # Related third party imports
 import yaml
 from PyQt4 import QtGui, QtCore
-from PyQt4.QtCore import pyqtSlot
 
 # Local application imports
 import fdfGui
 import functions
 import settings
-from functions import DatetimeError, ValidityError
+from functions import ValidityError
 from settings import app_config, column_config
-from delegates import tableDelegate
+from delegates import TableDelegate
 
 __author__ = 'Daniel Harris'
 __date__ = '12 December 2016'
@@ -52,10 +46,8 @@ __version__ = '0.10.1'
 ###############################################################################
 # Models
 ###############################################################################
-class tableModel(QtCore.QAbstractTableModel):
-    # table.setItemDelegate(ListColumnItemDelegate())
-    # table.setEditTriggers(QtGui.QAbstractItemView.AnyKeyPressed | QtGui.QAbstractItemView.DoubleClicked)
-
+class TableModel(QtCore.QAbstractTableModel):
+    # Define a signal for use in the view
     verticalHeaderChanged = QtCore.pyqtSignal()
 
     def __init__(self, samples=[], headers=[], parent=None):
@@ -66,18 +58,14 @@ class tableModel(QtCore.QAbstractTableModel):
         if not self._samples:
             self._samples.append(self.defaultData())
 
-    def rowCount(self, parent=None):
-        return len(self._samples)
-
+    ##########################################################################
+    # Reimplemented methods
+    ##########################################################################
     def columnCount(self, parent=None):
         return len(column_config)
 
-    def flags(self, index):
-        if index.column() == functions.get_column_number('sampling_number'):
-            flags = QtCore.Qt.ItemIsEnabled
-        else:
-            flags = QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
-        return flags
+    def rowCount(self, parent=None):
+        return len(self._samples)
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
         row = index.row()
@@ -85,8 +73,10 @@ class tableModel(QtCore.QAbstractTableModel):
         value = self._samples[row][column]
 
         if role == QtCore.Qt.DisplayRole:
+            # Dates and times
             if type(value) in (QtCore.QDate, QtCore.QTime):
                 value = value.toString(QtCore.Qt.ISODate)
+            # Floating point numbers
             if value and 'lower_limit' in column_config[column]:
                 value = QtCore.QString.number(value, 'f', column_config[column]['precision'])
             return value
@@ -103,6 +93,35 @@ class tableModel(QtCore.QAbstractTableModel):
         if role == QtCore.Qt.ToolTipRole:
             return self.validateData(value, index)[1]
 
+    def flags(self, index):
+        if index.column() == functions.get_column_number('sampling_number'):
+            flags = QtCore.Qt.ItemIsEnabled
+        else:
+            flags = QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+        return flags
+
+    def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):
+        if role == QtCore.Qt.DisplayRole:
+            if orientation == QtCore.Qt.Horizontal:
+                return column_config[section]['display_name']
+            else:
+                self.verticalHeaderChanged.emit()
+                return section + 1
+
+    def insertRows(self, position, rows, parent=QtCore.QModelIndex()):
+        self.beginInsertRows(parent, position, position + rows - 1)
+        for i in range(rows):
+            self._samples.insert(position, self.defaultData())
+        self.endInsertRows()
+        return True
+
+    def removeRows(self, position, rows, parent=QtCore.QModelIndex()):
+        self.beginRemoveRows(parent, position, position + rows - 1)
+        for i in range(rows):
+            del self._samples[position + i]
+        self.endRemoveRows()
+        return True
+
     def setData(self, index, value, role=QtCore.Qt.EditRole, *args, **kwargs):
         if index.isValid() and role == QtCore.Qt.EditRole:
             row = index.row()
@@ -110,10 +129,12 @@ class tableModel(QtCore.QAbstractTableModel):
 
             dateFormat = kwargs.get('dateFormat')
 
+            # Date as QDate object
             if column == functions.get_column_number('date'):
                 if type(value) is QtCore.QDate:
                     pass
                 else:
+                    # Change value to a string so it can be parsed
                     date = str(value)
                     try:
                         dt_dayfirst = True if dateFormat[:2] == 'dd' else False
@@ -126,10 +147,12 @@ class tableModel(QtCore.QAbstractTableModel):
                     dt = functions.parse_datetime_from_string(date, "", dayfirst=dt_dayfirst, yearfirst=dt_yearfirst)
                     value = QtCore.QDate(dt.year, dt.month, dt.day)
 
+            # Time as QTime object
             if column == functions.get_column_number('time'):
                 if type(value) is QtCore.QTime:
                     pass
                 else:
+                    # Change value to a string so it can be parsed
                     time = str(value)
                     dt = functions.parse_datetime_from_string("", time)
                     value = QtCore.QTime(dt.hour, dt.minute, dt.second)
@@ -138,17 +161,21 @@ class tableModel(QtCore.QAbstractTableModel):
             if column in (functions.get_column_number('station_number'),
                           functions.get_column_number('date'),
                           functions.get_column_number('sample_type')):
-                sampling_number = self.get_sampling_number(value, index)
+                sampling_number = self.getSamplingNumber(value, index)
                 self._samples[row][functions.get_column_number('sampling_number')] = sampling_number
+                # Tell the view that the sampling number has changed
                 idxChanged = self.index(row, functions.get_column_number('sampling_number'))
                 self.dataChanged.emit(idxChanged, idxChanged)
 
+            # Floating point numbers
             if value and 'lower_limit' in column_config[column]:
                 value = float(value)
 
+            # Update coordinate values
             if column in [functions.get_column_number('latitude'), functions.get_column_number('longitude')]:
                 try:
                     if column == functions.get_column_number('latitude'):
+                        # Ensure latitude is always south (negative)
                         if value > 0:
                             value *= -1
                         latitude = value
@@ -183,77 +210,13 @@ class tableModel(QtCore.QAbstractTableModel):
 
         return False
 
-    def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):
-        if role == QtCore.Qt.DisplayRole:
-            if orientation == QtCore.Qt.Horizontal:
-                return column_config[section]['display_name']
-            else:
-                self.verticalHeaderChanged.emit()
-                return section + 1
-
-    def insertRows(self, position, rows, parent=QtCore.QModelIndex()):
-        self.beginInsertRows(parent, position, position + rows - 1)
-        for i in range(rows):
-            self._samples.insert(position, self.defaultData())
-        self.endInsertRows()
-        return True
-
-    def removeRows(self, position, rows, parent=QtCore.QModelIndex()):
-        self.beginRemoveRows(parent, position, position + rows - 1)
-        for i in range(rows):
-            del self._samples[position + i]
-        self.endRemoveRows()
-        return True
-
-    def resetData(self):
-        for i in range(self.rowCount(), 0, -1):
-            self.removeRow(i - 1)
-
-    def defaultData(self):
-        defaultValues = [QtCore.QString("") for column in range(len(column_config))]
-        defaultValues[functions.get_column_number('date')] = QtCore.QDate()
-        defaultValues[functions.get_column_number('time')] = QtCore.QTime()
-        return defaultValues
-
-    def validateData(self, value, index):
-        if value == 0 and 'lower_limit' in column_config[index.column()]:
-            text = "Given value is zero (0). A value of zero generally indicates a sensor failure, " \
-                   "or a non-measured parameter. Please review and adjust before continuing."
-            return QtGui.QBrush(QtCore.Qt.red), text
-
-        elif value:
-            if index.column() == functions.get_column_number('date') and value > QtCore.QDate.currentDate():
-                text = "The entered date is in the future. Sampling dates must be in the past.\n" \
-                          "Please enter a different date."
-                return QtGui.QBrush(QtCore.Qt.red), text
-
-            if index.column() == functions.get_column_number('date') and not value.isValid():
-                text = "The entered date is invalid. Please enter a valid date."
-                return QtGui.QBrush(QtCore.Qt.red), text
-
-            if index.column() == functions.get_column_number('time') and not value.isValid():
-                text = "The entered time is invalid. Please enter a valid time."
-                return QtGui.QBrush(QtCore.Qt.red), text
-
-            if 'lower_limit' in column_config[index.column()]:
-                 if value < column_config[index.column()]['lower_limit'] or value > column_config[index.column()]['upper_limit']:
-                    lowerLimit = column_config[index.column()]['lower_limit']
-                    upperLimit = column_config[index.column()]['upper_limit']
-                    text = "Value out of range.\nAcceptable range is between %s and %s" % (lowerLimit, upperLimit)
-                    return QtGui.QBrush(QtCore.Qt.red), text
-
-            if 'list_items' in column_config[index.column()] and value not in column_config[index.column()]['list_items']:
-                text = "Value is not a valid value from the drop down list.\n" \
-                      "Please select a valid value from the list."
-                return QtGui.QBrush(QtCore.Qt.red), text
-
-        return QtGui.QBrush(QtCore.Qt.white), None
-
-    def check_matrix_consistency(self):
+    ##########################################################################
+    # Private methods
+    ##########################################################################
+    def checkMatrixConsistency(self):
         """
         Checks that all samples in a single sampling use the same matrix.
         This is a requirement for KiWQM.
-        :param table: Instance of QTableWidget
         :return: Boolean indicating if matrix is consistent or not
         """
         matrix_consistent = True
@@ -267,18 +230,19 @@ class tableModel(QtCore.QAbstractTableModel):
             )
 
         for sample in matrix_list:
+            # Get a list of all matrices in a single sampling.
             sampling_matrix = [x for (m, x, s) in matrix_list if m == sample[0] and s == sample[2]]
+            # Check that each sampling only has one matrix
             if len(set(sampling_matrix)) > 1:
                 matrix_consistent = False
                 break
 
         return matrix_consistent
 
-    def check_sequence_numbers(self):
+    def checkSequenceNumbers(self):
         """
         Checks that all samples in a single sampling use distinct sequence
         numbers and that they start at 1 and increment sequentially.
-        :param table: Instance of QTableWidget
         :return: Boolean indicating if sequence numbers are acceptable
         """
         sequence_correct = True
@@ -315,12 +279,22 @@ class tableModel(QtCore.QAbstractTableModel):
 
         return sequence_correct
 
-    def get_sampling_number(self, value, index):
+    def defaultData(self):
+        """
+        Generates a row of empty QStrings to initialise an empty data row
+        :return: List of QStrings
+        """
+        defaultValues = [QtCore.QString("") for column in range(len(column_config))]
+        defaultValues[functions.get_column_number('date')] = QtCore.QDate()
+        defaultValues[functions.get_column_number('time')] = QtCore.QTime()
+        return defaultValues
+
+    def getSamplingNumber(self, value, index):
         """
         Returns a new sampling number
-        :param station_number: String representing the station number
-        :param date: String with date (in any format)
-        :param sample_type: String representing the sample type code
+        :param value: The value to use for the update. This will be the
+        station number, date or sample type.
+        :index: Model index of the value
         :return: String of well-formatted sampling identification number
         """
         row = index.row()
@@ -339,17 +313,18 @@ class tableModel(QtCore.QAbstractTableModel):
 
         elif column == functions.get_column_number('sample_type'):
             station_number = self._samples[row][functions.get_column_number('station_number')]
-            date = self._samples[row][functions.get_column_number('date')].toPyDate()\
+            date = self._samples[row][functions.get_column_number('date')].toPyDate() \
                 .strftime(app_config['datetime_formats']['date']['sampling_number'])
             sample_type = value
 
         else:
             station_number = self._samples[row][functions.get_column_number('station_number')]
-            date = self._samples[row][functions.get_column_number('date')].toPyDate()\
+            date = self._samples[row][functions.get_column_number('date')].toPyDate() \
                 .strftime(app_config['datetime_formats']['date']['sampling_number'])
             sample_type = self._samples[row][functions.get_column_number('sample_type')]
 
         # Create the sampling number in format STATION#-DDMMYY[-SAMPLE_TYPE]
+        # Check if any components are empty or if date is not valid
         if (not station_number) or (not date) or date == '010123':
             sampling_number = ""
         elif sample_type in ["QR", "QB", "QT"]:
@@ -358,7 +333,63 @@ class tableModel(QtCore.QAbstractTableModel):
             sampling_number = QtCore.QString("%1-%2").arg(station_number).arg(date)
         return QtCore.QString(sampling_number)
 
+    def resetData(self):
+        """
+        Reset all data in model
+        :return: None
+        """
+        for i in range(self.rowCount(), 0, -1):
+            self.removeRow(i - 1)
+
+    def validateData(self, value, index):
+        """
+        Validates model data and returns a cell colour and tooltip for
+        invalid cells.
+        :param value: Value to be validated
+        :param index: Model index of the value to be validated
+        :return: QBrush colour and tooltip text
+        """
+        # Zero values must be test first because second test will return False
+        if value == 0 and 'lower_limit' in column_config[index.column()]:
+            text = "Given value is zero (0). A value of zero generally indicates a sensor failure, " \
+                   "or a non-measured parameter. Please review and adjust before continuing."
+            return QtGui.QBrush(QtCore.Qt.red), text
+
+        elif value:
+            if index.column() == functions.get_column_number('date') and value > QtCore.QDate.currentDate():
+                text = "The entered date is in the future. Sampling dates must be in the past.\n" \
+                          "Please enter a different date."
+                return QtGui.QBrush(QtCore.Qt.red), text
+
+            if index.column() == functions.get_column_number('date') and not value.isValid():
+                text = "The entered date is invalid. Please enter a valid date."
+                return QtGui.QBrush(QtCore.Qt.red), text
+
+            if index.column() == functions.get_column_number('time') and not value.isValid():
+                text = "The entered time is invalid. Please enter a valid time."
+                return QtGui.QBrush(QtCore.Qt.red), text
+
+            if 'lower_limit' in column_config[index.column()]:
+                 if value < column_config[index.column()]['lower_limit'] or value > column_config[index.column()]['upper_limit']:
+                    lowerLimit = column_config[index.column()]['lower_limit']
+                    upperLimit = column_config[index.column()]['upper_limit']
+                    text = "Value out of range.\nAcceptable range is between %s and %s" % (lowerLimit, upperLimit)
+                    return QtGui.QBrush(QtCore.Qt.red), text
+
+            if 'list_items' in column_config[index.column()] and value not in column_config[index.column()]['list_items']:
+                text = "Value is not a valid value from the drop down list.\n" \
+                      "Please select a valid value from the list."
+                return QtGui.QBrush(QtCore.Qt.red), text
+
+        return QtGui.QBrush(QtCore.Qt.white), None
+
     def swapMonthDay(self, listOfIndexes):
+        """
+        Swaps the month and day values for dates where that results in a
+        valid date.
+        :param listOfIndexes: List of model indexes to be swapped.
+        :return: None
+        """
         for index in listOfIndexes:
             if index.column() == functions.get_column_number('date'):
                 # Get current settings
@@ -378,24 +409,22 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
     """
     Constructor for the main application
     """
-
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
 
-        # Set up model
-        # Create empty dicionary to go in as first value
-        self.sampleModel = tableModel()
-        #self.tableViewData.setModel(self.sampleModel)
-        self.sampleModel.removeRows(0, 1)
-
+        # Check we are using the latest version of FDF
         self.checkVersion()
+        # Set up model
+        self.sampleModel = TableModel()
+        self.sampleModel.removeRows(0, 1)
+        # Set up the main GUI window
         self.setupUi(self.sampleModel, self)
-
+        # Initialise global variables
         settings.FROZEN_COLUMNS = self.spinBoxFrozenColumns.value()
-
-        self.tableViewData.setItemDelegate(tableDelegate(False))
-        self.tableViewData.frozenTableView.setItemDelegate(tableDelegate(True))
-
+        # Set up the table views
+        self.tableViewData.setItemDelegate(TableDelegate(False))
+        self.tableViewData.frozenTableView.setItemDelegate(TableDelegate(True))
+        # Connect signals
         self.filePickerBtn.clicked.connect(self.filePicker)
         self.addFileBtn.clicked.connect(self.addFile)
         self.pushButtonDeleteLines.clicked.connect(self.delRows)
@@ -474,6 +503,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 for j in range(len(lists[i])):
                     index = self.sampleModel.index(self.sampleModel.rowCount() - 1, j)
                     self.sampleModel.setData(index, lists[i][j])
+                    # If we have an invalid value, change the valid flag so that the message displays
                     if self.sampleModel.data(index, role=QtCore.Qt.BackgroundRole) == QtGui.QBrush(QtCore.Qt.red):
                         fileValid = False
 
@@ -539,7 +569,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         indexes = selection.selectedIndexes()
         if len(indexes) < 1:
             # Nothing selected
-            return
+            return None
 
         # Start copying
         text = ''
@@ -571,11 +601,13 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         indexes = selection.selectedIndexes()
         if len(indexes) < 1:
             # Nothing selected
-            return
+            return None
 
         # Start deleting
         for i in indexes:
             self.sampleModel.setData(i, QtCore.QString(""))
+
+        return  None
 
     def delRows(self):
         """Deletes selected rows from the table."""
@@ -607,7 +639,6 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             for column in range(self.sampleModel.columnCount()):
                 index = self.sampleModel.index(row, column)
                 tableData[row].append(str(self.sampleModel.data(index)))
-
         # Transform the list to a dictionary for dictWriter
         tableData = functions.lorl2lord(tableData, app_config['column_order'])
         # Reformat the data in parameter-oriented format
@@ -655,22 +686,6 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         currentIndex = self.tableViewData.currentIndex()
         self.tableViewData.setCurrentIndex(self.sampleModel.index(currentIndex.row() + 1, currentIndex.column()))
 
-    def resetData(self):
-        """Resets all data in the table instance after confirming with the user."""
-        txt = u"All data will be lost. Are you sure you want to continue?"
-        msg = QtGui.QMessageBox()
-        msg.setIcon(QtGui.QMessageBox.Warning)
-        msg.setStandardButtons(QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel)
-        msg.setDefaultButton(QtGui.QMessageBox.Cancel)
-        msg.setWindowTitle(u"Warning! Data reset!")
-        msg.setText(txt)
-        retVal = msg.exec_()
-        if retVal == QtGui.QMessageBox.Ok:
-            self.sampleModel.resetData()
-            self.listWidgetCurrentFiles.clear()
-        else:
-            return None
-
     def paste(self):
         """Creates Excel-style paste into the table instance from the clipboard."""
         # Get the selected cell or cells
@@ -696,7 +711,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         copyDataRows = txt.split('\n')
         if copyDataRows is None:
             # Nothing in the clipboard
-            return
+            return None
 
         # Paste data
         # Special case - only one value selected
@@ -713,6 +728,25 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 for j in range(len(copyDataCols)):
                     self.sampleModel.setData(self.sampleModel.index(pasteStartRow + i, pasteStartCol + j),
                                              copyDataCols[j], dateFormat=self.dateFormatComboBox.currentText())
+
+        return None
+
+    def resetData(self):
+        """Resets all data in the table instance after confirming with the user."""
+        txt = u"All data will be lost. Are you sure you want to continue?"
+        msg = QtGui.QMessageBox()
+        msg.setIcon(QtGui.QMessageBox.Warning)
+        msg.setStandardButtons(QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel)
+        msg.setDefaultButton(QtGui.QMessageBox.Cancel)
+        msg.setWindowTitle(u"Warning! Data reset!")
+        msg.setText(txt)
+        retVal = msg.exec_()
+        if retVal == QtGui.QMessageBox.Ok:
+            self.sampleModel.resetData()
+            self.listWidgetCurrentFiles.clear()
+            return None
+        else:
+            return None
 
     def showAbout(self):
         """Displays the about box from the help menu."""
@@ -731,9 +765,11 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         self.helpBrowser.show()
 
     def swapDayMonth(self):
+        """Swap the day and month values of selected indices."""
         self.sampleModel.swapMonthDay(self.tableViewData.selectedIndexes())
 
     def updateGlobalFrozenColumns(self, frozenColumns):
+        """Update the number of frozen columns at the left of the table."""
         settings.FROZEN_COLUMNS = frozenColumns
 
     def validateExport(self):
@@ -774,10 +810,10 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                             break
 
         # Test matrix consistency
-        matrixConsistent = model.check_matrix_consistency()
+        matrixConsistent = model.checkMatrixConsistency()
 
         # Test sequence number validity
-        sequenceCorrect = model.check_sequence_numbers()
+        sequenceCorrect = model.checkSequenceNumbers()
 
         # Prepare message for user
         msg = u""
