@@ -352,40 +352,9 @@ def load_instrument_file(instrument_file, file_source, date_format):
                 get_mga_coordinates(new_line['latitude'], new_line['longitude'])
 
             # Add the extra items we'll need access to later on
-            new_line['event_time'] = ""
-            new_line['sampling_number'] = ""
-            new_line['replicate_number'] = ""
-            new_line['sample_cid'] = ""
-            new_line['sample_matrix'] = ""
-            new_line['sample_type'] = ""
-            new_line['mp_number'] = ""
-            new_line['location_id'] = ""
-            new_line['collection_method'] = ""
-            new_line['calibration_record'] = ""
-            new_line['station_visited'] = ""
-            new_line['sample_collected'] = ""
-            new_line['depth_lower'] = ""
-            new_line['sampling_comment'] = ""
-            new_line['turbidity_instrument'] = ""
-            new_line['gauge_height'] = ""
-            new_line['turbidity'] = ""
-            new_line['water_depth'] = ""
-            if 'barometric_pressure' not in new_line:
-                new_line['barometric_pressure'] = ""
-            if 'conductivity_comp' not in new_line:
-                new_line['conductivity_comp'] = ""
-            if 'conductivity_uncomp' not in new_line:
-                new_line['conductivity_uncomp'] = ""
-            if 'easting' not in new_line:
-                new_line['easting'] = ""
-            if 'northing' not in new_line:
-                new_line['northing'] = ""
-            if 'map_zone' not in new_line:
-                new_line['map_zone'] = ""
-            if 'latitude' not in new_line:
-                new_line['latitude'] = ""
-            if 'longitude' not in new_line:
-                new_line['longitude'] = ""
+            for item in column_config:
+                if column_config[item]['name'] not in new_line:
+                    new_line[column_config[item]['name']] = ""
 
             # Add the new updated dictionary to our list
             data.append(new_line)
