@@ -152,7 +152,7 @@
   required_if_not_sampled: no
   lower_limit: 0
   upper_limit: 50
-  precision: 3
+  precision: 2
   unit_code: M
 17:
   name: depth_lower
@@ -162,7 +162,7 @@
   required_if_not_sampled: no
   lower_limit: 0
   upper_limit: 50
-  precision: 3
+  precision: 2
   unit_code: M
 18:
   name: do
@@ -205,7 +205,7 @@
   required_if_not_sampled: no
   lower_limit: 0
   upper_limit: 50
-  precision: 3
+  precision: 1
   unit_code: DEGC
   method: FLD_MULTI_PROBE
 22:
@@ -216,7 +216,7 @@
   required_if_not_sampled: no
   lower_limit: 0
   upper_limit: 5000000
-  precision: 4
+  precision: 0
   unit_code: MISC
   method: FLD_MULTI_PROBE
 23:
@@ -227,7 +227,7 @@
   required_if_not_sampled: no
   lower_limit: 0
   upper_limit: 5000000
-  precision: 4
+  precision: 0
   unit_code: MISC
   method: FLD_MULTI_PROBE
 24:
@@ -238,7 +238,7 @@
   required_if_not_sampled: no
   lower_limit: 0
   upper_limit: 10000
-  precision: 3
+  precision: 0
   unit_code: MMHG
   method: FLD_MULTI_PROBE
 25:
