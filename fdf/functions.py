@@ -44,6 +44,7 @@ import re
 import sys
 
 # Related third party imports
+import chardet
 from dateutil.parser import parse
 from utm import from_latlon
 
@@ -146,6 +147,11 @@ def load_instrument_file(instrument_file, file_source, date_format):
             data_start_row = 1
             encoding = 'utf16'
 
+    # TODO: Ensure encoding is working properly here
+    charset = chardet.detect(open(instrument_file, "rb").read())
+    encoding = charset['encoding']
+    bom = u'\ufeff'  # Byte Order Mark for utf16-le
+
     with codecs.open(instrument_file, "rb", encoding=encoding) as f:
         # Check the validity of the file
         try:
@@ -159,7 +165,7 @@ def load_instrument_file(instrument_file, file_source, date_format):
         # Read the file into a list for initial interrogation and processing. We will
         # read the data portion into a dictionary further below.
         in_list = list(f.readlines())
-        parameters = in_list[header_start_row].replace('"', '').replace('\r\n', '').split(',')
+        parameters = in_list[header_start_row].replace('"', '').replace(bom, '').replace('\r\n', '').split(',')
 
         if file_source in app_config['sources']['hydrolab']:
             # The hydrolab data headers are made up of two rows: one for the parameter and one
