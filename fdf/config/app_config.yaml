@@ -7,6 +7,8 @@ sources:
   ysi:
     - EXO (instrument)
     # - EXO (KOR file)
+  hanna:
+    - Hanna
   turbidity:
     - HACH Tubiditimeter 2100P
     - HACH Tubiditimeter 2100Q
