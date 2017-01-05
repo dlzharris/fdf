@@ -424,7 +424,9 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         # Set up the table views
         self.tableViewData.setItemDelegate(TableDelegate(False))
         self.tableViewData.frozenTableView.setItemDelegate(TableDelegate(True))
+        self.tableViewData.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
         # Connect signals
+        self.tableViewData.selectionModel().selectionChanged.connect(self.selectionChanged)
         self.filePickerBtn.clicked.connect(self.filePicker)
         self.addFileBtn.clicked.connect(self.addFile)
         self.pushButtonDeleteLines.clicked.connect(self.delRows)
@@ -480,6 +482,8 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             self.paste()
         elif event.key() in (QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return):
             self.keyPressEnter()
+        elif event.key() == QtCore.Qt.Key_Escape:
+            self.clearSelection()
         else:
             QtGui.QMainWindow.keyPressEvent(self, event)
 
@@ -564,6 +568,11 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             msg.setWindowTitle(u"New version available!")
             msg.exec_()
             sys.exit()
+
+    def clearSelection(self):
+        selection = self.tableViewData.selectionModel()
+        selectionRange = selection.selection()
+        selection.select(selectionRange, QtGui.QItemSelectionModel.Clear)
 
     def copy(self):
         """Implements Excel-style copy."""
@@ -750,6 +759,9 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             return None
         else:
             return None
+
+    def selectionChanged(self):
+        self.sampleModel.layoutChanged.emit()
 
     def showAbout(self):
         """Displays the about box from the help menu."""
