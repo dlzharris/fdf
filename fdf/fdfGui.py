@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'fdfGui-V01-6.ui'
+# Form implementation generated from reading ui file 'fdfGui-V01-7.ui'
 #
 # Created by: PyQt4 UI code generator 4.11.4
 #
@@ -145,8 +145,13 @@ class Ui_MainWindow(object):
         self.pushButtonSwapDayMonth = QtGui.QPushButton(self.groupBoxEditTools)
         self.pushButtonSwapDayMonth.setObjectName(_fromUtf8("pushButtonSwapDayMonth"))
         self.gridLayout_3.addWidget(self.pushButtonSwapDayMonth, 5, 1, 1, 1)
+        self.pushButtonFillSampleLocation = QtGui.QPushButton(self.groupBoxEditTools)
+        self.pushButtonFillSampleLocation.setObjectName(_fromUtf8("pushButtonFillSampleLocation"))
+        self.gridLayout_3.addWidget(self.pushButtonFillSampleLocation, 5, 0, 1, 1)
         self.horizontalLayout_3 = QtGui.QHBoxLayout()
         self.horizontalLayout_3.setObjectName(_fromUtf8("horizontalLayout_3"))
+        spacerItem2 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        self.horizontalLayout_3.addItem(spacerItem2)
         self.labelFrozenColumns = QtGui.QLabel(self.groupBoxEditTools)
         self.labelFrozenColumns.setObjectName(_fromUtf8("labelFrozenColumns"))
         self.horizontalLayout_3.addWidget(self.labelFrozenColumns)
@@ -162,16 +167,13 @@ class Ui_MainWindow(object):
         self.spinBoxFrozenColumns.setObjectName(_fromUtf8("spinBoxFrozenColumns"))
         self.horizontalLayout_3.addWidget(self.spinBoxFrozenColumns)
         self.gridLayout_3.addLayout(self.horizontalLayout_3, 5, 2, 1, 1)
-        self.pushButtonFillSampleLocation = QtGui.QPushButton(self.groupBoxEditTools)
-        self.pushButtonFillSampleLocation.setObjectName(_fromUtf8("pushButtonFillSampleLocation"))
-        self.gridLayout_3.addWidget(self.pushButtonFillSampleLocation, 5, 0, 1, 1)
         self.horizontalLayout.addWidget(self.groupBoxEditTools)
-        spacerItem2 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-        self.horizontalLayout.addItem(spacerItem2)
+        spacerItem3 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        self.horizontalLayout.addItem(spacerItem3)
         self.verticalLayout.addLayout(self.horizontalLayout)
         self.verticalLayout_2.addLayout(self.verticalLayout)
-        spacerItem3 = QtGui.QSpacerItem(20, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
-        self.verticalLayout_2.addItem(spacerItem3)
+        spacerItem4 = QtGui.QSpacerItem(20, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
+        self.verticalLayout_2.addItem(spacerItem4)
         self.tableViewData = FreezeTableWidget(model, self.centralwidget)  # Changed
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
@@ -220,8 +222,8 @@ class Ui_MainWindow(object):
         self.pushButtonResetData.setText(_translate("MainWindow", "Reset data", None))
         self.chkBoxSampleOriented.setText(_translate("MainWindow", "Include sample-oriented file", None))
         self.pushButtonSwapDayMonth.setText(_translate("MainWindow", "Swap day and month", None))
-        self.labelFrozenColumns.setText(_translate("MainWindow", "Frozen columns", None))
         self.pushButtonFillSampleLocation.setText(_translate("MainWindow", "Fill location and sequence", None))
+        self.labelFrozenColumns.setText(_translate("MainWindow", "Frozen columns", None))
         self.menuHelp.setTitle(_translate("MainWindow", "Help", None))
         self.actionHelp.setText(_translate("MainWindow", "Help", None))
         self.actionAbout.setText(_translate("MainWindow", "About", None))

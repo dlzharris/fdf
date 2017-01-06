@@ -50,6 +50,8 @@ class FreezeTableWidget(QtGui.QTableView):
         # Remove the scroll bar
         self.frozenTableView.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.frozenTableView.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        # Set the sorting
+        self.frozenTableView.setSortingEnabled(True)
         # Update the size and location of the frozen table with respect to the main table
         self.updateFrozenTableGeometry()
         # Set the scroll mode to keep in sync

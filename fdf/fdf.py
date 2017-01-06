@@ -20,6 +20,7 @@ Main: Runs the Field Data Formatter app.
 
 # Standard library imports
 import datetime
+import operator
 import os
 import sys
 import urllib2
@@ -383,6 +384,14 @@ class TableModel(QtCore.QAbstractTableModel):
 
         return QtGui.QBrush(QtCore.Qt.white), None
 
+    def sort(self, column, order):
+        """Sort table by given column number"""
+        self.layoutAboutToBeChanged.emit()
+        self._samples = sorted(self._samples, key=operator.itemgetter(column))
+        if order == QtCore.Qt.DescendingOrder:
+            self._samples.reverse()
+        self.layoutChanged.emit()
+
     def swapMonthDay(self, listOfIndexes):
         """
         Swaps the month and day values for dates where that results in a
@@ -425,6 +434,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         self.tableViewData.setItemDelegate(TableDelegate(False))
         self.tableViewData.frozenTableView.setItemDelegate(TableDelegate(True))
         self.tableViewData.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+        self.tableViewData.setSortingEnabled(True)
         # Connect signals
         self.tableViewData.selectionModel().selectionChanged.connect(self.selectionChanged)
         self.filePickerBtn.clicked.connect(self.filePicker)
