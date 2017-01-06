@@ -434,6 +434,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         self.pushButtonResetData.clicked.connect(self.resetData)
         self.pushButtonExportData.clicked.connect(self.exportData)
         self.pushButtonSwapDayMonth.clicked.connect(self.swapDayMonth)
+        self.pushButtonFillSampleLocation.clicked.connect(self.fillSampleLocation)
         self.spinBoxFrozenColumns.valueChanged.connect(self.tableViewData.updateFrozenColumns)
         self.spinBoxFrozenColumns.valueChanged.connect(self.updateGlobalFrozenColumns)
 
@@ -680,6 +681,26 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
     def filePicker(self):
         """Shows file picker dialog and name in text box."""
         self.fileLineEdit.setText(QtGui.QFileDialog.getOpenFileName())
+
+    def fillSampleLocation(self):
+        """Convenience function to fill the selected rows sample and location numbers with ones."""
+        # Get the selected cell or cells
+        selection = self.tableViewData.selectionModel()
+        indexes = selection.selectedIndexes()
+        # Get the location of the top left cell in selection
+        fillStartRow = min(r.row() for r in indexes)
+        fillEndRow = max(r.row() for r in indexes)
+        if len(indexes) < 1:
+            # Nothing selected
+            return None
+
+        for i in range(fillStartRow, fillEndRow + 1):
+            indexLocation = self.sampleModel.createIndex(i, functions.get_column_number('location_id'))
+            indexSample = self.sampleModel.createIndex(i, functions.get_column_number('sample_cid'))
+            self.sampleModel.setData(indexLocation, 1)
+            self.sampleModel.setData(indexSample, 1)
+
+        return None
 
     def insertRows(self):
         """Inserts additional rows to the table instance."""
