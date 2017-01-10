@@ -412,6 +412,28 @@ class TableModel(QtCore.QAbstractTableModel):
 
 
 ###############################################################################
+# Undo action commands
+###############################################################################
+class CommandSetData(QtGui.QUndoCommand):
+    def __init__(self, model, index, value, previous, description="Item edited", *args, **kwargs):
+        super(CommandSetData, self).__init__(description)
+        self.model = model
+        self.index = index
+        self.value = value
+        self.previous = previous
+        self.dateFormat = kwargs.get('dateFormat')
+
+    def redo(self):
+        if self.dateFormat:
+            self.model.setData(self.index, self.value, dateFormat=self.dateFormat)
+        else:
+            self.model.setData(self.index, self.value)
+
+    def undo(self):
+        self.model.setData(self.index, self.previous)
+
+
+###############################################################################
 # Main app constructor and initialisation
 ###############################################################################
 class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
@@ -426,6 +448,8 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         # Set up model
         self.sampleModel = TableModel()
         self.sampleModel.removeRows(0, 1)
+        # Set up the undo stack
+        self.undoStack = QtGui.QUndoStack(self)
         # Set up the main GUI window
         self.setupUi(self.sampleModel, self)
         # Initialise global variables
@@ -613,9 +637,17 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         """Implements Excel-style cut."""
         # Copy the selected cells
         rows, cols = self.copy()
+        # Prepare the undo macro
+        self.undoStack.beginMacro("Cut data")
+        # Begin cut operations
         for r in range(min(rows), max(rows) + 1):
             for c in range(min(cols), max(cols) + 1):
-                self.sampleModel.setData(self.sampleModel.index(r, c), QtCore.QString(""))
+                index = self.sampleModel.index(r, c)
+                value = QtCore.QString("")
+                previous = self.sampleModel.data(index)
+                command = CommandSetData(self.sampleModel, index, value, previous)
+                self.undoStack.push(command)
+        self.undoStack.endMacro()
 
     def delete(self):
         """Deletes data from currently selected cells."""
@@ -626,9 +658,15 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             # Nothing selected
             return None
 
+        # Prepare undo macro
+        self.undoStack.beginMacro("Delete data")
         # Start deleting
         for i in indexes:
-            self.sampleModel.setData(i, QtCore.QString(""))
+            value = QtCore.QString("")
+            previous = self.sampleModel.data(i)
+            command = CommandSetData(self.sampleModel, i, value, previous)
+            self.undoStack.push(command)
+        self.undoStack.endMacro()
 
         return  None
 
@@ -638,6 +676,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         # Reverse the order of rows so we delete from the bottom up
         # to avoid errors.
         rows.reverse()
+        # TODO: implement undo here
         for row in rows:
             self.sampleModel.removeRow(row.row())
 
@@ -704,11 +743,18 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             # Nothing selected
             return None
 
+        # Prepare undo macro
+        self.undoStack.beginMacro("Fill sample and location")
         for i in range(fillStartRow, fillEndRow + 1):
             indexLocation = self.sampleModel.createIndex(i, functions.get_column_number('location_id'))
             indexSample = self.sampleModel.createIndex(i, functions.get_column_number('sample_cid'))
-            self.sampleModel.setData(indexLocation, 1)
-            self.sampleModel.setData(indexSample, 1)
+            previousLocation = self.sampleModel.data(indexLocation)
+            previousSample = self.sampleModel.data(indexSample)
+            command = CommandSetData(self.sampleModel, indexLocation, 1, previousLocation)
+            self.undoStack.push(command)
+            command = CommandSetData(self.sampleModel, indexSample, 1, previousSample)
+            self.undoStack.push(command)
+        self.undoStack.endMacro()
 
         return None
 
@@ -762,15 +808,24 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             copyData = copyDataRows[0]
             for i in range(pasteEndRow - pasteStartRow + 1):
                 for j in range(pasteEndCol - pasteStartCol + 1):
-                    self.sampleModel.setData(self.sampleModel.index(pasteStartRow + i, pasteStartCol + j),
-                                             copyData, dateFormat=self.dateFormatComboBox.currentText())
+                    index = self.sampleModel.index(pasteStartRow + i, pasteStartCol + j)
+                    previous = self.sampleModel.data(index)
+                    command = CommandSetData(self.sampleModel, index, copyData,
+                                             previous, dateFormat=self.dateFormatComboBox.currentText())
+                    self.undoStack.push(command)
         else:
+            # Prepare the undo macro
+            self.undoStack.beginMacro("Paste data")
             # Paste data in rows, starting from top and moving left to right
             for i in range(len(copyDataRows)):
                 copyDataCols = copyDataRows[i].split('\t')
                 for j in range(len(copyDataCols)):
-                    self.sampleModel.setData(self.sampleModel.index(pasteStartRow + i, pasteStartCol + j),
-                                             copyDataCols[j], dateFormat=self.dateFormatComboBox.currentText())
+                    index = self.sampleModel.index(pasteStartRow + i, pasteStartCol + j)
+                    previous = self.sampleModel.data(index)
+                    command = CommandSetData(self.sampleModel, index, copyDataCols[j],
+                                             previous, dateFormat=self.dateFormatComboBox.currentText())
+                    self.undoStack.push(command)
+            self.undoStack.endMacro()
 
         return None
 
