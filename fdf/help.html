@@ -3,38 +3,64 @@
 <p>Welcome to the <em>KiWQM Field Data Importer Help</em> file. This document briefly describes how to use the <em>Field Data Importer</em>, provides explanations of the various fields requiring user input, and defines the codes used.</p>
 <h2 id="how-to-use-this-application">How to use this application</h2>
 <p>KiWQM requires that any imported data is loaded in a specific format. The <em>KiWQM Field Data Importer</em> helps get your field data into that format easily. The application can be used to load data from a data logger file (such as those created by the YSI or Hydrolab instruments when measurements are saved in the field) or to input data collected manually on a <em>Water Sample Log</em>.</p>
-<p>The application consists of a single screen with all the functions required availble.</p>
+<p>The application consists of a single screen with access to all the required functions.</p>
+<h3 id="freezing-columns">Freezing columns</h3>
+<p>Data entry requires entering data into many columns (up to 34 columns) so it is usually necessary to scroll to the right to view, validate and enter data. In order to keep track of the samples being edited, it is possible to freeze a number of columns on the left of the table so that they remain visible through the entire editing process. The <em>Frozen columns</em> box at the right side of the window sets the number of columns at the left that will remain visible. The default is <em>3</em> columns, which allows for the measuring program, station and date to be visible at all times. You can increase or decrease the number of frozen columns by using the up and down arrows provided, or by typing a number directly into the box.</p>
 <h3 id="manual-data-entry">Manual data entry<a name="manual-data-entry"></a></h3>
 <p>To input data manually from a log sheet, just press the <em>Add lines</em> button (once press for each sample required) and start entering data in the table. See <a href="#description-of-fields">Description of fields</a> for descritions of the various fields, and details on mandatory and optional fields.</p>
 <h3 id="importing-a-data-file-from-a-field-instrument">Importing a data file from a field instrument<a name="importing-data-files"></a></h3>
-<p>To import a data file created by fa Hydrolab or YSI instrument, do the following:</p>
+<p>To import a data file created by a Hydrolab or YSI instrument, do the following:</p>
 <ol style="list-style-type: decimal">
 <li>Select the instrument from the <em>Instrument</em> drop down list at the top of the window.</li>
 <li>Press the &quot;...&quot; key labeled <em>File location</em>.</li>
 <li>Select the file you wish to import.</li>
+<li>Select the date format of the file from the drop-down list. You can use the <em>Swap day and month</em> button later on to correct this if you make a mistake at this point (see <a href="#editing-functions">Editing functions</a> below for more information).</li>
 <li>Press the <em>Add file</em> button.</li>
 </ol>
 <p>The data will be automatically imported from the selected file and the file name will be displayed in the <em>Current files</em> box. You will be notified if there are problems with the data or if the data file is invalid for the selected instrument.</p>
 <h3 id="adding-additional-data-or-files">Adding additional data or files</h3>
-<p>The user is not restricted to opening a single file at once. To import additional files, follow the procedure outlined in <a href="#importing-data-files">Importing a data file from a field instrument</a> above. The newly added data will be added at the bottom of the existing data display, and the new file name will be added to the list in the <em>Current files</em> box.</p>
+<p>The user is not restricted to opening a single file at once. To open additional files, follow the procedure outlined in <a href="#importing-data-files">Importing a data file from a field instrument</a> above. The newly added data will be added at the bottom of the already displayed data, and the new file name will be added to the list in the <em>Current files</em> box.</p>
 <p>You can also add additional data manually by pressing the <em>Add lines</em> button and following the steps in <a href="#manual-data-entry">Manual data entry</a>.</p>
 <h3 id="editing-data">Editing data</h3>
-<p>Data can be edited directly in the table view. Some columns require selection of values from a drop-down list (see <a href="#description-of-fields">Description of fields</a> for more information).</p>
-<p>To edit values not requiring selection from a drop-down list, select the cell and begin typing. Once you are done (by pressing enter, tab, or one of the arrow keys, or by selecting another cell with the mouse), the application will check if the value added is valid and will report a message if it is not.</p>
-<p>To edit values in a drop down list, double-click in the cell you wish to edit and the drop-down list will appear. Alternatively, if you know all or part of the value you wish to select, simply click once in the cell and begin typing - a filtered list of options will appear and you can make your selection from the list.</p>
+<h4 id="manual-editing">Manual editing</h4>
+<p>Data can be edited directly in the table. Some columns require selection of values from a drop-down list (see <a href="#description-of-fields">Description of fields</a> for more information).</p>
+<p>To edit values that do not require selection from a drop-down list, select the cell and begin typing. Once you are done (by pressing enter, tab, or one of the arrow keys, or by selecting another cell with the mouse), the application will check if the value added is valid and will report a message if it is not.</p>
+<p>You will not be able to type in completely invalid values. For example, if you try to type <em>20</em> into the pH field, you will be able to type <em>2</em> but the application will prevent you from typeing the <em>0</em> because <em>20</em> is an invalid value for pH.</p>
+<p>To edit values in a drop down list, double-click in the cell you wish to edit and the drop-down list will appear. Alternatively, if you know all or part of the value you wish to select, simply select the cell (by clicking once in the cell, or by navigating to it with the arrow keys) and begin typing - a filtered list of options will appear and you can make your selection from the list.</p>
+<h4 id="editing-functions">Editing functions<a name="editing-functions"></a></h4>
+<p>Several buttons have been supplied that provide convenience editing functions:</p>
+<ul>
+<li><em>Fill location and sequence</em>: The majority of the time, water quality samples collected will have a location number of <em>1</em> and a sequence number of <em>1</em> (for more information on these, see <a href="http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/32012.pdf"><em>Water quality - users' guide to water sample logs</em> (STOP 32012)</a>). To ease data entry, a the <em>Fill location and sequence</em> button has been provided that will fill the location number and sequence number columns of any selected rows with ones. The validation checks will determine if any location or sequence numbers are invalid before export.</li>
+<li><em>Swap day and month</em>: For instances when the month and day have been accidentally reversed (e.g. the date has been recorded in the American format <em>MM/DD/YYYY</em> but has been interpreted in the Australian format <em>DD/MM/YYYY</em>), this button will swap the digits for day and month in the selected dates. This will also update the Sampling ID. Please note that the cells with the dates to be swapped must be selected.</li>
+</ul>
+<h4 id="copying-and-pasting">Copying and pasting</h4>
 <p>You can copy and paste data between cells and also between the FDF application and other programs such as Excel. After selecting the range to copy or paste, copy and paste inside FDF can be accomplished by either of the following methods:</p>
 <ol style="list-style-type: decimal">
 <li>Right-click and select <em>copy</em> or <em>paste</em> from the menu as appropriate.</li>
 <li>Using the keyboard shortcuts <em>Ctrl-C</em> (copy) and <em>Ctrl-V</em> (paste)</li>
 </ol>
+<h3 id="deleting-data">Deleting data</h3>
 <p>To delete an entire row (or rows), select the row(s) by pressing the row number at the left, and then press the <em>Delete selected</em> key. Lines can be added in the data set by selecting a row (or rows) and pressing the <em>Add lines</em> button - a number of blank lines will be added at the selected location.</p>
 <p>You can reset all data by pressing the <em>Reset data</em> button.</p>
+<h3 id="managing-not-visited-or-not-collected-items">Managing not-visited or not-collected items</h3>
+<p>Sometimes a station is not visited or a sample not collected if conditions are not appropriate. In these cases it is usually a requirement to log the scheduled sample without any results.</p>
+<p>The following fields are required to be filled when a station is not visited or a sample not collected:</p>
+<ul>
+<li>Measuring program number</li>
+<li>Station number</li>
+<li>Date</li>
+<li>Sampling officer</li>
+<li>Station visited</li>
+<li>Sample collected</li>
+<li>Comments</li>
+</ul>
+<p>The comment should contain a description of the reason for which the station was not visited or the sample not collected.</p>
 <h3 id="exporting-data">Exporting data</h3>
 <p>Once you have completed the data entry, press the <em>Export data</em> button to export the data set in a KiWQM-friendly format. The application will check that all required columns are complete and that all invalid values have been rectified. You will not be able to export the data with required columns that are incomplete, or with invalid values in the data set.</p>
-<p>An additional &quot;sample-oriented&quot; file can be exported at the same time by ticking the <em>Export sample-oriented file</em> checkbox. This additional file can be opened in Excel or any text editor and used for QA purposes. Additionally, the contents of this file can be pasted directly back into the application if corrections need to be made. The &quot;sample-oriented&quot; file cannot be imported to KiWQM.</p>
-<p>Before exporting the data to a file, you will be asked to confirm that you have validated the dates, times and depths as recorded by the data logger against the physical <em>Water Sample Log</em> sheet to ensure they are consistent. If you have not yet done this, go back and validate these parameters before exporting.</p>
+<p>An additional &quot;sample-oriented&quot; file can be exported at the same time by ticking the <em>Export sample-oriented file</em> checkbox. This additional file can be opened in Excel or any text editor and used for QA purposes. Additionally, the contents of this file can be pasted directly back into the application if corrections need to be made later on.</p>
+<p><strong><em>Note</em></strong>: The &quot;sample-oriented&quot; file <em>cannot be imported to KiWQM</em>.</p>
 <p>After the data has been exported, it is ready for importing to KiWQM. See the procedure <a href="http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/32055.pdf"><em>Bulk Data Import into KiWQM Database</em> (STOP 32055)</a> for details on this procedure.</p>
-<h2 id="description-of-fields">Description of fields<a name="description-of-fields"></a></h2>
+<h2 id="description-of-sample-metadata-fields">Description of sample metadata fields<a name="description-of-fields"></a></h2>
 <table border=1>
 <colgroup>
 <col width="23%" />
@@ -60,30 +86,30 @@
 <td><p>Y</p></td>
 </tr>
 <tr class="odd">
+<td><p>Date</p></td>
+<td><p>The date the sampling event took place. The date can be input in any format as long as it contains two digits for day, two digits for month and two or four digits for year <em>in that order</em>. The date will be automatically reformatted to the format <em>DD/MM/YYYY</em> if it was not entered as such.</p></td>
+<td><p>Y</p></td>
+</tr>
+<tr class="even">
+<td><p>Time</p></td>
+<td><p>The time at which the field measurements were taken or the sample was collected. The time can be entered in any format as long as it is entered in 24-hour time and contains at least two digits for hour and two digits for minute. The time can include seconds (two digits). The time will be automatically reformatted to the format <em>HH:MM:SS</em> (24-hour time). In general, the seconds should be zero so as to match the data exported by the laboratory. Where field measurements are taken using a data logger, the time recorded on the WSL should match the time recorded on the data logger. Since samples are often collected and bottled just after the field measurements are taken, the time recorded here may be slightly earlier than the exact time the sample was removed from the media or bottled.</p>
+<p>The time recorded here <em>must match</em> the time recorded on the <em>Water Sample Log</em> filled at time of sample collection.</p></td>
+<td><p>Y</p></td>
+</tr>
+<tr class="odd">
 <td><p>Sampling ID</p></td>
 <td><p>The <em>sampling ID</em> is a unique identifier that is used to group samples collected together as part of a single sampling event. To ensure uniqueness, it is generated from the <em>station number</em> and the <em>date</em> in the format <em>STATION_NUMBER-DDMMYY</em>. These fields are described in more detail in <a href="http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/32005.pdf"><em>STOP 32005: Water quality project, sample, fraction and station numbers (product identification and traceability)</em></a>.</p>
 <p>Individual samples within the sampling are identified in conjunction with the <em>location number</em> and <em>sample sequence number</em> as described below. In most situations, a single sample will have a single <em>Sampling ID</em>.</p></td>
 <td><p>Y (automatically generated)</p></td>
 </tr>
 <tr class="even">
-<td><p>Date</p></td>
-<td><p>The date the sampling event took place. The date can be input in any format as long as it contains two digits for day, two digits for month and two or four digits for year <em>in that order</em>. The date will be automatically reformatted to the format <em>DD/MM/YYYY</em> if it was not entered as such.</p></td>
-<td><p>Y</p></td>
-</tr>
-<tr class="odd">
-<td><p>Time</p></td>
-<td><p>The time at which the field measurements were taken or the sample was collected. The time can be entered in any format as long as it is entered in 24-hour time and contains at least two digits for hour and two digits for minute. The time can include seconds (two digits). The time will be automatically reformatted to the format <em>HH:MM:SS</em> (24-hour time). In general, the seconds should be zero so as to match the data exported by the laboratory. Where field measurements are taken using a data logger, the time recorded on the WSL should match the time recorded on the data logger. Since samples are often collected and bottled just after the field measurements are taken, the time recorded here may be slightly earlier than the exact time the sample was removed from the media or bottled.</p>
-<p>The time recorded here <em>must match</em> the time recorded on the <em>Water Sample Log</em> filled at time of sample collection.</p></td>
-<td><p>Y</p></td>
-</tr>
-<tr class="even">
-<td><p>Loc# (Location number)</p></td>
+<td><p>Location# (Location number)</p></td>
 <td><p>A single-digit number used to separate samples from the same station and sampling event, but collected from different spatial locations. This is mostly relevant for groundwater samples where there could be multiple pipes at a single site, but is also relevant for surface water samples where spatial analysis of water quality at a particular station is important.</p>
 <p>The <em>location number</em> starts at <em>1</em> and increments by one for each new location sampled. For groundwater samples, this column is used to indicate the <em>pipe number</em>. If only a single location or pipe exists at a station, this should be filled with a <em>1</em>.</p></td>
 <td><p>Y</p></td>
 </tr>
 <tr class="odd">
-<td><p>Seq# (Sample sequence number)</p></td>
+<td><p>Sequence# (Sample sequence number)</p></td>
 <td><p>A single-digit number used to specify individual samples within a sampling event at a given location. Every sample collected <em>must</em> have a <em>sequence number</em> associated with it. The <em>sequence number</em> starts at <em>1</em> and increments by one for each sample collected. For example, if three samples are collected at a station at different depths to form a depth profile, the first sample will have a <em>sequence number</em> of 1, the second sample will have a <em>sequence number</em> of 2, and the third sample will have a <em>sequence number</em> of 3. This also applies to replicate samples collected at a site. For example, a primary sample may have a <em>sequence number</em> of 1, while the replicate sample will have a <em>sequence number</em> of 2. If only one sample is collected at a station, it should be assigned a <em>sequence number</em> of <em>1</em>.</p></td>
 <td><p>Y</p></td>
 </tr>
@@ -113,13 +139,23 @@
 <td><p>Y</p></td>
 </tr>
 <tr class="odd">
-<td><p>Sampling Officer</p></td>
+<td><p>Turbidimeter</p></td>
+<td><p>The model of turbidity instrument used to collect the turbidity measurements. This must be selected from the list of available instruments.</p></td>
+<td><p>N</p></td>
+</tr>
+<tr class="even">
+<td><p>Sampling officer</p></td>
 <td><p>Name of the staff member who collected the field measurements.</p></td>
 <td><p>Y</p></td>
 </tr>
+<tr class="odd">
+<td><p>Station visited</p></td>
+<td><p>Indicates whether the station was visited (<em>YES</em>) or if this entry is for a scheduled visit that did not take place (<em>NO</em>).</p></td>
+<td><p>N</p></td>
+</tr>
 <tr class="even">
 <td><p>Sample collected</p></td>
-<td><p>Indicates whether a sample has been collected for laboratory analysis, or whether only field measurements have been collected. This is indicated by selecting either <em>Yes</em> or <em>No</em>.</p></td>
+<td><p>Indicates whether a sample has been collected for laboratory analysis, or whether only field measurements have been collected. This is indicated by selecting either <em>YES</em> or <em>NO</em>.</p></td>
 <td><p>N</p></td>
 </tr>
 <tr class="odd">
@@ -139,7 +175,39 @@
 </tr>
 </tbody>
 </table>
-<h2 id="field-measurements">Field measurements</h2>
+<p>The following location metadata is collected by some instruments (e.g YSI instruments) and can be imported to FDF with the other measurements:</p>
+<table border=1>
+<thead>
+<tr class="header">
+<th align="left">Parameter</th>
+<th align="center">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Latitude</td>
+<td align="center">Degrees south (decimal)</td>
+</tr>
+<tr class="even">
+<td align="left">Longitude</td>
+<td align="center">Degrees east (decimal)</td>
+</tr>
+<tr class="odd">
+<td align="left">Easting</td>
+<td align="center">m</td>
+</tr>
+<tr class="even">
+<td align="left">Norting</td>
+<td align="center">m</td>
+</tr>
+<tr class="odd">
+<td align="left">Map zone</td>
+<td align="center">N/A</td>
+</tr>
+</tbody>
+</table>
+<p>The easting, northing and map zone will be calculated automatically based on the latitude and longitude values.</p>
+<h2 id="field-parameters-and-measurements">Field parameters and measurements</h2>
 <p>The following columns are available for data collected in the field.</p>
 <table border=1>
 <thead>
@@ -180,6 +248,10 @@
 <tr class="even">
 <td align="left">Gauge height</td>
 <td align="center">m</td>
+</tr>
+<tr class="odd">
+<td align="left">Barometric pressure</td>
+<td align="center">Torr</td>
 </tr>
 </tbody>
 </table>
@@ -318,4 +390,5 @@
 <p><a href="http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/39004.doc"><em>Instrument Calibration Log and Maintenance Schedule</em> (STOP 39004)</a></p>
 <p><a href="http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/32057.pdf"><em>Instrument calibration log user guide</em> (STOP 32057)</a></p>
 <p><a href="http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/32005.pdf"><em>Water quality project, sample, fraction and station numbers (product identification and traceability)</em> (STOP 32005)</a></p>
+<p><a href="http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/32012.pdf"><em>Water quality - users' guide to water sample logs</em> (STOP 32012)</a></p>
 <p><a href="http://waterinfo.nsw.gov.au/stop/stop/stop/current-docs/39057.doc"><em>Water Sample Log</em> (STOP 39057)</a></p>
