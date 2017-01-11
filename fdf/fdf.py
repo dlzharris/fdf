@@ -33,15 +33,15 @@ from PyQt4 import QtGui, QtCore
 import fdfGui
 import functions
 import settings
-from functions import ValidityError
+from functions import ValidityError, DatetimeError
 from settings import app_config, column_config
 from delegates import TableDelegate
 
 __author__ = 'Daniel Harris'
-__date__ = '12 December 2016'
+__date__ = '12 January 2017'
 __email__ = 'daniel.harris@dpi.nsw.gov.au'
 __status__ = 'Development'
-__version__ = '0.10.1'
+__version__ = '0.10.2'
 
 
 ###############################################################################
@@ -51,10 +51,11 @@ class TableModel(QtCore.QAbstractTableModel):
     # Define a signal for use in the view
     verticalHeaderChanged = QtCore.pyqtSignal()
 
-    def __init__(self, samples=[], headers=[], parent=None):
+    def __init__(self, undoStack, samples=[], headers=[], parent=None):
         QtCore.QAbstractTableModel.__init__(self, parent)
         self._samples = samples
         self._headers = headers
+        self.undoStack = undoStack
 
         if not self._samples:
             self._samples.append(self.defaultData())
@@ -145,8 +146,11 @@ class TableModel(QtCore.QAbstractTableModel):
                         dt_yearfirst = True if dateFormat[:2] == 'YY' else False
                     except TypeError:
                         dt_yearfirst = False
-                    dt = functions.parse_datetime_from_string(date, "", dayfirst=dt_dayfirst, yearfirst=dt_yearfirst)
-                    value = QtCore.QDate(dt.year, dt.month, dt.day)
+                    try:
+                        dt = functions.parse_datetime_from_string(date, "", dayfirst=dt_dayfirst, yearfirst=dt_yearfirst)
+                        value = QtCore.QDate(dt.year, dt.month, dt.day)
+                    except DatetimeError:
+                        value = ""
 
             # Time as QTime object
             if column == functions.get_column_number('time'):
@@ -307,7 +311,7 @@ class TableModel(QtCore.QAbstractTableModel):
                 .strftime(app_config['datetime_formats']['date']['sampling_number'])
             sample_type = self._samples[row][functions.get_column_number('sample_type')]
 
-        elif column == functions.get_column_number('date'):
+        elif column == functions.get_column_number('date') and value:
             station_number = self._samples[row][functions.get_column_number('station_number')]
             date = value.toPyDate().strftime(app_config['datetime_formats']['date']['sampling_number'])
             sample_type = self._samples[row][functions.get_column_number('sample_type')]
@@ -386,6 +390,9 @@ class TableModel(QtCore.QAbstractTableModel):
 
     def sort(self, column, order):
         """Sort table by given column number"""
+        # Clear the undo stack
+        self.undoStack.clear()
+        # Begin sorting
         self.layoutAboutToBeChanged.emit()
         self._samples = sorted(self._samples, key=operator.itemgetter(column))
         if order == QtCore.Qt.DescendingOrder:
@@ -445,11 +452,11 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
 
         # Check we are using the latest version of FDF
         self.checkVersion()
-        # Set up model
-        self.sampleModel = TableModel()
-        self.sampleModel.removeRows(0, 1)
         # Set up the undo stack
         self.undoStack = QtGui.QUndoStack(self)
+        # Set up model
+        self.sampleModel = TableModel(undoStack=self.undoStack)
+        self.sampleModel.removeRows(0, 1)
         # Set up the main GUI window
         self.setupUi(self.sampleModel, self)
         # Initialise global variables
@@ -501,6 +508,9 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
     def contextMenuEvent(self, event):
         if event.Reason() == QtGui.QContextMenuEvent.Mouse:
             menu = QtGui.QMenu(self)
+            menu.addAction(u"Undo", self.undo, QtGui.QKeySequence.Undo)
+            menu.addAction(u"Redo", self.redo, QtGui.QKeySequence.Redo)
+            menu.addSeparator()
             menu.addAction(u"Copy", self.copy, QtGui.QKeySequence.Copy)
             menu.addAction(u"Cut", self.copy, QtGui.QKeySequence.Cut)
             menu.addAction(u"Paste", self.paste, QtGui.QKeySequence.Paste)
@@ -515,6 +525,10 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             self.delete()
         elif event.matches(QtGui.QKeySequence.Paste):
             self.paste()
+        elif event.matches(QtGui.QKeySequence.Undo):
+            self.undo()
+        elif event.matches(QtGui.QKeySequence.Redo):
+            self.redo()
         elif event.key() in (QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return):
             self.keyPressEnter()
         elif event.key() == QtCore.Qt.Key_Escape:
@@ -829,6 +843,9 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
 
         return None
 
+    def redo(self):
+        self.undoStack.redo()
+
     def resetData(self):
         """Resets all data in the table instance after confirming with the user."""
         txt = u"All data will be lost. Are you sure you want to continue?"
@@ -868,6 +885,9 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
     def swapDayMonth(self):
         """Swap the day and month values of selected indices."""
         self.sampleModel.swapMonthDay(self.tableViewData.selectedIndexes())
+
+    def undo(self):
+        self.undoStack.undo()
 
     def updateGlobalFrozenColumns(self, frozenColumns):
         """Update the number of frozen columns at the left of the table."""
