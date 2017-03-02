@@ -153,7 +153,7 @@
   required: yes
   required_if_not_sampled: no
   lower_limit: 0
-  upper_limit: 50
+  upper_limit: 200
   precision: 2
   unit_code: M
 17:
@@ -163,7 +163,7 @@
   required: no
   required_if_not_sampled: no
   lower_limit: 0
-  upper_limit: 50
+  upper_limit: 200
   precision: 2
   unit_code: M
 18:
@@ -184,7 +184,7 @@
   required: no
   required_if_not_sampled: no
   lower_limit: 0
-  upper_limit: 200
+  upper_limit: 500
   precision: 1
   unit_code: WISKI_PSAT
   method: FLD_MULTI_PROBE
@@ -217,7 +217,7 @@
   required: no
   required_if_not_sampled: no
   lower_limit: 0
-  upper_limit: 5000000
+  upper_limit: 200000
   precision: 0
   unit_code: MISC
   method: FLD_MULTI_PROBE
@@ -228,7 +228,7 @@
   required: no
   required_if_not_sampled: no
   lower_limit: 0
-  upper_limit: 5000000
+  upper_limit: 200000
   precision: 0
   unit_code: MISC
   method: FLD_MULTI_PROBE
@@ -239,7 +239,7 @@
   required: no
   required_if_not_sampled: no
   lower_limit: 0
-  upper_limit: 10000
+  upper_limit: 1000
   precision: 0
   unit_code: MMHG
   method: FLD_MULTI_PROBE
@@ -250,7 +250,7 @@
   required: no
   required_if_not_sampled: no
   lower_limit: 0
-  upper_limit: 5000
+  upper_limit: 1000
   precision: 2
   unit_code: NTU
   method: FLD_TURB

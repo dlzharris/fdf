@@ -16,7 +16,7 @@ from PyQt4 import QtGui, QtCore
 __author__ = 'Daniel Harris'
 __date__ = '12 December 2016'
 __email__ = 'daniel.harris@dpi.nsw.gov.au'
-__status__ = 'Development'
+__status__ = 'Production'
 __version__ = '1.0.0'
 
 

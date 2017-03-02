@@ -38,10 +38,10 @@ from settings import app_config, column_config
 from delegates import TableDelegate
 
 __author__ = 'Daniel Harris'
-__date__ = '12 January 2017'
+__date__ = '03 March 2017'
 __email__ = 'daniel.harris@dpi.nsw.gov.au'
-__status__ = 'Development'
-__version__ = '0.10.2'
+__status__ = 'Production'
+__version__ = '1.0.0'
 
 
 ###############################################################################
