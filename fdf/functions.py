@@ -52,10 +52,10 @@ from utm import from_latlon
 from settings import app_config, column_config, station_list
 
 __author__ = 'Daniel Harris'
-__date__ = '13 December 2016'
+__date__ = '09 March 2017'
 __email__ = 'daniel.harris@dpi.nsw.gov.au'
 __status__ = 'Production'
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 
 ###############################################################################
@@ -176,7 +176,7 @@ def load_instrument_file(instrument_file, file_source, date_format):
             header_start_row += 1
         else:
             separator = ','
-        
+
         parameters = in_list[header_start_row].replace('"', '').replace(bom, '').replace('\r\n', '').split(separator)
 
         if file_source in app_config['sources']['hydrolab']:
