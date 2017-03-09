@@ -107,7 +107,10 @@ def check_file_validity(instrument_file, file_source):
         if file_source == 'EXO (KOR file)':
             file_valid = True if "KOR Export File" in in_file[0] else False
         elif file_source == 'EXO (instrument)':
-            file_valid = True if "Date" in in_file[0] else False
+            if 'sep' in in_file[0]:
+                file_valid = True if "Date" in in_file[1] else False
+            else:
+                file_valid = True if "Date" in in_file[0] else False
 
     # If the instrument type is not found in the available instruments, then
     # the file is invalid.
@@ -164,7 +167,17 @@ def load_instrument_file(instrument_file, file_source, date_format):
         # Read the file into a list for initial interrogation and processing. We will
         # read the data portion into a dictionary further below.
         in_list = list(f.readlines())
-        parameters = in_list[header_start_row].replace('"', '').replace(bom, '').replace('\r\n', '').split(',')
+
+        # In EXO with updated firmware (Current March 2017), some data files contain
+        # an extra line with the separator value. We check if this is the case and
+        # increment the header start row.
+        if file_source == 'EXO (instrument)' and 'sep' in in_list[0]:
+            separator = in_list[0][in_list[0].find('=') + 1]
+            header_start_row += 1
+        else:
+            separator = ','
+        
+        parameters = in_list[header_start_row].replace('"', '').replace(bom, '').replace('\r\n', '').split(separator)
 
         if file_source in app_config['sources']['hydrolab']:
             # The hydrolab data headers are made up of two rows: one for the parameter and one
