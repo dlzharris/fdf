@@ -128,9 +128,11 @@
     - Peter Klowss
     - Phillip Cocks
     - Sarah McGeoch
+    - Shane Briggs
     - Skye Taylor
     - Sue Botting
     - Tracy Fulford
+    - Troy Hayes
     - Warwick Mawhinney
 14:
   name: station_visited
@@ -306,7 +308,7 @@
   allow_zero: no
   required: no
   required_if_not_sampled: no
-  lower_limit: -37
+  lower_limit: -38
   upper_limit: -20
   precision: 5
 32:

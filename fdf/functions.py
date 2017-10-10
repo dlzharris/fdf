@@ -635,6 +635,10 @@ def prepare_dictionary(data_list, date_format):
                 sample_param_oriented["units"] = column_config[col_number]['unit_code']
                 if param == 'turbidity':
                     sample_param_oriented["device"] = sample['turbidity_instrument']
+                    # Add ">" sign if turbidity is high
+                    # TODO: This could be made more generic if we want > available to other parameters
+                    if sample_param_oriented["value"] >= column_config[col_number]['upper_limit']:
+                        sample_param_oriented["value"] = ">" + sample_param_oriented["value"]
                 else:
                     sample_param_oriented["device"] = sample['sampling_instrument']
                 # If the value is empty, skip to the next value
