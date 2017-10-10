@@ -42,11 +42,13 @@ from itertools import islice
 import os
 import re
 import sys
+import time
 
 # Related third party imports
 import chardet
 from dateutil.parser import parse
 from utm import from_latlon
+import xlrd
 
 # Local application imports
 from settings import app_config, column_config, station_list
@@ -149,6 +151,11 @@ def load_instrument_file(instrument_file, file_source, date_format):
             header_start_row = 0
             data_start_row = 1
             encoding = 'utf16'
+    # If we are importing a Hanna instrument file we use a different import
+    # routine
+    elif file_source in app_config['sources']['hanna']:
+        data = load_hanna_instrument_file(instrument_file)
+        return data
 
     charset = chardet.detect(open(instrument_file, "rb").read())
     encoding = charset['encoding']
@@ -382,6 +389,32 @@ def load_instrument_file(instrument_file, file_source, date_format):
 
     # Return the list
     return data
+
+
+def load_hanna_instrument_file(instrument_file):
+    wb = xlrd.open_workbook(instrument_file)
+    ds = wb.sheet_by_index(1)  # Data sheet
+
+    data = []
+
+    headers = ds.row_values(0)
+    # Ensure we're not dealing with Unicode characters
+    headers = [heading.split('[')[0] for heading in headers]
+
+    for i in range(1, ds.nrows):
+        vals = dict(zip(headers, ds.row_values(i)))
+
+        vals = {k:v.strip() for k,v in vals.iteritems()}
+        if any(vals):
+            vals['date'] = time.strftime(app_config['datetime_formats']['date']['display'],
+                                         xlrd.xldate_as_tuple(vals['Date'], wb.datemode))
+            vals['sample_time'] = time.strftime(app_config['datetime_formats']['time']['display'],
+                                                xlrd.xldate_as_tuple(vals['Time'], wb.datemode))
+            del vals['Date']
+            del vals['Time']
+            data.append(vals)
+        else:
+            continue
 
 
 def lord2lorl(lord, colkeys):
