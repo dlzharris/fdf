@@ -8,7 +8,7 @@ sources:
     - EXO (instrument)
     # - EXO (KOR file)
   hanna:
-    - Hanna
+    - Hanna HI98195
   turbidity:
     - HACH Tubiditimeter 2100P
     - HACH Tubiditimeter 2100Q

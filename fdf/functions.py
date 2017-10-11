@@ -114,6 +114,10 @@ def check_file_validity(instrument_file, file_source):
             else:
                 file_valid = True if "Date" in in_file[0] else False
 
+    # File validity check for Hanna instruments:
+    elif file_source in app_config['sources']['hanna']:
+        file_valid = True
+
     # If the instrument type is not found in the available instruments, then
     # the file is invalid.
     else:
@@ -380,15 +384,22 @@ def load_instrument_file(instrument_file, file_source, date_format):
                 pass
 
             # Add the extra items we'll need access to later on
-            for item in column_config:
-                if column_config[item]['name'] not in new_line:
-                    new_line[column_config[item]['name']] = ""
+            new_line = add_empty_dict_items(new_line)
 
             # Add the new updated dictionary to our list
             data.append(new_line)
 
     # Return the list
     return data
+
+
+def add_empty_dict_items(data_dict):
+    """Add extra items to a data dictionary that may need to be accessed later."""
+    for item in column_config:
+        if column_config[item]['name'] not in data_dict:
+            data_dict[column_config[item]['name']] = ""
+
+    return data_dict
 
 
 def load_hanna_instrument_file(instrument_file):
@@ -404,17 +415,32 @@ def load_hanna_instrument_file(instrument_file):
     for i in range(1, ds.nrows):
         vals = dict(zip(headers, ds.row_values(i)))
 
-        vals = {k:v.strip() for k,v in vals.iteritems()}
-        if any(vals):
-            vals['date'] = time.strftime(app_config['datetime_formats']['date']['display'],
-                                         xlrd.xldate_as_tuple(vals['Date'], wb.datemode))
-            vals['sample_time'] = time.strftime(app_config['datetime_formats']['time']['display'],
-                                                xlrd.xldate_as_tuple(vals['Time'], wb.datemode))
-            del vals['Date']
-            del vals['Time']
-            data.append(vals)
+        try:
+            vals = {re.sub('[^A-Za-z0-9]+', '',k):v.strip() for k,v in vals.iteritems()}
+        except AttributeError:
+            vals = {re.sub('[^A-Za-z0-9]+', '',k):v for k,v in vals.iteritems()}
+
+        zeros = (0, 0, 0)
+
+        if any(value != u'' for value in vals.values()):
+            # TODO: Failing when trying to convert xldate from empty string
+            try:
+                vals['Date'] = time.strftime(app_config['datetime_formats']['date']['display'],
+                                             xlrd.xldate_as_tuple(vals['Date'], wb.datemode) + zeros)
+                vals['Time'] = time.strftime(app_config['datetime_formats']['time']['display'],
+                                             xlrd.xldate_as_tuple(vals['Time'], wb.datemode) + zeros)
+            except ValueError:
+                pass
+            # Replace keys with new keys
+            new_vals = {}
+            for item in vals:
+                new_vals[get_new_dict_key(item)] = vals[item]
+            new_vals = add_empty_dict_items(new_vals)
+            data.append(new_vals)
         else:
             continue
+
+    return data
 
 
 def lord2lorl(lord, colkeys):
@@ -498,14 +524,14 @@ def get_new_dict_key(key):
     :return: The new dictionary key
     """
     new_keys = {
-        "Date": "date",  # hydrolab & YSI
-        "Time": "sample_time",  # hydrolab & YSI
+        "Date": "date",  # hydrolab & YSI & Hanna
+        "Time": "sample_time",  # hydrolab & YSI & Hanna
         "TempC": "temp_c",  # hydrolab & YSI
         "TempF": "temp_f",  # hydrolab & YSI
         "Dep25": "depth_upper",  # hydrolab
         "LDO%": "do_sat",  # hydrolab
         "LDO": "do",  # hydrolab
-        "pH": "ph",  # hydrolab & YSI
+        "pH": "ph",  # hydrolab & YSI & Hanna
         "SpCond": "conductivity_comp",  # hydrolab & YSI
         "IBVSvr4": "internal_voltage",  # hydrolab
         "BPSvr4": "barometric_pressure",  # hydrolab
@@ -526,7 +552,11 @@ def get_new_dict_key(key):
         "DEP m": "depth_upper",  # YSI
         "mmHg": "barometric_pressure",  # YSI
         "Lat": "latitude",  # YSI
-        "Lon": "longitude"  # YSI
+        "Lon": "longitude",  # YSI
+        "EC": "conductivity_comp",  # Hanna
+        "ECAbs": "conductivity_uncomp",  # Hanna
+        "Temp": "temp_c",  # Hanna
+        "Remarks": "sampling_comment"  # Hanna
     }
     return new_keys[key]
 

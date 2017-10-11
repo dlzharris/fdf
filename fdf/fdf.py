@@ -483,6 +483,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
         instruments = ['']
         instruments.extend(app_config['sources']['hydrolab'])
         instruments.extend(app_config['sources']['ysi'])
+        instruments.extend(app_config['sources']['hanna'])
         self.instrumentComboBox.addItems(instruments)
 
         # Set up the date format picker
