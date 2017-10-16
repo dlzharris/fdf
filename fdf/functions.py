@@ -7,7 +7,7 @@ import file for KiWQM.
 Author: Daniel Harris
 Title: Data & Procedures Officer
 Organisation: DPI Water
-Date modified: 13/12/2016
+Date modified: 16/10/2017
 
 External dependencies: dateutil
 
@@ -91,6 +91,8 @@ def check_file_validity(instrument_file, file_source):
         in_file = instrument_file.readlines()
     except UnicodeError:
         raise ValidityError
+    except AttributeError:  # This catches Excel files, which do not have readlines property
+        pass
 
     # File validity check for Hydrolab instruments:
     if file_source in app_config['sources']['hydrolab']:
@@ -116,7 +118,14 @@ def check_file_validity(instrument_file, file_source):
 
     # File validity check for Hanna instruments:
     elif file_source in app_config['sources']['hanna']:
-        file_valid = True
+        md = instrument_file.sheet_by_index(0)  # Metadata sheet
+        # Test 1: "Instrument Name", "GENERAL INFORMATION", "SETTINGS",
+        # "LOT INFORMATION", and "Checksum" in column values
+        test_names = {"Instrument Name", "GENERAL INFORMATION", "SETTINGS",
+                      "LOT INFORMATION", "Checksum"}
+        column_values = set(md.col_values(0))
+        if column_values.issuperset(test_names):
+            file_valid = True
 
     # If the instrument type is not found in the available instruments, then
     # the file is invalid.
@@ -158,8 +167,14 @@ def load_instrument_file(instrument_file, file_source, date_format):
     # If we are importing a Hanna instrument file we use a different import
     # routine
     elif file_source in app_config['sources']['hanna']:
-        data = load_hanna_instrument_file(instrument_file)
-        return data
+        # Check the validity of the file
+        with xlrd.open_workbook(instrument_file) as wb:
+            try:
+                check_file_validity(wb, file_source)
+            except ValidityError:
+                raise ValidityError
+            data = load_hanna_instrument_file(wb)
+            return data
 
     charset = chardet.detect(open(instrument_file, "rb").read())
     encoding = charset['encoding']
@@ -402,28 +417,45 @@ def add_empty_dict_items(data_dict):
     return data_dict
 
 
-def load_hanna_instrument_file(instrument_file):
-    wb = xlrd.open_workbook(instrument_file)
+def load_hanna_instrument_file(wb):
+    """
+    Loads data from a Hanna instrument file downloaded as an Excel sheet from
+    the Hanna Windows software. Data is pulled from the Excel sheet and parsed
+    to a list of dictionaries that can be consumed by the QT data model.
+    :param instrument_file: String of file location and name
+    :return: List of dictionaries to be consumed by QT data model.
+    """
+    # Open the Excel workbook. We assume that the data is on the second
+    # worksheet (first worksheet is instrument metadata).
+    #wb = xlrd.open_workbook(instrument_file)
     ds = wb.sheet_by_index(1)  # Data sheet
 
+    # Initialise the data container
     data = []
 
+    # Load the column headings to be used as dict keys.
     headers = ds.row_values(0)
     # Ensure we're not dealing with Unicode characters
     headers = [heading.split('[')[0] for heading in headers]
 
+    # Create a dictionary for each data row using headers as keys.
     for i in range(1, ds.nrows):
         vals = dict(zip(headers, ds.row_values(i)))
 
+        # Remove all non-alphanumeric characters to make everything easier
         try:
             vals = {re.sub('[^A-Za-z0-9]+', '',k):v.strip() for k,v in vals.iteritems()}
         except AttributeError:
             vals = {re.sub('[^A-Za-z0-9]+', '',k):v for k,v in vals.iteritems()}
 
+        # We need a tuple of zeros to add to the end of the xldate_as_tuple
+        # values to provide time.strftime with the values it needs.
         zeros = (0, 0, 0)
 
+        # Hanna software can leave many rows of empty data, so we only try to
+        # parse rows that have at least one non-blank value in them to ensure
+        # we are only parsing real data.
         if any(value != u'' for value in vals.values()):
-            # TODO: Failing when trying to convert xldate from empty string
             try:
                 vals['Date'] = time.strftime(app_config['datetime_formats']['date']['display'],
                                              xlrd.xldate_as_tuple(vals['Date'], wb.datemode) + zeros)
@@ -436,6 +468,7 @@ def load_hanna_instrument_file(instrument_file):
             for item in vals:
                 new_vals[get_new_dict_key(item)] = vals[item]
             new_vals = add_empty_dict_items(new_vals)
+            # Add the dictionary to our list of data dictionaries.
             data.append(new_vals)
         else:
             continue
