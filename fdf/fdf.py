@@ -41,7 +41,7 @@ __author__ = 'Daniel Harris'
 __date__ = '09 March 2017'
 __email__ = 'daniel.harris@dpi.nsw.gov.au'
 __status__ = 'Production'
-__version__ = '1.0.1'
+__version__ = '1.1.0'
 
 
 ###############################################################################
