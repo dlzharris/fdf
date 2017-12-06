@@ -6,7 +6,7 @@ field data import file for KiWQM.
 Author: Daniel Harris
 Title: Data & Procedures Officer
 Organisation: DPI Water
-Date modified: 13/12/2016
+Date modified: 06/12/2017
 
 External dependencies: PyYAML, PyQT4
 
@@ -38,10 +38,10 @@ from settings import app_config, column_config
 from delegates import TableDelegate
 
 __author__ = 'Daniel Harris'
-__date__ = '09 March 2017'
+__date__ = '6 December 2017'
 __email__ = 'daniel.harris@dpi.nsw.gov.au'
 __status__ = 'Production'
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 
 
 ###############################################################################
@@ -133,6 +133,9 @@ class TableModel(QtCore.QAbstractTableModel):
 
             # Date as QDate object
             if column == functions.get_column_number('date'):
+                # TODO: Delete this
+                if row > 482:
+                    pass
                 if type(value) is QtCore.QDate:
                     pass
                 else:
@@ -542,6 +545,8 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
     ##########################################################################
     def addFile(self):
         """Loads the file specified in the UI and adds it to the table instance."""
+        dateFormat = self.dateFormatComboBox.currentText()
+
         try:
             # Validate file type
             dicts = functions.load_instrument_file(
@@ -559,7 +564,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
                 self.sampleModel.insertRows(self.sampleModel.rowCount(), 1)
                 for j in range(len(lists[i])):
                     index = self.sampleModel.index(self.sampleModel.rowCount() - 1, j)
-                    self.sampleModel.setData(index, lists[i][j])
+                    self.sampleModel.setData(index, lists[i][j], dateFormat=dateFormat)
                     # If we have an invalid value, change the valid flag so that the message displays
                     if self.sampleModel.data(index, role=QtCore.Qt.BackgroundRole) == QtGui.QBrush(QtCore.Qt.red):
                         fileValid = False
@@ -683,7 +688,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             self.undoStack.push(command)
         self.undoStack.endMacro()
 
-        return  None
+        return None
 
     def delRows(self):
         """Deletes selected rows from the table."""

@@ -54,10 +54,10 @@ import xlrd
 from settings import app_config, column_config, station_list
 
 __author__ = 'Daniel Harris'
-__date__ = '09 March 2017'
+__date__ = '6 December 2017'
 __email__ = 'daniel.harris@dpi.nsw.gov.au'
 __status__ = 'Production'
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 
 
 ###############################################################################
