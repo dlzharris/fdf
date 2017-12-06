@@ -40,7 +40,7 @@ from delegates import TableDelegate
 __author__ = 'Daniel Harris'
 __date__ = '6 December 2017'
 __email__ = 'daniel.harris@dpi.nsw.gov.au'
-__status__ = 'Development'
+__status__ = 'Production'
 __version__ = '1.1.1'
 
 
