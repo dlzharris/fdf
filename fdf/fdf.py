@@ -133,9 +133,6 @@ class TableModel(QtCore.QAbstractTableModel):
 
             # Date as QDate object
             if column == functions.get_column_number('date'):
-                # TODO: Delete this
-                if row > 482:
-                    pass
                 if type(value) is QtCore.QDate:
                     pass
                 else:
