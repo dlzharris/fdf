@@ -173,7 +173,7 @@ def load_instrument_file(instrument_file, file_source, date_format):
                 check_file_validity(wb, file_source)
             except ValidityError:
                 raise ValidityError
-            data = load_hanna_instrument_file(wb)
+            data = load_hanna_instrument_file(wb, file_source)
             return data
 
     charset = chardet.detect(open(instrument_file, "rb").read())
@@ -417,7 +417,7 @@ def add_empty_dict_items(data_dict):
     return data_dict
 
 
-def load_hanna_instrument_file(wb):
+def load_hanna_instrument_file(wb, file_source):
     """
     Loads data from a Hanna instrument file downloaded as an Excel sheet from
     the Hanna Windows software. Data is pulled from the Excel sheet and parsed
@@ -467,6 +467,7 @@ def load_hanna_instrument_file(wb):
             new_vals = {}
             for item in vals:
                 new_vals[get_new_dict_key(item)] = vals[item]
+            new_vals['sampling_instrument'] = file_source
             new_vals = add_empty_dict_items(new_vals)
             # Add the dictionary to our list of data dictionaries.
             data.append(new_vals)

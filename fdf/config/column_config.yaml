@@ -88,7 +88,7 @@
   allow_zero: yes
   required: yes
   required_if_not_sampled: no
-  list_items: [Hanna, Hydrolab DS5, Hydrolab MS4, Hydrolab MS5, EXO]
+  list_items: [Hanna HI98195, Hydrolab DS5, Hydrolab MS4, Hydrolab MS5, EXO]
 12:
   name: turbidity_instrument
   display_name: Turbidimeter

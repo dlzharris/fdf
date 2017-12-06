@@ -40,7 +40,7 @@ from delegates import TableDelegate
 __author__ = 'Daniel Harris'
 __date__ = '6 December 2017'
 __email__ = 'daniel.harris@dpi.nsw.gov.au'
-__status__ = 'Production'
+__status__ = 'Development'
 __version__ = '1.1.1'
 
 
@@ -604,7 +604,7 @@ class MainApp(fdfGui.Ui_MainWindow, QtGui.QMainWindow):
             opener = urllib2.build_opener(proxy)
             urllib2.install_opener(opener)
             if __status__ == 'Development':
-                current_version = yaml.load(urllib2.urlopen(version_url).read())['version_dev']
+                current_version = __version__
             else:
                 current_version = yaml.load(urllib2.urlopen(version_url).read())['version_stable']
         except urllib2.URLError:
